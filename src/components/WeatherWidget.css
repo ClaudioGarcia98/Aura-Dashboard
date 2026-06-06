@@ -192,3 +192,25 @@
 .weather-icon-rain {
     animation: weatherBob 2s ease-in-out infinite;
 }
+
+/* -- Responsive Mobile (fixed widget + clamped panel)  */
+@media (max-width: 768px) {
+    .weather-widget {
+        position: fixed;
+        top: calc(12px + env(safe-area-inset-top));
+        right: 12px;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        z-index: 80;
+    }
+    .weather-panel {
+        position: fixed;
+        top: calc(56px + env(safe-area-inset-top));
+        right: 12px;
+        width: min(280px, calc(100vw - 24px));
+        max-height: 70vh;
+        max-height: 70dvh;
+        overflow-y: auto;
+        z-index: 81;
+    }
+}

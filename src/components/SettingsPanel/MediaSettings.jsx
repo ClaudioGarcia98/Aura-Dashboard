@@ -1,6 +1,7 @@
 import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
+import { usePointerReorder } from '../../hooks/usePointerReorder';
 
 const saveBlob = async (blob) => {
     const db = await new Promise((res, rej) => {
@@ -88,24 +89,19 @@ export default memo(function MediaSettings() {
         setLofiStations(remaining);
     };
 
-    const draggedIdRef = useRef(null);
-
-    const handleDragStart = useCallback((stationId) => {
-        draggedIdRef.current = stationId;
-    }, []);
-
-    const handleDragEnter = useCallback((targetId) => {
-        const draggedId = draggedIdRef.current;
-        if (!draggedId || draggedId === targetId) return;
+    // Pointer-based reorder (works for mouse + touch + pen)
+    const handleReorder = useCallback((fromId, toId) => {
         const { lofiStations: current, setLofiStations: setter } = useSettingsStore.getState();
-        const oldIndex = current.findIndex(s => s.id === draggedId);
-        const newIndex = current.findIndex(s => s.id === targetId);
-        if (oldIndex === -1 || newIndex === -1) return;
+        const oldIndex = current.findIndex(s => String(s.id) === String(fromId));
+        const newIndex = current.findIndex(s => String(s.id) === String(toId));
+        if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
         const updated = [...current];
         const [item] = updated.splice(oldIndex, 1);
         updated.splice(newIndex, 0, item);
         setter(updated);
     }, []);
+
+    const { draggingId, startDrag } = usePointerReorder({ onReorder: handleReorder });
 
     // One-time fix: replace any "My Saved Station" placeholder names with real YouTube titles
     useEffect(() => {
@@ -202,12 +198,8 @@ export default memo(function MediaSettings() {
                             <li
                                 key={station.id}
                                 className="sp-list-item"
-                                style={{ flexDirection: editingStationId === station.id ? 'column' : 'row', gap: '8px', fontSize: '0.8rem', cursor: editingStationId === station.id ? 'default' : 'grab' }}
-                                draggable={editingStationId !== station.id}
-                                onDragStart={() => handleDragStart(station.id)}
-                                onDragEnter={(e) => { e.preventDefault(); handleDragEnter(station.id); }}
-                                onDragOver={(e) => e.preventDefault()}
-                                onDragEnd={() => { draggedIdRef.current = null; }}
+                                data-reorder-id={station.id}
+                                style={{ flexDirection: editingStationId === station.id ? 'column' : 'row', gap: '8px', fontSize: '0.8rem', opacity: draggingId === String(station.id) ? 0.5 : 1 }}
                             >
                                 {editingStationId === station.id ? (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
@@ -232,11 +224,19 @@ export default memo(function MediaSettings() {
                                 ) : (
                                     <>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', flex: 1 }}>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.3, flexShrink: 0 }}>
-                                                <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
-                                                <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
-                                                <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
-                                            </svg>
+                                            <span
+                                                className="station-drag-handle"
+                                                onPointerDown={(e) => startDrag(e, station.id)}
+                                                aria-label="Drag to reorder"
+                                                title="Drag to reorder"
+                                                style={{ display: 'flex', flexShrink: 0, cursor: 'grab', touchAction: 'none' }}
+                                            >
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.3 }}>
+                                                    <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
+                                                    <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+                                                    <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
+                                                </svg>
+                                            </span>
                                             <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                 {station.name || station.videoId}
                                             </span>

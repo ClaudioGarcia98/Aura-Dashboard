@@ -90,8 +90,14 @@ export default memo(function SearchBox() {
 
         document.addEventListener('keydown', handleCtrlSpace);
         document.addEventListener('click', handleClickOutside);
-        
+
         loadRecent();
+
+        // Only auto-focus (and pop the keyboard) on devices with a fine pointer —
+        // avoids the keyboard springing up on every phone/tablet tab open.
+        if (window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
+            inputRef.current?.focus();
+        }
 
         return () => {
             document.removeEventListener('keydown', handleCtrlSpace);
@@ -343,8 +349,7 @@ export default memo(function SearchBox() {
                 id="searchInput"
                 ref={inputRef}
                 placeholder="Let's search something"
-                autoComplete="off" 
-                autoFocus
+                autoComplete="off"
                 value={query}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}

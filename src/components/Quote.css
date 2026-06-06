@@ -53,3 +53,13 @@
     text-transform: none;
     letter-spacing: normal;
 }
+
+/* -- Responsive Mobile ------------------------------- */
+@media (max-width: 768px) {
+    #quote-container {
+        padding: 10px 20px;
+    }
+    .quote-text {
+        font-size: 0.95rem;
+    }
+}

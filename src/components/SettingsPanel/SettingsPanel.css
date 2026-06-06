@@ -231,6 +231,8 @@
     padding: 28px;
     max-width: 360px;
     width: 90%;
+    max-height: 85dvh;
+    overflow-y: auto;
     text-align: center;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
     animation: modalSlideIn 0.25s ease;
@@ -271,4 +273,83 @@
 @keyframes modalSlideIn {
     from { opacity: 0; transform: scale(0.95) translateY(10px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* -- Settings drawer header close (mobile only) ------ */
+.sp-close {
+    display: none;
+    margin-left: auto;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-primary);
+    width: 36px; height: 36px; border-radius: 50%;
+    align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    transition: var(--transition-standard);
+}
+.sp-close:hover { background: rgba(255,80,80,0.2); color: #ff6b6b; }
+
+/* -- Responsive Mobile (bottom sheet) ---------------- */
+@media (max-width: 768px) {
+    .settings-toggle {
+        position: fixed;
+        left: 16px;
+        bottom: calc(16px + env(safe-area-inset-bottom));
+        width: 48px;
+        height: 48px;
+        z-index: 95;
+    }
+    .settings-panel {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        width: 100%;
+        max-width: 100%;
+        max-height: 85vh;
+        max-height: 85dvh;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        padding-top: var(--space-4);
+        padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+        transform: translateY(100%);
+        opacity: 1;
+        visibility: visible;
+        z-index: 100;
+    }
+    .settings-panel::before {
+        content: '';
+        position: absolute;
+        top: 8px; left: 50%;
+        transform: translateX(-50%);
+        width: 40px; height: 4px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.25);
+    }
+    .settings-panel.open {
+        transform: translateY(0);
+    }
+    .sp-close { display: flex; }
+    /* Comfortable touch targets */
+    .settings-panel input[type="text"],
+    .settings-panel .gif-btn {
+        min-height: 44px;
+        font-size: 16px; /* 16px prevents iOS zoom-on-focus */
+    }
+    .settings-panel .pill {
+        min-height: 36px;
+        padding: 7px 14px;
+        font-size: 0.8rem;
+    }
+    .settings-panel .sp-action-btn {
+        width: 38px;
+        height: 38px;
+    }
+    .settings-panel input[type="range"] {
+        height: 24px !important; /* bigger hit area than the desktop 4px track */
+    }
+    .settings-hint-card,
+    .city-suggestions-dropdown {
+        max-width: calc(100vw - 24px);
+    }
 }

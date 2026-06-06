@@ -141,3 +141,18 @@
     from { opacity: 0; transform: translate(-50%, 20px); }
     to { opacity: 1; transform: translate(-50%, 0); }
 }
+
+/* -- Responsive Mobile (fixed bottom-center pill) ---- */
+@media (max-width: 768px) {
+    .lofi-player {
+        position: fixed;
+        bottom: calc(14px + env(safe-area-inset-bottom));
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 95;
+        max-width: calc(100vw - 140px);
+    }
+    .lofi-info {
+        max-width: 120px;
+    }
+}

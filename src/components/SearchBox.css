@@ -156,3 +156,14 @@
 .suggestions-list li:hover .sug-remove, .suggestions-list li.selected .sug-remove,
 .suggestions-list li:hover .sug-add, .suggestions-list li.selected .sug-add { opacity: 1; }
 .sug-remove:hover, .sug-add:hover { color: rgba(255,255,255,0.85) !important; background: rgba(255,255,255,0.08); }
+
+/* -- Touch devices: action buttons can't rely on hover ---- */
+@media (hover: none) {
+    .sug-remove, .sug-add { opacity: 0.7; }
+    .sug-remove, .sug-add { padding: 6px; }
+}
+
+/* -- Phones: roomier, easier-to-tap suggestion rows ------- */
+@media (max-width: 768px) {
+    .suggestions-list li { padding: 13px 16px; font-size: 0.95rem; }
+}

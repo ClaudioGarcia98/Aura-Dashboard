@@ -22,6 +22,8 @@
 .speed-dial-wrapper {
     position: relative;
     display: inline-block;
+    /* Allow vertical page scroll, but capture horizontal drag for reordering */
+    touch-action: pan-y;
 }
 .speed-dial-delete {
     position: absolute;
@@ -108,4 +110,12 @@
     justify-content: center;
     box-shadow: var(--shadow-elevated), 0 0 25px var(--accent-glow);
     animation: dragShake 0.4s ease-in-out infinite;
+}
+
+/* -- Touch devices: reveal delete without hover ------ */
+@media (hover: none) {
+    .speed-dial-delete {
+        opacity: 1;
+        transform: scale(1);
+    }
 }

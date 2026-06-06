@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import AnimeCard from './AnimeCard';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 const DAY_FILTERS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
@@ -33,6 +34,8 @@ export default memo(function Sidebar({
     sidebarRef,
     toggleRef,
 }) {
+    useBodyScrollLock(isSidebarOpen);
+
     return (
         <>
             <div style={{ opacity: 'var(--ui-opacity)', transition: 'opacity 0.8s ease-in-out' }}>
@@ -48,6 +51,8 @@ export default memo(function Sidebar({
                     </svg>
                 </button>
             </div>
+
+            {isSidebarOpen && <div className="drawer-scrim show drawer-scrim--tablet" onClick={() => setIsSidebarOpen(false)} aria-hidden="true" />}
 
             <aside className={`anime-sidebar ${isSidebarOpen ? 'open' : ''}`} id="animeSidebar" ref={sidebarRef}>
                 <header className="as-header">

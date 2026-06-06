@@ -7,3 +7,11 @@
     transition: color 0.5s ease;
     animation: fadeSlideIn 0.5s ease 0.08s both;
 }
+
+/* -- Responsive Mobile ------------------------------- */
+@media (max-width: 768px) {
+    #greeting {
+        font-size: 1.1rem;
+        letter-spacing: 2px;
+    }
+}

@@ -121,7 +121,17 @@ export default memo(function Clock() {
         };
     }, [clockMode]);
 
-    const analogSize = clockMode === 'analog' ? 150 : 90;
+    const [isPhone, setIsPhone] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches);
+    useEffect(() => {
+        const mq = window.matchMedia('(max-width: 768px)');
+        const handler = (e) => setIsPhone(e.matches);
+        mq.addEventListener('change', handler);
+        return () => mq.removeEventListener('change', handler);
+    }, []);
+
+    const analogSize = clockMode === 'analog'
+        ? (isPhone ? 120 : 150)
+        : (isPhone ? 64 : 90);
 
     return (
         <>
