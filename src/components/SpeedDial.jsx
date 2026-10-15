@@ -6,11 +6,13 @@ import { useShallow } from 'zustand/react/shallow';
 
 export default memo(function SpeedDial() {
     const { speedDials, setSpeedDials } = useSettingsStore(useShallow(s => ({ speedDials: s.speedDials, setSpeedDials: s.setSpeedDials })));
+    const safeSpeedDials = Array.isArray(speedDials) ? speedDials : [];
     const [draggedId, setDraggedId] = useState(null);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
     const getFavicon = (url) => {
         try {
+            if (!url) return '';
             const dom = new URL(url).hostname;
             return `https://www.google.com/s2/favicons?domain=${dom}&sz=64`;
         } catch {
@@ -34,7 +36,7 @@ export default memo(function SpeedDial() {
 
     const handleDragStart = (e, id) => {
         if (e.dataTransfer) {
-            e.dataTransfer.setData('text/plain', id);
+            e.dataTransfer.setData('text/plain', String(id));
             e.dataTransfer.effectAllowed = 'move';
             
             // Create an invisible image to hide the native browser drag ghost
@@ -60,11 +62,11 @@ export default memo(function SpeedDial() {
         e.preventDefault();
         if (!draggedId || targetId === draggedId) return;
 
-        const oldIndex = speedDials.findIndex(s => s.id === draggedId);
-        const newIndex = speedDials.findIndex(s => s.id === targetId);
+        const oldIndex = safeSpeedDials.findIndex(s => s.id === draggedId);
+        const newIndex = safeSpeedDials.findIndex(s => s.id === targetId);
 
         if (oldIndex !== -1 && newIndex !== -1) {
-            const newSpeedDials = [...speedDials];
+            const newSpeedDials = [...safeSpeedDials];
             const [draggedItem] = newSpeedDials.splice(oldIndex, 1);
             newSpeedDials.splice(newIndex, 0, draggedItem);
             
@@ -85,12 +87,12 @@ export default memo(function SpeedDial() {
         setDraggedId(null);
     };
 
-    const draggedItem = speedDials.find(s => s.id === draggedId);
+    const draggedItem = safeSpeedDials.find(s => s.id === draggedId);
 
     return (
         <>
             <nav className="speed-dial" aria-label="Quick Links">
-                {speedDials.length === 0 ? (
+                {safeSpeedDials.length === 0 ? (
                     <button 
                         className="add-dial-empty-btn"
                         onClick={() => window.dispatchEvent(new Event('open-settings-dials'))}
@@ -103,71 +105,101 @@ export default memo(function SpeedDial() {
                         </svg>
                     </button>
                 ) : (
-                    speedDials.map((link) => {
-                        const isDragged = draggedId === link.id;
+                    <>
+                        {safeSpeedDials.map((link) => {
+                            const isDragged = draggedId === link.id;
+                            const favicon = getFavicon(link.url);
 
-                        return (
-                            <div 
-                                key={link.id}
-                                className="speed-dial-wrapper"
-                                draggable
-                                onDragStart={(e) => handleDragStart(e, link.id)}
-                                onDragOver={handleDragOver}
-                                onDragEnter={(e) => handleDragEnter(e, link.id)}
-                                onDrop={handleDrop}
-                                onDragEnd={handleDragEnd}
-                                style={{
-                                    position: 'relative',
-                                    viewTransitionName: `speed-dial-${link.id}`
-                                }}
-                            >
-                                <a 
-                                    href={link.url} 
-                                    className="speed-dial-item"
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    aria-label={link.name}
-                                    draggable={false}
+                            return (
+                                <div 
+                                    key={link.id}
+                                    className="speed-dial-wrapper"
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, link.id)}
+                                    onDragOver={handleDragOver}
+                                    onDragEnter={(e) => handleDragEnter(e, link.id)}
+                                    onDrop={handleDrop}
+                                    onDragEnd={handleDragEnd}
                                     style={{
-                                        background: isDragged ? 'transparent' : '',
-                                        border: isDragged ? '2px dashed rgba(255, 255, 255, 0.4)' : '',
-                                        backdropFilter: isDragged ? 'none' : '',
-                                        WebkitBackdropFilter: isDragged ? 'none' : '',
+                                        position: 'relative',
+                                        viewTransitionName: `speed-dial-${link.id}`
                                     }}
                                 >
-                                    <img 
-                                        src={getFavicon(link.url)} 
-                                        alt={link.name} 
-                                        style={{ 
-                                            width: '26px', 
-                                            height: '26px', 
-                                            borderRadius: '4px', 
-                                            pointerEvents: 'none',
-                                            opacity: isDragged ? 0 : 1,
-                                            transition: 'opacity 0.2s ease'
+                                    <a 
+                                        href={link.url} 
+                                        className="speed-dial-item"
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        aria-label={link.name}
+                                        draggable={false}
+                                        style={{
+                                            background: isDragged ? 'transparent' : '',
+                                            border: isDragged ? '2px dashed rgba(255, 255, 255, 0.4)' : '',
+                                            backdropFilter: isDragged ? 'none' : '',
+                                            WebkitBackdropFilter: isDragged ? 'none' : '',
                                         }}
-                                        onError={(e) => { e.target.style.display = 'none'; }}
-                                    />
-                                </a>
-                                {!isDragged && (
-                                    <button 
-                                        className="speed-dial-delete"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            setSpeedDials(speedDials.filter(d => d.id !== link.id));
-                                        }}
-                                        title="Remove Speed Dial"
                                     >
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                    </button>
-                                )}
-                            </div>
-                        );
-                    })
+                                        {favicon ? (
+                                            <>
+                                                <img 
+                                                    src={favicon} 
+                                                    alt={link.name} 
+                                                    style={{ 
+                                                        width: '26px', 
+                                                        height: '26px', 
+                                                        borderRadius: '4px', 
+                                                        pointerEvents: 'none',
+                                                        opacity: isDragged ? 0 : 1,
+                                                        transition: 'opacity 0.2s ease'
+                                                    }}
+                                                    onError={(e) => {
+                                                        e.target.style.display = 'none';
+                                                        if (e.target.nextElementSibling) {
+                                                            e.target.nextElementSibling.style.display = 'flex';
+                                                        }
+                                                    }}
+                                                />
+                                                <span className="speed-dial-fallback" style={{ display: 'none' }}>
+                                                    {(link.name || 'S').charAt(0).toUpperCase()}
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <span className="speed-dial-fallback" style={{ display: 'flex' }}>
+                                                {(link.name || 'S').charAt(0).toUpperCase()}
+                                            </span>
+                                        )}
+                                    </a>
+                                    {!isDragged && (
+                                        <button 
+                                            className="speed-dial-delete"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setSpeedDials(safeSpeedDials.filter(d => d.id !== link.id));
+                                            }}
+                                            title="Remove Speed Dial"
+                                        >
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        })}
+                        <button 
+                            className="speed-dial-add-btn"
+                            onClick={() => window.dispatchEvent(new Event('open-settings-dials'))}
+                            title="Add Speed Dial"
+                            aria-label="Add Speed Dial"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                    </>
                 )}
             </nav>
 

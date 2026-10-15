@@ -225,7 +225,8 @@ export default memo(function SearchBox() {
             name: finalName,
             url: url
         };
-        setSpeedDials([...speedDials, newDial]);
+        const currentList = Array.isArray(speedDials) ? speedDials : [];
+        setSpeedDials([...currentList, newDial]);
         setActiveEngine(null);
         setQuery('');
         setShowSuggestions(false);

@@ -26,7 +26,7 @@ export const useSettingsStore = create(
             lofiId:           localStorage.getItem('dash_lofi_id')              || 'Gu-g8FRG4Zs',
             lofiStations:     DEFAULT_STATIONS.map((s, i) => ({ id: i + 1, ...s })),
             volume:           parseFloat(localStorage.getItem('dash_volume'))   || 0.2,
-            speedDials:       (() => { try { return JSON.parse(localStorage.getItem('dash_speed_dials') || '[]'); } catch { return []; } })(),
+            speedDials:       (() => { try { const stored = JSON.parse(localStorage.getItem('dash_speed_dials') || '[]'); return Array.isArray(stored) ? stored : []; } catch { return []; } })(),
             customEngines:    (() => { try { return JSON.parse(localStorage.getItem('dash_custom_engines') || '[]'); } catch { return []; } })(),
             showWeatherWidget: localStorage.getItem('dash_show_weather')        !== 'false',
             showQuote:        localStorage.getItem('dash_show_quote')           !== 'false',
@@ -56,7 +56,17 @@ export const useSettingsStore = create(
             setLofiId:            (lofiId)          => set({ lofiId }),
             setLofiStations:      (lofiStations)    => set({ lofiStations }),
             setVolume:            (volume)          => set({ volume }),
-            setSpeedDials:        (speedDials)      => set({ speedDials }),
+            setSpeedDials:        (valOrFn)         => set((state) => {
+                const current = Array.isArray(state.speedDials) ? state.speedDials : [];
+                const next = typeof valOrFn === 'function' ? valOrFn(current) : valOrFn;
+                const safeNext = Array.isArray(next) ? next : [];
+                try {
+                    localStorage.setItem('dash_speed_dials', JSON.stringify(safeNext));
+                } catch {
+                    // ignore storage errors
+                }
+                return { speedDials: safeNext };
+            }),
             setCustomEngines:     (customEngines)   => set({ customEngines }),
             setBackgroundUrl:     (backgroundUrl)   => set({ backgroundUrl }),
             setBackgroundIsVideo: (backgroundIsVideo) => set({ backgroundIsVideo }),
@@ -74,7 +84,16 @@ export const useSettingsStore = create(
         {
             name: 'dash_settings',
             version: 1,
-            migrate: (state) => {
+            migrate: (persistedState) => {
+                const state = { ...persistedState };
+                if (!Array.isArray(state.speedDials)) {
+                    try {
+                        const legacy = JSON.parse(localStorage.getItem('dash_speed_dials') || '[]');
+                        state.speedDials = Array.isArray(legacy) ? legacy : [];
+                    } catch {
+                        state.speedDials = [];
+                    }
+                }
                 if (state.lofiStations) {
                     const seen = new Set();
                     state.lofiStations = state.lofiStations.filter(s => {
@@ -84,6 +103,11 @@ export const useSettingsStore = create(
                     });
                 }
                 return state;
+            },
+            onRehydrateStorage: () => (state) => {
+                if (state && !Array.isArray(state.speedDials)) {
+                    state.speedDials = [];
+                }
             },
             partialize: (s) => ({
                 theme: s.theme, font: s.font, clockMode: s.clockMode,

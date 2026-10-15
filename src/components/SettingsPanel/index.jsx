@@ -62,7 +62,11 @@ export default memo(function SettingsPanel() {
             setTimeout(() => {
                 if (panelRef.current) {
                     const section = panelRef.current.querySelector('#dials-settings-section');
-                    if (section) section.scrollIntoView({ behavior: 'smooth' });
+                    if (section) {
+                        section.scrollIntoView({ behavior: 'smooth' });
+                        const input = section.querySelector('input');
+                        if (input) input.focus();
+                    }
                 }
             }, 150);
         };
@@ -151,16 +155,30 @@ export default memo(function SettingsPanel() {
         if (!newDialUrl.trim()) return;
         let url = newDialUrl.trim();
         if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-        let finalName;
+        let finalName = 'Speed Dial';
         try {
-            const host = new URL(url).hostname.replace('www.', '').split('.')[0];
-            finalName = host.charAt(0).toUpperCase() + host.slice(1);
+            const host = new URL(url).hostname.replace(/^www\./, '').split('.')[0];
+            if (host) finalName = host.charAt(0).toUpperCase() + host.slice(1);
         } catch { finalName = 'Speed Dial'; }
-        setSpeedDials(prev => [...prev, { id: Date.now(), name: finalName, url }]);
+        const currentList = Array.isArray(speedDials) ? speedDials : [];
+        setSpeedDials([...currentList, { id: Date.now(), name: finalName, url }]);
         setNewDialUrl('');
     };
 
-    const handleRemoveDial = (id) => setSpeedDials(prev => prev.filter(d => d.id !== id));
+    const handleRemoveDial = (id) => {
+        const currentList = Array.isArray(speedDials) ? speedDials : [];
+        setSpeedDials(currentList.filter(d => d.id !== id));
+    };
+
+    const handleSaveEdit = (dialId) => {
+        const currentList = Array.isArray(speedDials) ? speedDials : [];
+        let url = editDialUrl.trim();
+        if (!url) return;
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        const name = editDialName.trim() || 'Speed Dial';
+        setSpeedDials(currentList.map(d => d.id === dialId ? { ...d, name, url } : d));
+        setEditingDialId(null);
+    };
 
     return (
         <>
@@ -305,50 +323,46 @@ export default memo(function SettingsPanel() {
                             <button className="pill" onClick={handleAddDial}>Add</button>
                         </div>
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                            {speedDials.map(dial => (
-                                <li key={dial.id} className="sp-list-item" style={{ flexDirection: editingDialId === dial.id ? 'column' : 'row', gap: '8px', fontSize: '0.8rem' }}>
-                                    {editingDialId === dial.id ? (
-                                        <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                                            <input type="text" value={editDialName} onChange={e => setEditDialName(e.target.value)} style={{ flex: 1 }} />
-                                            <input
-                                                type="text"
-                                                value={editDialUrl}
-                                                onChange={e => setEditDialUrl(e.target.value)}
-                                                style={{ flex: 2 }}
-                                                onKeyDown={e => {
-                                                    if (e.key === 'Enter') {
-                                                        setSpeedDials(speedDials.map(d => d.id === dial.id ? { ...d, name: editDialName, url: editDialUrl } : d));
-                                                        setEditingDialId(null);
-                                                    }
-                                                }}
-                                            />
-                                            <button className="pill" onClick={() => {
-                                                setSpeedDials(speedDials.map(d => d.id === dial.id ? { ...d, name: editDialName, url: editDialUrl } : d));
-                                                setEditingDialId(null);
-                                            }}>Save</button>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', overflow: 'hidden' }}>
-                                                <img src={getFaviconUrl(dial.url)} style={{ width: 16, height: 16, borderRadius: 3 }} onError={e => e.target.style.display = 'none'} alt="" />
-                                                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}>{dial.name}</span>
+                            {(!Array.isArray(speedDials) || speedDials.length === 0) ? (
+                                <li style={{ opacity: 0.5, padding: '12px 0', textAlign: 'center', fontSize: '0.8rem' }}>No speed dials added yet.</li>
+                            ) : (
+                                speedDials.map(dial => (
+                                    <li key={dial.id} className="sp-list-item" style={{ flexDirection: editingDialId === dial.id ? 'column' : 'row', gap: '8px', fontSize: '0.8rem' }}>
+                                        {editingDialId === dial.id ? (
+                                            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                                                <input type="text" value={editDialName} onChange={e => setEditDialName(e.target.value)} style={{ flex: 1 }} />
+                                                <input
+                                                    type="text"
+                                                    value={editDialUrl}
+                                                    onChange={e => setEditDialUrl(e.target.value)}
+                                                    style={{ flex: 2 }}
+                                                    onKeyDown={e => e.key === 'Enter' && handleSaveEdit(dial.id)}
+                                                />
+                                                <button className="pill" onClick={() => handleSaveEdit(dial.id)}>Save</button>
                                             </div>
-                                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                                                <button onClick={() => { setEditingDialId(dial.id); setEditDialName(dial.name); setEditDialUrl(dial.url); }} className="sp-action-btn" title="Edit">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                                                    </svg>
-                                                </button>
-                                                <button onClick={() => handleRemoveDial(dial.id)} className="sp-action-btn delete" title="Delete">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </>
-                                    )}
-                                </li>
-                            ))}
+                                        ) : (
+                                            <>
+                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', overflow: 'hidden' }}>
+                                                    <img src={getFaviconUrl(dial.url)} style={{ width: 16, height: 16, borderRadius: 3 }} onError={e => e.target.style.display = 'none'} alt="" />
+                                                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}>{dial.name}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                                    <button onClick={() => { setEditingDialId(dial.id); setEditDialName(dial.name); setEditDialUrl(dial.url); }} className="sp-action-btn" title="Edit">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <button onClick={() => handleRemoveDial(dial.id)} className="sp-action-btn delete" title="Delete">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </li>
+                                ))
+                            )}
                         </ul>
                     </div>
 

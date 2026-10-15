@@ -15,6 +15,8 @@ import { useFontEffect } from './hooks/useFontEffect';
 import { useShallow } from 'zustand/react/shallow';
 import logoUrl from './assets/logo.png';
 
+import ErrorBoundary from './components/ErrorBoundary';
+
 export default function App() {
     useBackgroundLoader();
     useThemeEffect();
@@ -137,7 +139,11 @@ export default function App() {
                     {hasBottomContent && (
                         <section style={{ opacity: 'var(--ui-opacity)', transition: 'opacity 0.8s ease-in-out', display: 'flex', flexDirection: 'column' }}>
                             {showSearchBox && <SearchBox />}
-                            {showSpeedDial && <SpeedDial />}
+                            {showSpeedDial && (
+                                <ErrorBoundary>
+                                    <SpeedDial />
+                                </ErrorBoundary>
+                            )}
                             {showTop5Anime && (
                                 <div className="scrollable-section">
                                     <AnimeSchedule />
