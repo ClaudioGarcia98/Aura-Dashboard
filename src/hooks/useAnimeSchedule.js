@@ -103,11 +103,16 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
 
         const loadInitialData = async () => {
             let cachedWatching = [];
-            const cached = safeJsonParse(localStorage.getItem(WATCHING_CACHE_KEY), []);
-            if (Array.isArray(cached) && cached.length > 0 && typeof cached[0] === 'object') {
-                cachedWatching = cached;
-            } else if (cached !== null && localStorage.getItem(WATCHING_CACHE_KEY)) {
+            const cleanUser = (malUsername || '').trim().toLowerCase();
+            const cachedUser = (localStorage.getItem('dash_anime_watching_user') || '').trim().toLowerCase();
+            if (cleanUser && cachedUser === cleanUser) {
+                const cached = safeJsonParse(localStorage.getItem(WATCHING_CACHE_KEY), []);
+                if (Array.isArray(cached) && cached.length > 0 && typeof cached[0] === 'object') {
+                    cachedWatching = cached;
+                }
+            } else if (!cleanUser || cachedUser !== cleanUser) {
                 localStorage.removeItem(WATCHING_CACHE_KEY);
+                localStorage.removeItem('dash_anime_watching_user');
             }
             if (isMounted) setUserWatching(cachedWatching);
 
@@ -126,8 +131,10 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
                 if (freshWatching) {
                     if (freshWatching.length > 0) {
                         localStorage.setItem(WATCHING_CACHE_KEY, JSON.stringify(freshWatching));
+                        localStorage.setItem('dash_anime_watching_user', cleanUser);
                     } else if (!malUsername) {
                         localStorage.removeItem(WATCHING_CACHE_KEY);
+                        localStorage.removeItem('dash_anime_watching_user');
                     }
                     if (isMounted) {
                         setUserWatching(freshWatching);
@@ -185,13 +192,16 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
 
         const refreshWatching = async () => {
             if (isMounted) setMalLoading(true);
+            const cleanUser = malUsername.trim().toLowerCase();
             try {
                 const freshWatching = await fetchUserWatchingList(malUsername);
                 if (freshWatching) {
                     if (freshWatching.length > 0) {
                         localStorage.setItem(WATCHING_CACHE_KEY, JSON.stringify(freshWatching));
+                        localStorage.setItem('dash_anime_watching_user', cleanUser);
                     } else {
                         localStorage.removeItem(WATCHING_CACHE_KEY);
+                        localStorage.removeItem('dash_anime_watching_user');
                     }
                     if (isMounted) {
                         setUserWatching(freshWatching);
@@ -201,15 +211,11 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
                 }
             } catch {
                 if (isMounted) {
-                    const fallback = safeJsonParse(localStorage.getItem(WATCHING_CACHE_KEY), []);
-                    if (Array.isArray(fallback) && fallback.length > 0) {
-                        setUserWatching(fallback);
-                        setMalSuccess(true);
-                        setMalError(false);
-                    } else {
-                        setMalError(true);
-                        setMalSuccess(false);
-                    }
+                    setUserWatching([]);
+                    localStorage.removeItem(WATCHING_CACHE_KEY);
+                    localStorage.removeItem('dash_anime_watching_user');
+                    setMalError(true);
+                    setMalSuccess(false);
                 }
             } finally {
                 if (isMounted) setMalLoading(false);

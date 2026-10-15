@@ -7,7 +7,6 @@ import {
     RSS2JSON_BASE,
     FEED2JSON_BASE,
     SCHEDULE_CACHE_KEY,
-    WATCHING_CACHE_KEY,
     fetchWithRetry,
 } from './api.js';
 
@@ -514,19 +513,5 @@ export async function fetchUserWatchingList(malUsername) {
             ]),
             15000
         );
-    }, 0, 0).catch(e => {
-        console.error('MAL fetch timed out or failed:', e);
-        if (typeof localStorage !== 'undefined') {
-            try {
-                const stored = JSON.parse(localStorage.getItem(WATCHING_CACHE_KEY) || '[]');
-                if (Array.isArray(stored) && stored.length > 0) {
-                    console.info('Returning cached watching list as offline/proxy fallback');
-                    return stored;
-                }
-            } catch {
-                // Ignore storage parse errors
-            }
-        }
-        throw e;
-    });
+    }, 0, 0);
 }

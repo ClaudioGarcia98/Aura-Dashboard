@@ -499,21 +499,9 @@ describe('animeService', () => {
       localStorage.removeItem('dash_mal_proxy');
     });
 
-    it('returns stale cached list from localStorage when all proxies fail', async () => {
-      const cached = [{
-        mal_id: 55,
-        url: 'https://myanimelist.net/anime/55',
-        image_url: 'cached.jpg',
-        title: 'Cached Show',
-        score: 9.0,
-        watched_eps: 12
-      }];
-      localStorage.setItem('dash_anime_watching', JSON.stringify(cached));
+    it('throws error when all proxies fail', async () => {
       globalThis.fetch.mockRejectedValue(new Error('All proxies dead'));
-
-      const result = await fetchUserWatchingList('offlineUser');
-      expect(result).toEqual(cached);
-      localStorage.removeItem('dash_anime_watching');
+      await expect(fetchUserWatchingList('offlineUser')).rejects.toThrow();
     });
   });
 });
