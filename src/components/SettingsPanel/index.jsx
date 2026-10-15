@@ -414,31 +414,33 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                     </div>
                 </div>
 
-                {/* Keyboard Shortcuts */}
-                {showShortcuts && (
-                    <div className="sp-section sp-shortcuts-section">
-                        <div className="sp-label">Keyboard Shortcuts</div>
-                        <div className="shortcut-list">
-                            <div className="shortcut-item"><span>Focus Search</span><kbd>Ctrl + Space</kbd></div>
-                            <div className="shortcut-item"><span>Close Suggestions</span><kbd>Esc</kbd></div>
-                            <div className="shortcut-item"><span>Navigate List</span><kbd>↑ / ↓</kbd></div>
-                            <div className="shortcut-item"><span>Clear Engine Prefix</span><kbd>Backspace</kbd></div>
+                {/* Search & Shortcuts */}
+                <div className="sp-section">
+                    {showShortcuts && (
+                        <div className="sp-shortcuts-subsection" style={{ marginBottom: '15px' }}>
+                            <div className="sp-label">Keyboard Shortcuts</div>
+                            <div className="shortcut-list">
+                                <div className="shortcut-item"><span>Focus Search</span><kbd>Ctrl + Space</kbd></div>
+                                <div className="shortcut-item"><span>Close Suggestions</span><kbd>Esc</kbd></div>
+                                <div className="shortcut-item"><span>Navigate List</span><kbd>↑ / ↓</kbd></div>
+                                <div className="shortcut-item"><span>Clear Engine Prefix</span><kbd>Backspace</kbd></div>
+                            </div>
                         </div>
-                        <div className="sp-label" style={{ marginTop: '15px' }}>Search Prefixes</div>
-                        <div className="prefix-grid">
-                            <div className="prefix-item"><code>g </code><span>Google</span></div>
-                            <div className="prefix-item"><code>yt </code><span>YouTube</span></div>
-                            <div className="prefix-item"><code>r </code><span>Reddit</span></div>
-                            <div className="prefix-item"><code>gh </code><span>GitHub</span></div>
-                            <div className="prefix-item"><code>ddg </code><span>DuckDuckGo</span></div>
-                            <div className="prefix-item"><code>wiki </code><span>Wikipedia</span></div>
-                            <div className="prefix-item"><code>mdn </code><span>MDN</span></div>
-                            <div className="prefix-item"><code>tw </code><span>Twitter/X</span></div>
-                            <div className="prefix-item"><code>a </code><span>Amazon</span></div>
-                            <div className="prefix-item"><code>mal </code><span>MyAnimeList</span></div>
-                        </div>
+                    )}
+                    <div className="sp-label">Search Prefixes</div>
+                    <div className="prefix-grid">
+                        <div className="prefix-item"><code>g </code><span>Google</span></div>
+                        <div className="prefix-item"><code>yt </code><span>YouTube</span></div>
+                        <div className="prefix-item"><code>r </code><span>Reddit</span></div>
+                        <div className="prefix-item"><code>gh </code><span>GitHub</span></div>
+                        <div className="prefix-item"><code>ddg </code><span>DuckDuckGo</span></div>
+                        <div className="prefix-item"><code>wiki </code><span>Wikipedia</span></div>
+                        <div className="prefix-item"><code>mdn </code><span>MDN</span></div>
+                        <div className="prefix-item"><code>tw </code><span>Twitter/X</span></div>
+                        <div className="prefix-item"><code>a </code><span>Amazon</span></div>
+                        <div className="prefix-item"><code>mal </code><span>MyAnimeList</span></div>
                     </div>
-                )}
+                </div>
 
                 {/* Backup & Restore */}
                 <div className="sp-section">

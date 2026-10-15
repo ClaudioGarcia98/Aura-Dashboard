@@ -149,6 +149,7 @@ describe('SettingsPanel', () => {
         render(<SettingsPanel embedded={true} />);
         expect(screen.queryByText('Keyboard Shortcuts')).toBeNull();
         expect(screen.queryByText('Focus Search')).toBeNull();
+        expect(screen.getByText('Search Prefixes')).toBeTruthy();
     });
 
     it('does not render keyboard shortcuts section on mobile/touch screens', () => {
@@ -164,6 +165,7 @@ describe('SettingsPanel', () => {
             render(<SettingsPanel embedded={false} />);
             expect(screen.queryByText('Keyboard Shortcuts')).toBeNull();
             expect(screen.queryByText('Focus Search')).toBeNull();
+            expect(screen.getByText('Search Prefixes')).toBeTruthy();
         } finally {
             window.matchMedia = originalMatchMedia;
         }
