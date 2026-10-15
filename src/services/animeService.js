@@ -45,13 +45,15 @@ export function parseMALItems(raw) {
 export function parseMALRssItems(items) {
     if (!Array.isArray(items)) return [];
     const results = [];
+    const seen = new Set();
     for (const item of items) {
         const text = String(item.content_html || item.description || item.summary || '');
         if (!text.toLowerCase().includes('watching')) continue;
         const link = String(item.url || item.link || item.guid || '');
         const match = link.match(/\/anime\/(\d+)/);
         const malId = match ? parseInt(match[1], 10) : null;
-        if (!malId) continue;
+        if (!malId || seen.has(malId)) continue;
+        seen.add(malId);
 
         let watchedEps = 0;
         const epMatch = text.match(/Watching\s*-\s*(\d+)/i);
@@ -373,7 +375,8 @@ export async function fetchUserWatchingList(malUsername) {
 
     const malPath = `/animelist/${cleanUsername}/load.json?offset=0&status=1`;
     const malUrl = `https://myanimelist.net${malPath}`;
-    const malRssUrl = `https://myanimelist.net/rss.php?type=rw&u=${cleanUsername}`;
+    const malRssUrl = `https://myanimelist.net/rss.php?type=rw&u=${cleanUsername}&limit=100`;
+    const malRssUrlFallback = `https://myanimelist.net/rss.php?type=rw&u=${cleanUsername}`;
 
     const isLocalEnv = () => {
         if (typeof window === 'undefined') return true;
@@ -394,7 +397,7 @@ export async function fetchUserWatchingList(malUsername) {
     };
 
     const makeRss2JsonRequest = async () => {
-        const res = await fetch(RSS2JSON_BASE + encodeURIComponent(malRssUrl), { cache: 'no-store' });
+        const res = await fetch(RSS2JSON_BASE + encodeURIComponent(malRssUrlFallback), { cache: 'no-store' });
         if (!res.ok) throw new Error(`rss2json status ${res.status}`);
         const data = await res.json();
         if (data.status !== 'ok' || !Array.isArray(data.items)) {

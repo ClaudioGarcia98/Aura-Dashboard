@@ -280,15 +280,15 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
     }, [volume, previewTrailer, trailerMuted]);
 
     // Derived: today display list (watching-prioritized top-5)
-    const userWatchingIds = userWatching.map(u => u.mal_id);
+    const userWatchingIds = userWatching.map(u => Number(u.mal_id)).filter(id => !isNaN(id) && id > 0);
     const displayList = (() => {
         if (!todayData || todayData.length === 0) return [];
         const watchedToday = todayData
-            .filter(a => userWatchingIds.includes(a.mal_id))
+            .filter(a => userWatchingIds.includes(Number(a.mal_id)))
             .sort((a, b) => (b.score || 0) - (a.score || 0));
         if (watchedToday.length >= 5) return watchedToday;
         const othersToday = todayData
-            .filter(a => !userWatchingIds.includes(a.mal_id))
+            .filter(a => !userWatchingIds.includes(Number(a.mal_id)))
             .sort((a, b) => (b.score || 0) - (a.score || 0));
         return [...watchedToday, ...othersToday.slice(0, 5 - watchedToday.length)];
     })();

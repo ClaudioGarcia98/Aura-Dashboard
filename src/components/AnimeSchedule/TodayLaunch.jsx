@@ -58,7 +58,7 @@ export default memo(function TodayLaunch({
                             anime={anime}
                             variant="today"
                             isExpanded={expandedAnime?.id === anime.mal_id && expandedAnime?.source === 'today'}
-                            isWatching={userWatchingIds.includes(anime.mal_id)}
+                            isWatching={userWatchingIds.includes(Number(anime.mal_id))}
                             onToggleExpand={setExpandedAnime}
                             onMouseEnter={onMouseEnter}
                             onMouseLeave={onMouseLeave}

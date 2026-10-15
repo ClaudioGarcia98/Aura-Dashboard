@@ -106,6 +106,24 @@ describe('animeService', () => {
         }
       ]);
     });
+
+    it('deduplicates multiple entries of the same anime keeping the newest', () => {
+      const items = [
+        {
+          title: 'Show 1 - TV',
+          link: 'https://myanimelist.net/anime/111/show1',
+          description: 'Watching - 5 of 12 episodes',
+        },
+        {
+          title: 'Show 1 - TV',
+          link: 'https://myanimelist.net/anime/111/show1',
+          description: 'Watching - 4 of 12 episodes',
+        }
+      ];
+      const parsed = parseMALRssItems(items);
+      expect(parsed).toHaveLength(1);
+      expect(parsed[0].watched_eps).toBe(5);
+    });
   });
 
   describe('getJstDayRange', () => {

@@ -75,7 +75,7 @@ export default memo(function EmbeddedAnimeList({
                             anime={anime}
                             variant="sidebar"
                             isExpanded={expandedAnime?.id === anime.mal_id && expandedAnime?.source === 'sidebar'}
-                            isWatching={userWatchingIds.includes(anime.mal_id)}
+                            isWatching={userWatchingIds.includes(Number(anime.mal_id))}
                             onToggleExpand={setExpandedAnime}
                             onMouseEnter={onMouseEnter}
                             onMouseLeave={onMouseLeave}
