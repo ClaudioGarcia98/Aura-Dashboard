@@ -220,4 +220,23 @@ describe('MediaSettings — volume slider', () => {
         fireEvent.change(container.querySelector('input[type="range"]'), { target: { value: '0.8' } });
         expect(mockState.setVolume).toHaveBeenCalledWith(0.8);
     });
+
+    it('clicking volume icon when unmuted mutes to 0', () => {
+        const { container } = render(<MediaSettings />);
+        const muteBtn = container.querySelector('.sp-volume-mute-btn');
+        expect(muteBtn).toBeTruthy();
+        expect(muteBtn.classList.contains('muted')).toBe(false);
+        fireEvent.click(muteBtn);
+        expect(mockState.setVolume).toHaveBeenCalledWith(0);
+    });
+
+    it('clicking volume icon when muted restores previous volume', () => {
+        mockState.volume = 0;
+        localStorage.setItem('dash_prev_volume', '0.6');
+        const { container } = render(<MediaSettings />);
+        const muteBtn = container.querySelector('.sp-volume-mute-btn');
+        expect(muteBtn.classList.contains('muted')).toBe(true);
+        fireEvent.click(muteBtn);
+        expect(mockState.setVolume).toHaveBeenCalledWith(0.6);
+    });
 });

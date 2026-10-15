@@ -73,6 +73,11 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
         if (iframeRef.current && iframeRef.current.contentWindow) {
             iframeRef.current.contentWindow.postMessage(JSON.stringify({
                 event: 'command',
+                func: volume === 0 ? 'mute' : 'unMute',
+                args: []
+            }), '*');
+            iframeRef.current.contentWindow.postMessage(JSON.stringify({
+                event: 'command',
                 func: 'setVolume',
                 args: [Math.round(volume * 100)]
             }), '*');
@@ -92,6 +97,11 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
 
         // Force volume sync when playing
         if (!isPlaying) {
+            iframeRef.current.contentWindow.postMessage(JSON.stringify({
+                event: 'command',
+                func: volume === 0 ? 'mute' : 'unMute',
+                args: []
+            }), '*');
             iframeRef.current.contentWindow.postMessage(JSON.stringify({
                 event: 'command',
                 func: 'setVolume',
@@ -148,6 +158,9 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
     const handleIframeLoad = () => {
         if (iframeRef.current && iframeRef.current.contentWindow) {
             iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
+            iframeRef.current.contentWindow.postMessage(JSON.stringify({
+                event: 'command', func: volume === 0 ? 'mute' : 'unMute', args: []
+            }), '*');
             iframeRef.current.contentWindow.postMessage(JSON.stringify({
                 event: 'command', func: 'setVolume', args: [Math.round(volume * 100)]
             }), '*');

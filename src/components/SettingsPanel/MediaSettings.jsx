@@ -31,6 +31,25 @@ export default memo(function MediaSettings() {
     const [editStationName, setEditStationName] = useState('');
     const [bgError, setBgError] = useState('');
     const bgFileInputRef = useRef(null);
+    const lastNonZeroVolumeRef = useRef(volume > 0 ? volume : 0.2);
+
+    useEffect(() => {
+        if (volume > 0) {
+            lastNonZeroVolumeRef.current = volume;
+            localStorage.setItem('dash_prev_volume', String(volume));
+        }
+    }, [volume]);
+
+    const handleToggleMute = () => {
+        if (volume > 0) {
+            lastNonZeroVolumeRef.current = volume;
+            localStorage.setItem('dash_prev_volume', String(volume));
+            setVolume(0);
+        } else {
+            const restored = parseFloat(localStorage.getItem('dash_prev_volume')) || lastNonZeroVolumeRef.current || 0.2;
+            setVolume(restored > 0 ? restored : 0.2);
+        }
+    };
 
     const handleFileChange = async (e) => {
         const f = e.target.files[0];
@@ -138,11 +157,28 @@ export default memo(function MediaSettings() {
             <div className="sp-section">
                 <div className="sp-label">Media Volume</div>
                 <div className="sp-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                        {volume > 0 && <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>}
-                        {volume > 0.5 && <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>}
-                    </svg>
+                    <button
+                        type="button"
+                        className={`sp-volume-mute-btn ${volume === 0 ? 'muted' : ''}`}
+                        onClick={handleToggleMute}
+                        aria-label={volume === 0 ? 'Unmute media volume' : 'Mute media volume'}
+                        title={volume === 0 ? 'Unmute' : 'Mute'}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            {volume === 0 ? (
+                                <>
+                                    <line x1="23" y1="9" x2="17" y2="15"></line>
+                                    <line x1="17" y1="9" x2="23" y2="15"></line>
+                                </>
+                            ) : (
+                                <>
+                                    {volume > 0 && <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>}
+                                    {volume > 0.5 && <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>}
+                                </>
+                            )}
+                        </svg>
+                    </button>
                     <input
                         type="range"
                         min="0"

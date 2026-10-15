@@ -233,7 +233,7 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
 
     // Trailer: auto-unmute when a new trailer opens (if user preference is unmuted)
     useEffect(() => {
-        if (!previewTrailer || trailerMuted) return;
+        if (!previewTrailer || trailerMuted || volume === 0) return;
         const timer = setTimeout(() => {
             const iframe = trailerIframeRef.current;
             if (iframe && iframe.contentWindow) {
@@ -249,7 +249,12 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
         if (!previewTrailer || trailerMuted) return;
         const iframe = trailerIframeRef.current;
         if (iframe && iframe.contentWindow) {
-            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(volume * 100)] }), '*');
+            if (volume === 0) {
+                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*');
+            } else {
+                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*');
+                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(volume * 100)] }), '*');
+            }
         }
     }, [volume, previewTrailer, trailerMuted]);
 
