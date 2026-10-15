@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { SCHEDULE_CACHE_KEY } from './api';
 import {
   getScheduleCache,
   setScheduleCache,
   parseMALItems,
+  getJstDayRange,
+  parseAniListSchedule,
   fetchDaySchedule,
   fetchUserWatchingList
 } from './animeService';
@@ -16,7 +19,7 @@ describe('animeService', () => {
   describe('cache operations', () => {
     it('returns empty object if cache is empty or invalid JSON', () => {
       expect(getScheduleCache()).toEqual({});
-      localStorage.setItem('dash_anime_schedule_v2', 'invalid');
+      localStorage.setItem(SCHEDULE_CACHE_KEY, 'invalid json {[');
       expect(getScheduleCache()).toEqual({});
     });
 
@@ -55,6 +58,81 @@ describe('animeService', () => {
     });
   });
 
+  describe('getJstDayRange', () => {
+    it('returns null for invalid dayFilter', () => {
+      expect(getJstDayRange('someday')).toBeNull();
+      expect(getJstDayRange('')).toBeNull();
+      expect(getJstDayRange(null)).toBeNull();
+    });
+
+    it('returns valid 24h start and end UTC timestamps for valid weekdays', () => {
+      const range = getJstDayRange('thursday');
+      expect(range).not.toBeNull();
+      expect(range.endUtcSec - range.startUtcSec).toBe(86400);
+    });
+  });
+
+  describe('parseAniListSchedule', () => {
+    it('returns empty array if input is not array', () => {
+      expect(parseAniListSchedule(null)).toEqual([]);
+      expect(parseAniListSchedule(undefined)).toEqual([]);
+    });
+
+    it('filters adult anime and maps AniList schema to expected format', () => {
+      const mockSchedules = [
+        {
+          airingAt: 1729000800,
+          media: {
+            id: 100,
+            idMal: 200,
+            title: { english: 'My Hero', romaji: 'Boku no Hero' },
+            coverImage: { large: 'cover.jpg', medium: 'cover_m.jpg' },
+            averageScore: 85,
+            genres: ['Action', 'Hero'],
+            episodes: 24,
+            description: 'A great <i>adventure</i> &quot;story&quot;!',
+            trailer: { id: 'trailer123', site: 'youtube' },
+            isAdult: false,
+          }
+        },
+        {
+          airingAt: 1729000800,
+          media: {
+            id: 101,
+            idMal: 201,
+            title: { romaji: 'Adult Title' },
+            isAdult: true,
+          }
+        }
+      ];
+
+      const parsed = parseAniListSchedule(mockSchedules, 'thursday');
+      expect(parsed).toHaveLength(1);
+      expect(parsed[0].mal_id).toBe(200);
+      expect(parsed[0].title).toBe('My Hero');
+      expect(parsed[0].score).toBe(8.5);
+      expect(parsed[0].synopsis).toBe('A great adventure "story"!');
+      expect(parsed[0].images.jpg.image_url).toBe('cover.jpg');
+      expect(parsed[0].broadcast.day).toBe('Thursdays');
+      expect(parsed[0].broadcast.timezone).toBe('Asia/Tokyo');
+      expect(parsed[0].genres).toEqual([{ mal_id: 'Action', name: 'Action' }, { mal_id: 'Hero', name: 'Hero' }]);
+      expect(parsed[0].trailer).toEqual({
+        youtube_id: 'trailer123',
+        embed_url: 'https://www.youtube.com/embed/trailer123',
+        url: 'https://www.youtube.com/watch?v=trailer123'
+      });
+    });
+
+    it('deduplicates multiple airings of the same anime', () => {
+      const duplicateSchedules = [
+        { airingAt: 1729000800, media: { id: 100, idMal: 200, title: { romaji: 'Test 1' }, isAdult: false } },
+        { airingAt: 1729004400, media: { id: 100, idMal: 200, title: { romaji: 'Test 1' }, isAdult: false } },
+      ];
+      const parsed = parseAniListSchedule(duplicateSchedules, 'monday');
+      expect(parsed).toHaveLength(1);
+    });
+  });
+
   describe('fetchDaySchedule', () => {
     it('returns cached data if still valid (under 1 hour)', async () => {
       const cache = {
@@ -74,6 +152,67 @@ describe('animeService', () => {
       const data = await fetchDaySchedule('monday');
       expect(data).toEqual([{ mal_id: 2, title: 'Fresh' }]);
       expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('successfully fetches and parses AniList GraphQL airingSchedules', async () => {
+      globalThis.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            Page: {
+              airingSchedules: [
+                {
+                  airingAt: 1729000800,
+                  media: {
+                    id: 50,
+                    idMal: 60,
+                    title: { english: 'AniList Show' },
+                    coverImage: { large: 'show.jpg' },
+                    averageScore: 90,
+                    isAdult: false,
+                  }
+                }
+              ]
+            }
+          }
+        })
+      });
+
+      const data = await fetchDaySchedule('thursday');
+      expect(data).toHaveLength(1);
+      expect(data[0].mal_id).toBe(60);
+      expect(data[0].title).toBe('AniList Show');
+      expect(data[0].score).toBe(9.0);
+    });
+
+    it('falls back to Jikan API if AniList request fails', async () => {
+      // First call (AniList) fails
+      globalThis.fetch.mockRejectedValueOnce(new Error('AniList Network Down'));
+      // Second call (Jikan fallback) succeeds
+      globalThis.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [{ mal_id: 77, title: 'Jikan Fallback Show' }]
+        })
+      });
+
+      const data = await fetchDaySchedule('friday');
+      expect(data).toHaveLength(1);
+      expect(data[0].mal_id).toBe(77);
+      expect(data[0].title).toBe('Jikan Fallback Show');
+    });
+
+    it('returns stale cache if all network attempts fail', async () => {
+      const staleCache = {
+        sunday: { data: [{ mal_id: 999, title: 'Stale Cache' }], ts: Date.now() - 7200000 }
+      };
+      setScheduleCache(staleCache);
+
+      // Both AniList and Jikan fail
+      globalThis.fetch.mockRejectedValue(new Error('Network offline'));
+
+      const data = await fetchDaySchedule('sunday');
+      expect(data).toEqual([{ mal_id: 999, title: 'Stale Cache' }]);
     });
   });
 

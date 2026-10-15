@@ -1,6 +1,7 @@
 import './WeatherWidget.css';
 import { memo, useState, useEffect, useRef } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
+import { safeJsonParse } from '../utils/storage';
 
 const SunIcon = () => (
     <svg className="weather-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -126,12 +127,7 @@ export default memo(function WeatherWidget({ inline = false }) {
     const fallbackCity = useSettingsStore(s => s.fallbackCity);
     const [expanded, setExpanded] = useState(false);
     const [weather, setWeather] = useState(() => {
-        try {
-            const cached = localStorage.getItem('dash_weather_cache');
-            return cached ? JSON.parse(cached) : null;
-        } catch {
-            return null;
-        }
+        return safeJsonParse(localStorage.getItem('dash_weather_cache'), null);
     });
     const [error, setError] = useState(false);
     const [isOffline, setIsOffline] = useState(false);
@@ -142,6 +138,7 @@ export default memo(function WeatherWidget({ inline = false }) {
     const prevFallbackCityRef = useRef(fallbackCity);
     const retryTimeoutRef = useRef(null);
     const retryDelayRef = useRef(60000); // Start at 60s
+    const fetchWeatherRef = useRef(null);
 
     useEffect(() => {
         const cityChanged = prevFallbackCityRef.current !== fallbackCity;
@@ -169,8 +166,10 @@ export default memo(function WeatherWidget({ inline = false }) {
                 let lat, lon;
                 const cached = localStorage.getItem('dash_geo');
                 const cachedTs = parseInt(localStorage.getItem('dash_geo_ts') || '0', 10);
-                if (cached && Date.now() - cachedTs < 3600000) {
-                    ({ lat, lon } = JSON.parse(cached));
+                const geoData = safeJsonParse(cached, null);
+                if (geoData && geoData.lat !== undefined && geoData.lon !== undefined && Date.now() - cachedTs < 3600000) {
+                    lat = geoData.lat;
+                    lon = geoData.lon;
                 } else {
                     // 1. Try GPS with strict timeout
                     let resolved = false;
@@ -296,6 +295,7 @@ export default memo(function WeatherWidget({ inline = false }) {
                 const unitStr = useCelsius ? '°C' : '°F';
                 const weatherData = {
                     iconType,
+                    weatherCode: c.weather_code,
                     temp: Math.round(c.temperature_2m) + unitStr,
                     feelsLike: Math.round(c.apparent_temperature) + unitStr,
                     humidity: c.relative_humidity_2m + '%',
@@ -325,6 +325,7 @@ export default memo(function WeatherWidget({ inline = false }) {
             }
         };
 
+        fetchWeatherRef.current = fetchWeather;
         fetchWeather();
         
         const interval = setInterval(fetchWeather, 600000);
@@ -380,7 +381,14 @@ export default memo(function WeatherWidget({ inline = false }) {
             );
         }
         return (
-            <button className="weather-widget" style={{ opacity: 0.6 }} title="Weather failed to load">
+            <button 
+                type="button" 
+                className="weather-widget" 
+                style={{ opacity: 0.6 }} 
+                title="Weather failed to load. Click to retry." 
+                aria-label="Weather Error"
+                onClick={() => fetchWeatherRef.current?.()}
+            >
                 <span className="weather-icon-cloud" style={{ display: 'flex', alignItems: 'center' }}>⚠️</span>
                 <span style={{ color: 'var(--text-primary)' }}>Weather Error</span>
             </button>
@@ -461,6 +469,7 @@ export default memo(function WeatherWidget({ inline = false }) {
     return (
         <>
             <button 
+                type="button"
                 className={`weather-widget ${expanded ? 'expanded' : ''}`} 
                 id="weatherWidget"
                 ref={widgetRef}

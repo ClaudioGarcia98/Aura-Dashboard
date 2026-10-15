@@ -1,6 +1,6 @@
 import './SettingsPanel.css';
 import { memo, useState, useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom';
+import { createPortal } from 'react-dom';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
@@ -13,6 +13,15 @@ const getFaviconUrl = (url) => {
     try { return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=16`; }
     catch { return ''; }
 };
+
+const TRANSIENT_KEYS = new Set([
+    'dash_anime_schedule_v3',
+    'dash_anime_schedule_v2',
+    'dash_weather_cache',
+    'dash_geo',
+    'dash_recent',
+    'dash_watching_list',
+]);
 
 export default memo(function SettingsPanel({ embedded = false } = {}) {
     const {
@@ -66,7 +75,11 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
             setTimeout(() => {
                 if (panelRef.current) {
                     const section = panelRef.current.querySelector('#dials-settings-section');
-                    if (section) section.scrollIntoView({ behavior: 'smooth' });
+                    if (section) {
+                        section.scrollIntoView({ behavior: 'smooth' });
+                        const input = section.querySelector('input');
+                        if (input) input.focus();
+                    }
                 }
             }, 150);
         };
@@ -113,7 +126,9 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
         const settings = {};
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key.startsWith('dash_')) settings[key] = localStorage.getItem(key);
+            if (key.startsWith('dash_') && !TRANSIENT_KEYS.has(key)) {
+                settings[key] = localStorage.getItem(key);
+            }
         }
         const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -136,7 +151,11 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                     setPopupMessage({ title: 'Import Failed', message: 'Invalid backup file format. Please ensure you are uploading a valid Good Morning backup file.', type: 'error' });
                     return;
                 }
-                keys.forEach(k => { if (k.startsWith('dash_')) localStorage.setItem(k, settings[k]); });
+                keys.forEach(k => {
+                    if (k.startsWith('dash_') && !TRANSIENT_KEYS.has(k)) {
+                        localStorage.setItem(k, settings[k]);
+                    }
+                });
                 setPopupMessage({
                     title: 'Success!',
                     message: 'Your settings and customization have been successfully restored. The dashboard needs to reload to apply the changes.',
@@ -155,21 +174,36 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
         if (!newDialUrl.trim()) return;
         let url = newDialUrl.trim();
         if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-        let finalName;
+        let finalName = 'Speed Dial';
         try {
-            const host = new URL(url).hostname.replace('www.', '').split('.')[0];
-            finalName = host.charAt(0).toUpperCase() + host.slice(1);
+            const host = new URL(url).hostname.replace(/^www\./, '').split('.')[0];
+            if (host) finalName = host.charAt(0).toUpperCase() + host.slice(1);
         } catch { finalName = 'Speed Dial'; }
-        setSpeedDials(prev => [...prev, { id: Date.now(), name: finalName, url }]);
+        const currentList = Array.isArray(speedDials) ? speedDials : [];
+        setSpeedDials([...currentList, { id: Date.now(), name: finalName, url }]);
         setNewDialUrl('');
     };
 
-    const handleRemoveDial = (id) => setSpeedDials(prev => prev.filter(d => d.id !== id));
+    const handleRemoveDial = (id) => {
+        const currentList = Array.isArray(speedDials) ? speedDials : [];
+        setSpeedDials(currentList.filter(d => d.id !== id));
+    };
+
+    const handleSaveEdit = (dialId) => {
+        const currentList = Array.isArray(speedDials) ? speedDials : [];
+        let url = editDialUrl.trim();
+        if (!url) return;
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        const name = editDialName.trim() || 'Speed Dial';
+        setSpeedDials(currentList.map(d => d.id === dialId ? { ...d, name, url } : d));
+        setEditingDialId(null);
+    };
 
     return (
         <>
             {!embedded && (
                 <button
+                    type="button"
                     className={`settings-toggle ${isOpen ? 'open' : ''}`}
                     id="settingsToggle"
                     title="Settings"
@@ -262,7 +296,7 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                 </svg>
                             </span>
-                            {cityHintPos && ReactDOM.createPortal(
+                            {cityHintPos && createPortal(
                                 <div className="settings-hint-card" style={{ top: cityHintPos.top, left: cityHintPos.left }}>
                                     <p>This is only used when your browser's GPS location is unavailable or denied.</p>
                                 </div>,
@@ -317,61 +351,57 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                                 style={{ flex: 1 }}
                                 onKeyDown={e => e.key === 'Enter' && handleAddDial()}
                             />
-                            <button className="pill" onClick={handleAddDial}>Add</button>
+                            <button type="button" className="pill" onClick={handleAddDial} aria-label="Add speed dial">Add</button>
                         </div>
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                            {speedDials.map(dial => (
-                                <li key={dial.id} className="sp-list-item" style={{ flexDirection: editingDialId === dial.id ? 'column' : 'row', gap: '8px', fontSize: '0.8rem' }}>
-                                    {editingDialId === dial.id ? (
-                                        <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                                            <input type="text" value={editDialName} onChange={e => setEditDialName(e.target.value)} style={{ flex: 1 }} />
-                                            <input
-                                                type="text"
-                                                value={editDialUrl}
-                                                onChange={e => setEditDialUrl(e.target.value)}
-                                                style={{ flex: 2 }}
-                                                onKeyDown={e => {
-                                                    if (e.key === 'Enter') {
-                                                        setSpeedDials(speedDials.map(d => d.id === dial.id ? { ...d, name: editDialName, url: editDialUrl } : d));
-                                                        setEditingDialId(null);
-                                                    }
-                                                }}
-                                            />
-                                            <button className="pill" onClick={() => {
-                                                setSpeedDials(speedDials.map(d => d.id === dial.id ? { ...d, name: editDialName, url: editDialUrl } : d));
-                                                setEditingDialId(null);
-                                            }}>Save</button>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', overflow: 'hidden' }}>
-                                                <img src={getFaviconUrl(dial.url)} style={{ width: 16, height: 16, borderRadius: 3 }} onError={e => e.target.style.display = 'none'} alt="" />
-                                                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}>{dial.name}</span>
+                            {(!Array.isArray(speedDials) || speedDials.length === 0) ? (
+                                <li style={{ opacity: 0.5, padding: '12px 0', textAlign: 'center', fontSize: '0.8rem' }}>No speed dials added yet.</li>
+                            ) : (
+                                speedDials.map(dial => (
+                                    <li key={dial.id} className="sp-list-item" style={{ flexDirection: editingDialId === dial.id ? 'column' : 'row', gap: '8px', fontSize: '0.8rem' }}>
+                                        {editingDialId === dial.id ? (
+                                            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                                                <input type="text" value={editDialName} onChange={e => setEditDialName(e.target.value)} style={{ flex: 1 }} />
+                                                <input
+                                                    type="text"
+                                                    value={editDialUrl}
+                                                    onChange={e => setEditDialUrl(e.target.value)}
+                                                    style={{ flex: 2 }}
+                                                    onKeyDown={e => e.key === 'Enter' && handleSaveEdit(dial.id)}
+                                                />
+                                                <button type="button" className="pill" onClick={() => handleSaveEdit(dial.id)}>Save</button>
                                             </div>
-                                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                                                <button onClick={() => { setEditingDialId(dial.id); setEditDialName(dial.name); setEditDialUrl(dial.url); }} className="sp-action-btn" title="Edit">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                                                    </svg>
-                                                </button>
-                                                <button onClick={() => handleRemoveDial(dial.id)} className="sp-action-btn delete" title="Delete">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </>
-                                    )}
-                                </li>
-                            ))}
+                                        ) : (
+                                            <>
+                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', overflow: 'hidden' }}>
+                                                    <img src={getFaviconUrl(dial.url)} style={{ width: 16, height: 16, borderRadius: 3 }} onError={e => e.target.style.display = 'none'} alt="" />
+                                                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}>{dial.name}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                                    <button type="button" onClick={() => { setEditingDialId(dial.id); setEditDialName(dial.name); setEditDialUrl(dial.url); }} className="sp-action-btn" title="Edit" aria-label="Edit speed dial">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <button type="button" onClick={() => handleRemoveDial(dial.id)} className="sp-action-btn delete" title="Delete" aria-label="Delete speed dial">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </li>
+                                ))
+                            )}
                         </ul>
                     </div>
 
                     <div className="sp-section" style={{ marginTop: '15px' }}>
                         <div className="sp-label">Temperature Unit</div>
                         <div className="pill-row">
-                            <button className={`pill ${useCelsius ? 'active' : ''}`} onClick={() => setUseCelsius(true)}>Celsius (°C)</button>
-                            <button className={`pill ${!useCelsius ? 'active' : ''}`} onClick={() => setUseCelsius(false)}>Fahrenheit (°F)</button>
+                            <button type="button" className={`pill ${useCelsius ? 'active' : ''}`} onClick={() => setUseCelsius(true)}>Celsius (°C)</button>
+                            <button type="button" className={`pill ${!useCelsius ? 'active' : ''}`} onClick={() => setUseCelsius(false)}>Fahrenheit (°F)</button>
                         </div>
                     </div>
                 </div>
@@ -404,8 +434,8 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                 <div className="sp-section">
                     <div className="sp-label">Backup & Restore</div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                        <button className="pill" style={{ flex: 1, justifyContent: 'center' }} onClick={handleExportSettings}>⬇ Export Settings</button>
-                        <button className="pill" style={{ flex: 1, justifyContent: 'center' }} onClick={() => importFileInputRef.current?.click()}>⬆ Import Settings</button>
+                        <button type="button" className="pill" style={{ flex: 1, justifyContent: 'center' }} onClick={handleExportSettings}>⬇ Export Settings</button>
+                        <button type="button" className="pill" style={{ flex: 1, justifyContent: 'center' }} onClick={() => importFileInputRef.current?.click()}>⬆ Import Settings</button>
                         <input type="file" accept=".json" ref={importFileInputRef} style={{ display: 'none' }} onChange={handleImportSettings} />
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginTop: '8px', lineHeight: 1.4 }}>
@@ -416,12 +446,12 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                 {/* Danger Zone */}
                 <div className="sp-section">
                     <div className="sp-label">Danger Zone</div>
-                    <button className="reset-btn" onClick={() => setConfirmReset(1)}>🗑 Reset All Settings</button>
+                    <button type="button" className="reset-btn" onClick={() => setConfirmReset(1)}>🗑 Reset All Settings</button>
                 </div>
             </section>
 
             {/* Reset confirm modal */}
-            {confirmReset > 0 && ReactDOM.createPortal(
+            {confirmReset > 0 && createPortal(
                 <div className="reset-overlay" onClick={() => setConfirmReset(0)}>
                     <div className="reset-modal" onClick={e => e.stopPropagation()}>
                         {confirmReset === 1 ? (
@@ -429,8 +459,8 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                                 <p>Are you sure you want to reset all settings?</p>
                                 <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>This will clear all your preferences, speed dials, and saved data.</span>
                                 <div className="reset-modal-actions">
-                                    <button className="pill" onClick={() => setConfirmReset(0)}>Cancel</button>
-                                    <button className="reset-confirm-btn" onClick={() => setConfirmReset(2)}>Yes, Reset</button>
+                                    <button type="button" className="pill" onClick={() => setConfirmReset(0)}>Cancel</button>
+                                    <button type="button" className="reset-confirm-btn" onClick={() => setConfirmReset(2)}>Yes, Reset</button>
                                 </div>
                             </>
                         ) : (
@@ -438,8 +468,8 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                                 <p>⚠️ This cannot be undone</p>
                                 <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>All settings, cached location, background, and stored data will be permanently erased. The page will reload.</span>
                                 <div className="reset-modal-actions">
-                                    <button className="pill" onClick={() => setConfirmReset(0)}>Go Back</button>
-                                    <button className="reset-confirm-btn" onClick={async () => {
+                                    <button type="button" className="pill" onClick={() => setConfirmReset(0)}>Go Back</button>
+                                    <button type="button" className="reset-confirm-btn" onClick={async () => {
                                         localStorage.clear();
                                         sessionStorage.clear();
                                         indexedDB.deleteDatabase('dashDB');
@@ -462,7 +492,7 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
             )}
 
             {/* Import/Export popup modal */}
-            {popupMessage && ReactDOM.createPortal(
+            {popupMessage && createPortal(
                 <div className="reset-overlay" style={{ zIndex: 1000000, animation: 'fadeSlideIn 0.2s ease-out' }}>
                     <div className="reset-modal" style={{ textAlign: 'center', maxWidth: '350px', padding: '30px 24px', animation: 'pulseGlow 2s infinite' }}>
                         <div style={{ fontSize: '3.5rem', marginBottom: '15px', lineHeight: 1, display: 'flex', justifyContent: 'center' }}>
@@ -473,6 +503,7 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                         <h3 style={{ margin: '0 0 12px 0', fontSize: '1.4rem', color: popupMessage.type === 'error' ? '#ff6b6b' : 'var(--accent-color)' }}>{popupMessage.title}</h3>
                         <p style={{ fontSize: '0.95rem', opacity: 0.85, marginBottom: '25px', lineHeight: 1.5 }}>{popupMessage.message}</p>
                         <button
+                            type="button"
                             className="pill"
                             style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '1rem', background: popupMessage.type === 'error' ? 'rgba(255, 107, 107, 0.15)' : 'var(--accent-glow)', color: popupMessage.type === 'error' ? '#ff6b6b' : 'var(--accent-color)', border: `1px solid ${popupMessage.type === 'error' ? '#ff6b6b' : 'var(--accent-color)'}` }}
                             onClick={() => { if (popupMessage.onAction) popupMessage.onAction(); else setPopupMessage(null); }}

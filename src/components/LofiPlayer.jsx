@@ -11,6 +11,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
     const [title, setTitle] = useState('Loading...');
     const iframeRef = useRef(null);
     const shouldAutoPlayRef = useRef(false); // tracks intent across iframe reloads
+    const playTimeoutRef = useRef(null);
 
     const stationsList = useMemo(() =>
         lofiStations.map(s => ({ id: s.videoId, name: s.name || null })),
@@ -19,6 +20,13 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
     const hasStations = stationsList.length > 0;
     const knownStation = stationsList.find(s => s.id === lofiId);
     const displayTitle = knownStation?.name ? knownStation.name : title;
+
+    // Cleanup play timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
+        };
+    }, []);
 
     // Close menu if all stations are deleted while it's open
     useEffect(() => {
@@ -145,7 +153,8 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
             }), '*');
             if (isPlaying || shouldAutoPlayRef.current) {
                 shouldAutoPlayRef.current = false;
-                setTimeout(() => {
+                if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
+                playTimeoutRef.current = setTimeout(() => {
                     if (iframeRef.current && iframeRef.current.contentWindow) {
                         iframeRef.current.contentWindow.postMessage(JSON.stringify({
                             event: 'command', func: 'playVideo', args: []
@@ -156,6 +165,10 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
         }
     };
 
+    const originParam = typeof window !== 'undefined' && window.location.origin && window.location.origin !== 'null'
+        ? `&origin=${encodeURIComponent(window.location.origin)}`
+        : '';
+
     // Hidden iframe that actually plays the music. Kept mounted across tab
     // switches in compact mode so audio never stops.
     const iframeEl = (
@@ -163,7 +176,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
             ref={iframeRef}
             width="0"
             height="0"
-            src={`https://www.youtube.com/embed/${lofiId}?enablejsapi=1&autoplay=0&controls=0&showinfo=0&rel=0&origin=${window.location.origin}`}
+            src={`https://www.youtube.com/embed/${lofiId}?enablejsapi=1&autoplay=0&controls=0&showinfo=0&rel=0${originParam}`}
             allow="autoplay; encrypted-media"
             style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', border: 'none' }}
             title="Lofi Background Stream"
@@ -240,7 +253,6 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
         <div className="lofi-player">
             {/* Hidden iframe that actually plays the music */}
             {iframeEl}
-
             {/* Minimal UI Pill */}
             <div className="lofi-ui-container" ref={menuRef} style={{ position: 'relative' }}>
                 {/* Station Menu Popover */}
@@ -250,6 +262,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                         <div className="lofi-station-list">
                             {stationsList.map(station => (
                                 <button 
+                                    type="button"
                                     key={station.id}
                                     className={`lofi-station-btn ${lofiId === station.id ? 'active' : ''}`}
                                     onClick={() => {
@@ -280,7 +293,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                 )}
 
                 <div className="lofi-ui">
-                    <button className="lofi-play-btn" onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
+                    <button type="button" className={`lofi-play-btn ${isPlaying ? 'playing' : ''}`} onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
                         {isPlaying ? (
                             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                                 <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
@@ -303,11 +316,16 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                         }}
                         role="button"
                         tabIndex={0}
-                        style={{ width: '180px', flexShrink: 0, cursor: 'pointer' }} 
+                        aria-label="Change station"
                         title="Click to change station"
                     >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span className="lofi-title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', width: '100%' }} title={displayTitle}>{displayTitle}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span className="lofi-title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', maxWidth: '155px' }} title={displayTitle}>{displayTitle}</span>
+                        {hasStations && (
+                            <svg className={`lofi-chevron ${showMenu ? 'open' : ''}`} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.6, flexShrink: 0, transition: 'transform 0.2s ease' }}>
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        )}
                     </div>
                     <span className="lofi-status">
                         {isPlaying ? (

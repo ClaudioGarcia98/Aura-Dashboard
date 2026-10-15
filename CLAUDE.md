@@ -9,7 +9,7 @@ npm run dev      # dev server at localhost:5173
 npm run build    # production build → dist/index.html (single inlined file)
 npm run preview  # preview the production build locally
 npm run lint     # ESLint across src/
-npm run test     # Vitest unit tests across src/
+npm run test     # Vitest unit test suite (300+ tests)
 ```
 
 Unit tests run via Vitest (`npm run test`). The build output is a **single self-contained `dist/index.html`** (via `vite-plugin-singlefile` — all JS and CSS inlined). This is deployed to GitHub Pages automatically on every push to `main` via GitHub Actions (`.github/workflows/deploy.yml` enforces lint, test, and build before deployment).
@@ -20,11 +20,11 @@ Unit tests run via Vitest (`npm run test`). The build output is a **single self-
 
 ### State & persistence
 
-All settings live in a Zustand store (`src/stores/useSettingsStore.js`) with `persist` middleware (key `dash_settings`), which handles migration and falls back to legacy `dash_*` keys for backward compatibility. Theme and font definitions are in `src/context/settingsConstants.js`.
+All settings live in a Zustand store (`src/stores/useSettingsStore.js`) with `persist` middleware (key `dash_settings`), which handles migration and falls back to legacy `dash_*` keys for backward compatibility. Theme and font definitions are in `src/constants/settingsConstants.js`.
 
 - All legacy `localStorage` keys are prefixed `dash_`. Widget visibility keys use `dash_show_<widget>` and default to `true` (read with `!== 'false'`).
-- Binary backgrounds (GIF/video/image) are stored in **IndexedDB** (`dashDB`, object store `s`, key `'bg'`) because `localStorage` can't hold binaries. On boot `useBackgroundLoader` reads it and creates a blob URL; a paired `useEffect` calls `URL.revokeObjectURL` on cleanup.
-- The anime schedule cache uses a versioned key (`dash_anime_schedule_v2`).
+- Binary backgrounds (GIF/video/image) are stored in **IndexedDB** (`dashDB`, object store `s`, key `'bg'`) via `src/services/db.js` because `localStorage` can't hold binaries. On boot `useBackgroundLoader` reads it and creates a blob URL; a paired `useEffect` calls `URL.revokeObjectURL` on cleanup.
+- The anime schedule cache uses a versioned key (`dash_anime_schedule_v3`).
 
 ### Layout
 

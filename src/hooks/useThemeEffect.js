@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { THEMES } from '../context/settingsConstants';
+import { THEMES } from '../constants/settingsConstants';
 import { useSettingsStore } from '../stores/useSettingsStore';
 
 export function useThemeEffect() {

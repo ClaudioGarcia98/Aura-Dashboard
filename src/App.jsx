@@ -17,6 +17,8 @@ import { useMediaQuery } from './hooks/useMediaQuery';
 import { useShallow } from 'zustand/react/shallow';
 import logoUrl from './assets/logo.png';
 
+import ErrorBoundary from './components/ErrorBoundary';
+
 export default function App() {
     useBackgroundLoader();
     useThemeEffect();
@@ -67,13 +69,11 @@ export default function App() {
         
         const resetIdle = () => {
             document.documentElement.style.setProperty('--ui-opacity', '1');
-            document.body.classList.remove('idle');
             if (mainUi) mainUi.style.pointerEvents = 'auto';
             clearTimeout(idleT);
             idleT = setTimeout(() => {
                 if (document.activeElement !== document.getElementById('searchInput')) {
                     document.documentElement.style.setProperty('--ui-opacity', '0.2');
-                    document.body.classList.add('idle');
                     window.dispatchEvent(new Event('app-idle'));
                 }
             }, 120000); // 2 minutes
@@ -135,7 +135,11 @@ export default function App() {
             ) : (
             <main className={`interactive-ui ${booting ? 'boot-hidden' : ''}`} id="mainUi">
                 <section style={{ opacity: 'var(--ui-opacity)', transition: 'opacity 0.8s ease-in-out' }}>
-                    {showWeatherWidget && <WeatherWidget />}
+                    {showWeatherWidget && (
+                        <ErrorBoundary>
+                            <WeatherWidget />
+                        </ErrorBoundary>
+                    )}
                 </section>
                 <div className="container" style={{ paddingBottom: isTotallyEmptyBelowClock ? '32px' : undefined }}>
                     <header className="center-content" style={{ marginBottom: isTotallyEmptyBelowClock ? '-32px' : undefined }}>
@@ -143,26 +147,46 @@ export default function App() {
                         <Clock />
                         {showQuote && (
                             <div style={{ opacity: 'var(--ui-opacity)', transition: 'opacity 0.8s ease-in-out', marginBottom: hasBottomContent ? '35px' : '0' }}>
-                                <Quote />
+                                <ErrorBoundary>
+                                    <Quote />
+                                </ErrorBoundary>
                             </div>
                         )}
                     </header>
                     {hasBottomContent && (
                         <section style={{ opacity: 'var(--ui-opacity)', transition: 'opacity 0.8s ease-in-out', display: 'flex', flexDirection: 'column' }}>
-                            {showSearchBox && <SearchBox />}
-                            {showSpeedDial && <SpeedDial />}
+                            {showSearchBox && (
+                                <ErrorBoundary>
+                                    <SearchBox />
+                                </ErrorBoundary>
+                            )}
+                            {showSpeedDial && (
+                                <ErrorBoundary>
+                                    <SpeedDial />
+                                </ErrorBoundary>
+                            )}
                             {showTop5Anime && (
                                 <div className="scrollable-section">
-                                    <AnimeSchedule />
+                                    <ErrorBoundary>
+                                        <AnimeSchedule />
+                                    </ErrorBoundary>
                                 </div>
                             )}
                         </section>
                     )}
-                    {(!showTop5Anime && showAnimeSidebar) && <AnimeSchedule />}
+                    {(!showTop5Anime && showAnimeSidebar) && (
+                        <ErrorBoundary>
+                            <AnimeSchedule />
+                        </ErrorBoundary>
+                    )}
                 </div>
                 <aside style={{ opacity: 'var(--ui-opacity)', transition: 'opacity 0.8s ease-in-out' }}>
                     <SettingsPanel />
-                    {showLofiPlayer && lofiStations.length > 0 && <LofiPlayer />}
+                    {showLofiPlayer && lofiStations.length > 0 && (
+                        <ErrorBoundary>
+                            <LofiPlayer />
+                        </ErrorBoundary>
+                    )}
                 </aside>
             </main>
             )}

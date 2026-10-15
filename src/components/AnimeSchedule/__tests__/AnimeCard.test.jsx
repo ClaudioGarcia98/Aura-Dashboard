@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import AnimeCard from '../AnimeCard.jsx';
+import { formatBroadcastTime } from '../../../services/animeService';
 
 vi.mock('../AnimeCard.jsx', async (importOriginal) => importOriginal());
 
@@ -315,5 +316,59 @@ describe('AnimeCard — CountdownBadge', () => {
         const anime = { ...baseAnime, broadcast: { time: `${h}:${m}`, day } };
         render(<AnimeCard {...defaultProps} anime={anime} />);
         expect(screen.getByText('Out Now!')).toBeTruthy();
+    });
+
+    it('shows exact countdown without artificial 90-minute delay', () => {
+        const now = new Date('2026-06-01T10:00:00Z'); // 19:00 JST Monday
+        vi.setSystemTime(now);
+        // Airing at 23:30 JST Monday (4h 30m away)
+        const anime = { ...baseAnime, broadcast: { time: '23:30', day: 'monday' } };
+        render(<AnimeCard {...defaultProps} anime={anime} />);
+        expect(screen.getByText('4h 30m')).toBeTruthy();
+    });
+
+    it('uses exact airingAt timestamp for countdown when provided', () => {
+        const now = new Date('2026-06-01T10:00:00Z');
+        vi.setSystemTime(now);
+        // Airing in 3 hours 15 minutes
+        const airEpoch = Math.floor((now.getTime() + (3 * 3600 + 15 * 60) * 1000) / 1000);
+        const anime = { ...baseAnime, airingAt: airEpoch };
+        render(<AnimeCard {...defaultProps} anime={anime} />);
+        expect(screen.getByText('3h 15m')).toBeTruthy();
+    });
+});
+
+describe('formatBroadcastTime helper', () => {
+    it('returns "?" for null or empty string', () => {
+        expect(formatBroadcastTime(null)).toBe('?');
+        expect(formatBroadcastTime('')).toBe('?');
+        expect(formatBroadcastTime(undefined)).toBe('?');
+    });
+
+    it('returns original string if format is invalid', () => {
+        expect(formatBroadcastTime('invalid')).toBe('invalid');
+        expect(formatBroadcastTime('abc:def')).toBe('abc:def');
+    });
+
+    it('formats valid JST time with PT and JST labels', () => {
+        const result = formatBroadcastTime('23:30');
+        expect(result).toContain('23:30 JST');
+        expect(result).toContain('PT');
+        expect(result).toMatch(/\d{2}:\d{2} PT \/ 23:30 JST/);
+    });
+
+    it('formats single-line PT and JST format without day wrap', () => {
+        const result = formatBroadcastTime('00:45');
+        expect(result).not.toContain('Wed');
+        expect(result).not.toContain('Thu');
+        expect(result).toContain('00:45 JST');
+        expect(result).toContain('16:45 PT');
+    });
+
+    it('formats exact PT and JST from airingAt epoch timestamp when provided', () => {
+        // 2026-10-15 14:30:00 UTC -> 15:30 PT / 23:30 JST
+        const airEpoch = Math.floor(Date.UTC(2026, 9, 15, 14, 30) / 1000);
+        const result = formatBroadcastTime(null, airEpoch);
+        expect(result).toBe('15:30 PT / 23:30 JST');
     });
 });

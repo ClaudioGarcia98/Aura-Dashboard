@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
-import { THEMES, FONTS } from '../../context/settingsConstants';
+import { THEMES, FONTS } from '../../constants/settingsConstants';
 
 export default memo(function ThemeSettings() {
     const { theme, setTheme, font, setFont, clockMode, setClockMode, use24hClock, setUse24hClock } = useSettingsStore(
@@ -20,6 +20,7 @@ export default memo(function ThemeSettings() {
                 <div className="pill-row">
                     {Object.keys(THEMES).map(t => (
                         <button
+                            type="button"
                             key={t}
                             className={`pill ${theme === t ? 'active' : ''}`}
                             onClick={() => setTheme(t)}
@@ -36,6 +37,7 @@ export default memo(function ThemeSettings() {
                 <div className="pill-row">
                     {Object.keys(FONTS).map(f => (
                         <button
+                            type="button"
                             key={f}
                             className={`pill ${font === f ? 'active' : ''}`}
                             onClick={() => setFont(f)}
@@ -52,6 +54,7 @@ export default memo(function ThemeSettings() {
                 <div className="pill-row">
                     {['digital', 'analog', 'both'].map(m => (
                         <button
+                            type="button"
                             key={m}
                             className={`pill ${clockMode === m ? 'active' : ''}`}
                             onClick={() => setClockMode(m)}
@@ -66,12 +69,14 @@ export default memo(function ThemeSettings() {
                 <div className="sp-label">Clock Format</div>
                 <div className="pill-row">
                     <button
+                        type="button"
                         className={`pill ${!use24hClock ? 'active' : ''}`}
                         onClick={() => setUse24hClock(false)}
                     >
                         12-Hour
                     </button>
                     <button
+                        type="button"
                         className={`pill ${use24hClock ? 'active' : ''}`}
                         onClick={() => setUse24hClock(true)}
                     >

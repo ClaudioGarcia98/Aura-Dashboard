@@ -203,6 +203,20 @@ describe('useSettingsStore — actions', () => {
         expect(useSettingsStore.getState().speedDials).toEqual(dials);
     });
 
+    it('setSpeedDials supports updater function', () => {
+        useSettingsStore.getState().setSpeedDials([{ id: 1, name: 'A', url: 'https://a.com' }]);
+        useSettingsStore.getState().setSpeedDials(prev => [...prev, { id: 2, name: 'B', url: 'https://b.com' }]);
+        expect(useSettingsStore.getState().speedDials).toEqual([
+            { id: 1, name: 'A', url: 'https://a.com' },
+            { id: 2, name: 'B', url: 'https://b.com' }
+        ]);
+    });
+
+    it('setSpeedDials coerces non-array inputs to empty array', () => {
+        useSettingsStore.getState().setSpeedDials(null);
+        expect(useSettingsStore.getState().speedDials).toEqual([]);
+    });
+
     it('setCustomEngines updates customEngines', () => {
         const engines = [{ name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=%s' }];
         useSettingsStore.getState().setCustomEngines(engines);

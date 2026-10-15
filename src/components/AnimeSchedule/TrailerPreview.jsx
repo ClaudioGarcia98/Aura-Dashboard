@@ -1,6 +1,10 @@
 import { memo } from 'react';
 
 export default memo(function TrailerPreview({ youtubeId, pos, muted, onMute, onUnmute, onMouseEnter, onMouseLeave, iframeRef }) {
+    const origin = (typeof window !== 'undefined' && window.location?.origin && window.location.origin !== 'null')
+        ? window.location.origin
+        : 'http://localhost';
+
     return (
         <div
             className="trailer-portal-container"
@@ -12,12 +16,12 @@ export default memo(function TrailerPreview({ youtubeId, pos, muted, onMute, onU
                 height: '169px',
                 background: '#000',
                 borderRadius: '12px',
-                boxShadow: '0 10px 40px rgba(0,0,0,0.8)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                boxShadow: '0 16px 48px rgba(0,0,0,0.85), 0 0 24px rgba(0,0,0,0.5)',
+                border: '1px solid rgba(255,255,255,0.15)',
                 zIndex: 99999,
                 overflow: 'hidden',
                 pointerEvents: 'auto',
-                animation: 'fadeSlideIn 0.3s ease both',
+                animation: 'scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both',
             }}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
@@ -25,7 +29,8 @@ export default memo(function TrailerPreview({ youtubeId, pos, muted, onMute, onU
             <div style={{ borderRadius: '12px', overflow: 'hidden', width: '300px', height: '169px', position: 'relative' }}>
                 <iframe
                     ref={iframeRef}
-                    src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&enablejsapi=1&modestbranding=1&showinfo=0&rel=0&controls=0&playsinline=1&origin=${window.location.origin}`}
+                    title="Anime Trailer Preview"
+                    src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&enablejsapi=1&modestbranding=1&showinfo=0&rel=0&controls=0&playsinline=1&origin=${origin}`}
                     width="300"
                     height="169"
                     style={{ border: 'none', display: 'block' }}
@@ -33,7 +38,9 @@ export default memo(function TrailerPreview({ youtubeId, pos, muted, onMute, onU
                     allowFullScreen
                 />
                 <button
+                    type="button"
                     onClick={muted ? onUnmute : onMute}
+                    aria-label={muted ? 'Unmute' : 'Mute'}
                     style={{
                         position: 'absolute',
                         bottom: '8px',

@@ -1,8 +1,9 @@
 export const JIKAN_BASE = 'https://api.jikan.moe/v4';
+export const ANILIST_GRAPHQL_ENDPOINT = 'https://graphql.anilist.co';
 export const ALLORIGINS_BASE = 'https://api.allorigins.win/get?url=';
 export const CODETABS_BASE = 'https://api.codetabs.com/v1/proxy?quest=';
 export const CORSPROXY_IO_BASE = 'https://corsproxy.io/?';
-export const SCHEDULE_CACHE_KEY = 'dash_anime_schedule_v2';
+export const SCHEDULE_CACHE_KEY = 'dash_anime_schedule_v3';
 export const WATCHING_CACHE_KEY = 'dash_anime_watching';
 
 export async function fetchWithRetry(fn, retries = 1, delay = 500) {

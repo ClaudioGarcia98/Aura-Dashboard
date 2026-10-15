@@ -7,12 +7,13 @@
 .search-container input {
     width: 100%; padding: var(--space-2) var(--space-3) var(--space-2) 52px;
     font-size: 1rem; font-family: inherit;
-    border: 1px solid rgba(255,255,255,0.3);
-    border-radius: var(--radius-xl); background: transparent;
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: var(--radius-xl);
+    background: rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
     color: var(--text-primary); outline: none;
     transition: var(--transition-standard);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 .search-container input::placeholder {
     color: rgba(255,255,255,0.55);
@@ -20,8 +21,9 @@
 }
 .search-container input:focus {
     border-color: var(--accent-color);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 4px 20px var(--accent-glow);
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 4px 24px var(--accent-glow), 0 0 0 1px var(--accent-color);
 }
 /* magnifier icon */
 .search-icon {
@@ -113,22 +115,29 @@
 
 /* ── Suggestions ───────────────────────────────────── */
 .suggestions-list {
-    position: absolute; top: calc(100% + 5px); left: 0; width: 100%;
-    background: #141414;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 16px; list-style: none; overflow: hidden;
+    position: absolute; top: calc(100% + 6px); left: 0; width: 100%;
+    background: rgba(16, 16, 20, 0.94);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-lg); list-style: none; overflow: hidden;
     display: none; z-index: 100;
-    box-shadow: 0 12px 36px rgba(0,0,0,0.8);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65), 0 0 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .suggestions-list li {
     display: flex; align-items: center; gap: 10px;
     padding: 10px 18px;
     font-size: 0.92rem; color: rgba(255,255,255,0.88);
-    cursor: pointer; transition: background 0.15s ease;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, padding-left 0.15s ease;
+    border-left: 2px solid transparent;
 }
 .suggestions-list li:hover,
 .suggestions-list li.selected {
-    background: rgba(255,255,255,0.12); color: var(--accent-color);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--accent-color);
+    border-left-color: var(--accent-color);
+    padding-left: 22px;
 }
 .sug-group {
     padding: 7px 18px 3px; font-size: 0.65rem;

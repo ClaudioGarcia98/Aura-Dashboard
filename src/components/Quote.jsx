@@ -1,5 +1,5 @@
 import './Quote.css';
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useRef } from 'react';
 
 const ANIME_QUOTES = [
     { text: "A lesson without pain is meaningless. For you cannot gain anything without sacrificing something else in return.", author: "Edward Elric", anime: "Fullmetal Alchemist" },
@@ -21,7 +21,17 @@ const ANIME_QUOTES = [
     { text: "Even if I'm weak, even if I have no power. I'm going to protect them all.", author: "Natsuki Subaru", anime: "Re:Zero" },
     { text: "The ticket to the future is always open.", author: "Vash the Stampede", anime: "Trigun" },
     { text: "Knowing you're different is only the beginning. If you accept these differences you'll be able to get past them and grow even closer.", author: "Miss Kobayashi", anime: "Miss Kobayashi's Dragon Maid" },
-    { text: "You can die anytime, but living takes true courage.", author: "Kenshin Himura", anime: "Rurouni Kenshin" }
+    { text: "You can die anytime, but living takes true courage.", author: "Kenshin Himura", anime: "Rurouni Kenshin" },
+    { text: "Power comes in response to a need, not a desire.", author: "Goku", anime: "Dragon Ball Z" },
+    { text: "In our world, time is irreversible. Once you make a choice, you can only move forward.", author: "Okabe Rintarou", anime: "Steins;Gate" },
+    { text: "Fear is not evil. It tells you what weakness is. And once you know your weakness, you can become stronger as well as kinder.", author: "Gildarts Clive", anime: "Fairy Tail" },
+    { text: "It's not about whether I have a chance. It's about whether I have the will to try.", author: "Saitama", anime: "One Punch Man" },
+    { text: "If you don't like your destiny, don't accept it. Instead, have the courage to change it the way you want it to be.", author: "Naruto Uzumaki", anime: "Naruto" },
+    { text: "Being lonely is more painful than getting hurt.", author: "Monkey D. Luffy", anime: "One Piece" },
+    { text: "No matter how deep the night, it always turns to day, eventually.", author: "Brook", anime: "One Piece" },
+    { text: "Push through the pain, giving up hurts more.", author: "Vegeta", anime: "Dragon Ball Z" },
+    { text: "The moment you think of giving up, think of the reason why you held on so long.", author: "Natsu Dragneel", anime: "Fairy Tail" },
+    { text: "To know sorrow is not terrifying. What is terrifying is to know you can't go back to the happiness you could have.", author: "Matsumoto Rangiku", anime: "Bleach" }
 ];
 
 export default memo(function Quote() {
@@ -30,41 +40,55 @@ export default memo(function Quote() {
         return ANIME_QUOTES[randomIndex];
     });
     const [opacity, setOpacity] = useState(1);
+    const transitionTimerRef = useRef(null);
+    const isGeneratingRef = useRef(false);
 
     const generateNewQuote = async () => {
+        if (isGeneratingRef.current) return;
+        isGeneratingRef.current = true;
         setOpacity(0);
-        
+
         let newQuote = null;
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            const timeoutId = setTimeout(() => controller.abort(), 1000);
             const res = await fetch('https://animechan.io/api/v1/quotes/random', { signal: controller.signal });
             clearTimeout(timeoutId);
-            
+
             if (!res.ok) throw new Error('API down');
             const data = await res.json();
-            
+
             if (data.quote) {
                 newQuote = { text: data.quote, author: data.character, anime: data.anime };
-            } else if (data.data && data.data.content) {
-                newQuote = { text: data.data.content, author: data.data.character.name, anime: data.data.anime.name };
+            } else if (data.data?.content) {
+                newQuote = { text: data.data.content, author: data.data.character?.name, anime: data.data.anime?.name };
             } else {
                 throw new Error('Invalid format');
             }
         } catch {
-            const randomIndex = Math.floor(Math.random() * ANIME_QUOTES.length);
-            newQuote = ANIME_QUOTES[randomIndex];
+            let nextQuote;
+            do {
+                const nextIndex = Math.floor(Math.random() * ANIME_QUOTES.length);
+                nextQuote = ANIME_QUOTES[nextIndex];
+            } while (ANIME_QUOTES.length > 1 && nextQuote.text === quoteObj?.text);
+            newQuote = nextQuote;
         }
 
-        setTimeout(() => {
+        if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+        transitionTimerRef.current = setTimeout(() => {
             setQuoteObj(newQuote);
             setOpacity(1);
-        }, 300);
+            isGeneratingRef.current = false;
+        }, 250);
     };
 
     useEffect(() => {
         const intervalId = setInterval(generateNewQuote, 60 * 60 * 1000);
-        return () => clearInterval(intervalId);
+        return () => {
+            clearInterval(intervalId);
+            if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     if (!quoteObj) return null;
@@ -72,11 +96,13 @@ export default memo(function Quote() {
     return (
         <div 
             id="quote-container" 
+            role="button"
+            aria-label="Click for a new quote"
             title="Click for a new quote" 
             onClick={generateNewQuote}
-            style={{ opacity, transition: 'opacity 0.4s ease' }}
-            tabIndex="0"
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') generateNewQuote(); }}
+            style={{ opacity, transition: 'opacity 0.25s ease' }}
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); generateNewQuote(); } }}
         >
             <div className="quote-content">
                 <span className="quote-text">"{quoteObj.text}"</span>

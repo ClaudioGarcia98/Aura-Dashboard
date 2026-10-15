@@ -110,9 +110,10 @@ export default memo(function Clock() {
             ctx.fillStyle = accentColor;
             ctx.fill();
 
+            const msToNextSecond = 1000 - new Date().getMilliseconds();
             timeoutId = setTimeout(() => {
                 reqId = requestAnimationFrame(renderAnalog);
-            }, 1000);
+            }, Math.max(16, msToNextSecond));
         };
         
         reqId = requestAnimationFrame(renderAnalog);
