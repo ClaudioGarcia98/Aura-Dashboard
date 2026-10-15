@@ -142,6 +142,113 @@
     to { opacity: 1; transform: translate(-50%, 0); }
 }
 
+/* ── Compact expanded player (Lofi tab) ─────────────── */
+.lofi-compact {
+    transform: none;
+    animation: none;
+    left: auto;
+    bottom: auto;
+}
+.lofi-compact.collapsed {
+    position: fixed;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+.lofi-compact.expanded {
+    position: static;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+}
+.lofi-expanded {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 26px;
+    padding: 32px 20px calc(32px + env(safe-area-inset-bottom));
+}
+.lofi-expanded-now {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+.lofi-expanded-eyebrow {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--accent-color);
+    font-weight: 700;
+}
+.lofi-expanded-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    max-width: 88vw;
+    overflow-wrap: break-word;
+}
+.lofi-expanded-visual {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.lofi-expanded-paused {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+.lofi-visualizer-lg {
+    height: 56px;
+    gap: 5px;
+    margin-top: 0;
+}
+.lofi-visualizer-lg .bar { width: 6px; }
+.lofi-visualizer-lg .bar:nth-child(1) { height: 24px; animation-delay: -0.4s; }
+.lofi-visualizer-lg .bar:nth-child(2) { height: 44px; animation-delay: -0.2s; }
+.lofi-visualizer-lg .bar:nth-child(3) { height: 56px; animation-delay: -0.6s; }
+.lofi-visualizer-lg .bar:nth-child(4) { height: 36px; animation-delay: -0.1s; }
+.lofi-visualizer-lg .bar:nth-child(5) { height: 48px; animation-delay: -0.3s; }
+.lofi-visualizer-lg .bar:nth-child(6) { height: 28px; animation-delay: -0.5s; }
+.lofi-visualizer-lg .bar:nth-child(7) { height: 40px; animation-delay: -0.15s; }
+.lofi-expanded-play {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    color: #111;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 8px 28px var(--accent-glow);
+    transition: transform 0.15s ease;
+}
+.lofi-expanded-play:active { transform: scale(0.94); }
+.lofi-expanded-stations {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(14, 14, 14, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg);
+    padding: 14px;
+    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+}
+.lofi-expanded-stations .lofi-station-btn {
+    padding: 13px 12px;
+}
+
 /* -- Responsive Mobile (fixed bottom-center pill) ---- */
 @media (max-width: 768px) {
     .lofi-player {
@@ -151,6 +258,14 @@
         transform: translateX(-50%);
         z-index: 95;
         max-width: calc(100vw - 140px);
+    }
+    .lofi-compact {
+        position: static;
+        transform: none;
+        max-width: none;
+    }
+    .lofi-compact.collapsed {
+        position: fixed;
     }
     .lofi-info {
         max-width: 120px;

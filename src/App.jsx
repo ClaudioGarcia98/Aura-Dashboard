@@ -8,10 +8,12 @@ import WeatherWidget from './components/WeatherWidget';
 import SettingsPanel from './components/SettingsPanel/index.jsx';
 import AnimeSchedule from './components/AnimeSchedule/index.jsx';
 import LofiPlayer from './components/LofiPlayer';
+import CompactLayout from './components/CompactLayout';
 import { useSettingsStore } from './stores/useSettingsStore';
 import { useBackgroundLoader } from './hooks/useBackgroundLoader';
 import { useThemeEffect } from './hooks/useThemeEffect';
 import { useFontEffect } from './hooks/useFontEffect';
+import { useMediaQuery } from './hooks/useMediaQuery';
 import { useShallow } from 'zustand/react/shallow';
 import logoUrl from './assets/logo.png';
 
@@ -46,9 +48,17 @@ export default function App() {
         lofiStations: s.lofiStations,
     })));
     const [booting, setBooting] = useState(true);
+    const isCompact = useMediaQuery('(max-width: 1024px)');
 
     const hasBottomContent = showSearchBox || showSpeedDial || showTop5Anime;
     const isTotallyEmptyBelowClock = !showQuote && !hasBottomContent;
+
+    // Lock the page (no scroll) and drop desktop body padding while in the
+    // compact tab layout, so the fixed background stays full-screen.
+    useEffect(() => {
+        document.body.classList.toggle('compact-mode', isCompact);
+        return () => document.body.classList.remove('compact-mode');
+    }, [isCompact]);
 
     useEffect(() => {
         const bootT = setTimeout(() => setBooting(false), 2800);
@@ -102,8 +112,9 @@ export default function App() {
                     autoPlay
                     loop
                     muted
+                    playsInline
                     style={{
-                        position: 'absolute',
+                        position: 'fixed',
                         top: 0, left: 0,
                         width: '100%', height: '100%',
                         objectFit: 'cover',
@@ -119,6 +130,9 @@ export default function App() {
                 </div>
             )}
             
+            {isCompact ? (
+                <CompactLayout />
+            ) : (
             <main className={`interactive-ui ${booting ? 'boot-hidden' : ''}`} id="mainUi">
                 <section style={{ opacity: 'var(--ui-opacity)', transition: 'opacity 0.8s ease-in-out' }}>
                     {showWeatherWidget && <WeatherWidget />}
@@ -151,6 +165,7 @@ export default function App() {
                     {showLofiPlayer && lofiStations.length > 0 && <LofiPlayer />}
                 </aside>
             </main>
+            )}
         </>
     );
 }

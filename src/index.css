@@ -6,6 +6,7 @@ button, a, [role="button"], label, summary { touch-action: manipulation; }
     --accent-color: #FFD26A;
     --accent-glow:  rgba(255, 210, 106, 0.2);
     --ui-opacity:   1;
+    --top-nav-height: 56px;
 
     /* 8pt Grid System */
     --space-1: 8px;
@@ -101,10 +102,20 @@ body {
 }
 
 .overlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: linear-gradient(90deg,
         rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0) 100%);
     z-index: 1;
+}
+
+/* ── Compact tab layout: lock the page so the fixed background never
+   reveals a void below it (phones + tablets, toggled from App.jsx) ── */
+body.compact-mode {
+    display: block;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    padding: 0;
 }
 
 /* ── Interactive UI Layer ──────────────────────────── */

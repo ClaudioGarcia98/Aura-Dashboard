@@ -37,6 +37,30 @@
 .settings-panel::-webkit-scrollbar { width: 3px; }
 .settings-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
 .settings-panel.open { transform: translateY(0); opacity: 1; visibility: visible; }
+
+/* Embedded variant (compact Settings tab): always-open, fills the tab panel,
+   no floating/slide chrome. Higher specificity beats the desktop + mobile
+   positioning rules above and in the @media blocks. */
+.settings-panel.embedded {
+    position: static;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    transform: none;
+    opacity: 1;
+    visibility: visible;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    padding: 0;
+    z-index: auto;
+}
+.settings-panel.embedded::before { content: none; }
 .sp-title {
     font-size: 1rem; font-weight: 700; letter-spacing: 1px;
     color: var(--accent-color);

@@ -3,7 +3,7 @@ import { memo, useState, useEffect, useRef, useMemo } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
 
-export default memo(function LofiPlayer() {
+export default memo(function LofiPlayer({ compact = false, expanded = false, onPlayingChange } = {}) {
     const { volume, lofiId, setLofiId, lofiStations } = useSettingsStore(useShallow(s => ({ volume: s.volume, lofiId: s.lofiId, setLofiId: s.setLofiId, lofiStations: s.lofiStations })));
     const [isPlaying, setIsPlaying] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
@@ -24,6 +24,11 @@ export default memo(function LofiPlayer() {
     useEffect(() => {
         if (!hasStations) setShowMenu(false);
     }, [hasStations]);
+
+    // Surface play state to parent (e.g. the compact top-nav "playing" pulse)
+    useEffect(() => {
+        if (onPlayingChange) onPlayingChange(isPlaying);
+    }, [isPlaying, onPlayingChange]);
 
     // Listen for YouTube IFrame state changes
     useEffect(() => {
@@ -151,20 +156,91 @@ export default memo(function LofiPlayer() {
         }
     };
 
+    // Hidden iframe that actually plays the music. Kept mounted across tab
+    // switches in compact mode so audio never stops.
+    const iframeEl = (
+        <iframe
+            ref={iframeRef}
+            width="0"
+            height="0"
+            src={`https://www.youtube.com/embed/${lofiId}?enablejsapi=1&autoplay=0&controls=0&showinfo=0&rel=0&origin=${window.location.origin}`}
+            allow="autoplay; encrypted-media"
+            style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', border: 'none' }}
+            title="Lofi Background Stream"
+            onLoad={handleIframeLoad}
+        />
+    );
+
+    // ── Compact (phones/tablets): full-screen expanded player in the Lofi tab ──
+    if (compact) {
+        return (
+            <div className={`lofi-player lofi-compact ${expanded ? 'expanded' : 'collapsed'}`}>
+                {iframeEl}
+                {expanded && (
+                    <div className="lofi-expanded">
+                        <div className="lofi-expanded-now">
+                            <span className="lofi-expanded-eyebrow">Now Playing</span>
+                            <span className="lofi-expanded-title" title={displayTitle}>{displayTitle}</span>
+                        </div>
+
+                        <div className="lofi-expanded-visual">
+                            {isPlaying ? (
+                                <div className="lofi-visualizer lofi-visualizer-lg" aria-hidden="true">
+                                    {Array.from({ length: 7 }).map((_, i) => <div key={i} className="bar" />)}
+                                </div>
+                            ) : (
+                                <span className="lofi-expanded-paused">Paused</span>
+                            )}
+                        </div>
+
+                        <button className="lofi-expanded-play" onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
+                            {isPlaying ? (
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                            ) : (
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                            )}
+                        </button>
+
+                        {hasStations && (
+                            <div className="lofi-expanded-stations">
+                                <div className="lofi-station-header">Stations</div>
+                                <div className="lofi-station-list">
+                                    {stationsList.map(station => (
+                                        <button
+                                            key={station.id}
+                                            className={`lofi-station-btn ${lofiId === station.id ? 'active' : ''}`}
+                                            onClick={() => {
+                                                shouldAutoPlayRef.current = isPlaying;
+                                                setLofiId(station.id);
+                                                setIsPlaying(false);
+                                            }}
+                                        >
+                                            <div className="lofi-station-icon" style={{ flexShrink: 0 }}>
+                                                {lofiId === station.id ? (
+                                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" /></svg>
+                                                ) : (
+                                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" /></svg>
+                                                )}
+                                            </div>
+                                            <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {station.name}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
     return (
         <div className="lofi-player">
             {/* Hidden iframe that actually plays the music */}
-            <iframe 
-                ref={iframeRef}
-                width="0" 
-                height="0" 
-                src={`https://www.youtube.com/embed/${lofiId}?enablejsapi=1&autoplay=0&controls=0&showinfo=0&rel=0&origin=${window.location.origin}`}
-                allow="autoplay; encrypted-media"
-                style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', border: 'none' }}
-                title="Lofi Background Stream"
-                onLoad={handleIframeLoad}
-            />
-            
+            {iframeEl}
+
             {/* Minimal UI Pill */}
             <div className="lofi-ui-container" ref={menuRef} style={{ position: 'relative' }}>
                 {/* Station Menu Popover */}

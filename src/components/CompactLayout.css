@@ -1,0 +1,72 @@
+/* ── Compact shell (phones + tablets, <=1024px) ─────── */
+.compact-root {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 2;
+    pointer-events: auto;
+}
+
+/* Each tab panel is the only scroll container — the page itself never scrolls,
+   so the fixed background is always full-screen with nothing below it. */
+.tab-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: none;
+}
+.tab-panel.active {
+    display: block;
+}
+/* Panels whose inner content manages its own scroll (e.g. anime list) */
+.tab-panel--fill.active {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.tab-panel::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ── Home tab ───────────────────────────────────────── */
+.compact-home {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px clamp(14px, 5vw, 28px) calc(40px + env(safe-area-inset-bottom));
+}
+/* Neutralize component margins that assume the desktop .container flow */
+.compact-home .speed-dial { margin-bottom: 0; }
+.compact-home .search-container { width: 100%; max-width: 100%; }
+/* Keep the clock from overflowing the column on tablet widths */
+.compact-home .clock-row { flex-wrap: wrap; }
+
+/* ── Anime tab ──────────────────────────────────────── */
+.anime-embedded {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 18px clamp(12px, 4vw, 22px) 0;
+    max-width: 720px;
+    width: 100%;
+    margin: 0 auto;
+}
+.anime-embedded .as-content {
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: calc(28px + env(safe-area-inset-bottom));
+}
+
+/* ── Settings tab ───────────────────────────────────── */
+.compact-settings {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 22px clamp(14px, 5vw, 28px) calc(40px + env(safe-area-inset-bottom));
+}

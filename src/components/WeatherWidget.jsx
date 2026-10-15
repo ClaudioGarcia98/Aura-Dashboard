@@ -97,6 +97,18 @@ const getIconClassName = (type) => {
     return 'weather-icon-rain';
 };
 
+const getConditionLabel = (type) => {
+    switch (type) {
+        case 'sun': return 'Clear';
+        case 'partly-cloudy': return 'Partly cloudy';
+        case 'cloud': return 'Cloudy';
+        case 'rain': return 'Rain';
+        case 'snow': return 'Snow';
+        case 'storm': return 'Storm';
+        default: return 'Weather';
+    }
+};
+
 const WeatherIcon = ({ type }) => {
     switch (type) {
         case 'sun': return <SunIcon />;
@@ -109,7 +121,7 @@ const WeatherIcon = ({ type }) => {
     }
 };
 
-export default memo(function WeatherWidget() {
+export default memo(function WeatherWidget({ inline = false }) {
     const useCelsius = useSettingsStore(s => s.useCelsius);
     const fallbackCity = useSettingsStore(s => s.fallbackCity);
     const [expanded, setExpanded] = useState(false);
@@ -342,6 +354,14 @@ export default memo(function WeatherWidget() {
     }, []);
 
     if (!weather && !error) {
+        if (inline) {
+            return (
+                <div className="weather-inline-card loading" aria-label="Loading weather">
+                    <div className="weather-loading-icon" />
+                    <div className="weather-loading-temp" />
+                </div>
+            );
+        }
         return (
             <div className="weather-widget loading" id="weatherWidget" aria-label="Loading weather">
                 <div className="weather-loading-icon" />
@@ -351,11 +371,90 @@ export default memo(function WeatherWidget() {
     }
 
     if (error) {
+        if (inline) {
+            return (
+                <div className="weather-inline-card" style={{ opacity: 0.7 }}>
+                    <span className="weather-icon-cloud" style={{ display: 'flex', alignItems: 'center' }}>⚠️</span>
+                    <span style={{ color: 'var(--text-primary)' }}>Weather unavailable</span>
+                </div>
+            );
+        }
         return (
             <button className="weather-widget" style={{ opacity: 0.6 }} title="Weather failed to load">
                 <span className="weather-icon-cloud" style={{ display: 'flex', alignItems: 'center' }}>⚠️</span>
                 <span style={{ color: 'var(--text-primary)' }}>Weather Error</span>
             </button>
+        );
+    }
+
+    if (inline) {
+        return (
+            <div className="weather-inline" ref={widgetRef}>
+                <button
+                    className={`weather-inline-card ${expanded ? 'expanded' : ''}`}
+                    onClick={() => setExpanded(!expanded)}
+                    aria-expanded={expanded}
+                    aria-label="Toggle weather details"
+                >
+                    <span className={`weather-inline-icon ${weather ? getIconClassName(weather.iconType) : ''}`} aria-hidden="true">
+                        {weather ? <WeatherIcon type={weather.iconType} /> : null}
+                    </span>
+                    <span className="weather-inline-main">
+                        <span className="weather-inline-temp">{weather ? weather.temp : '--°'}</span>
+                        <span className="weather-inline-cond">
+                            {weather ? getConditionLabel(weather.iconType) : ''}
+                            {isFallback && <span title="Location access denied. Showing fallback." style={{ marginLeft: 6 }}>📍</span>}
+                        </span>
+                    </span>
+                    <span className={`weather-inline-chevron ${expanded ? 'open' : ''}`} aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </span>
+                </button>
+
+                <div className={`weather-inline-details ${expanded ? 'open' : ''}`} ref={panelRef} role="region" aria-label="Weather Details">
+                    <div className="wd-row">
+                        <span className="wd-label"><FeelsLikeIcon /> Feels like</span>
+                        <span>{weather ? weather.feelsLike : '--°'}</span>
+                    </div>
+                    <div className="wd-row">
+                        <span className="wd-label"><HumidityIcon /> Humidity</span>
+                        <span>{weather ? weather.humidity : '--%'}</span>
+                    </div>
+                    <div className="wd-row">
+                        <span className="wd-label"><WindIcon /> Wind</span>
+                        <span>{weather ? weather.wind : '-- km/h'}</span>
+                    </div>
+                    <div className="wd-row">
+                        <span className="wd-label"><SunriseIcon /> Sunrise</span>
+                        <span>{weather ? weather.sunrise : '--:--'}</span>
+                    </div>
+                    <div className="wd-row">
+                        <span className="wd-label"><SunsetIcon /> Sunset</span>
+                        <span>{weather ? weather.sunset : '--:--'}</span>
+                    </div>
+                    {weather?.forecast && weather.forecast.length > 0 && (
+                        <div className="weather-forecast">
+                            <div className="weather-forecast-title">3-Day Forecast</div>
+                            <div className="weather-forecast-grid">
+                                {weather.forecast.map((day, idx) => (
+                                    <div key={idx} className="weather-forecast-day">
+                                        <span className="weather-forecast-name">{day.day}</span>
+                                        <span className={`weather-forecast-icon ${getIconClassName(day.iconType)}`}>
+                                            <WeatherIcon type={day.iconType} />
+                                        </span>
+                                        <div className="weather-forecast-temps">
+                                            <span className="weather-forecast-max">{day.max}°</span>
+                                            <span className="weather-forecast-min">{day.min}°</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
         );
     }
 

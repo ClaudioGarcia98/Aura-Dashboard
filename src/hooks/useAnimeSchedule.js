@@ -7,10 +7,10 @@ import { WATCHING_CACHE_KEY } from '../services/api';
 const DAY_FILTERS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 const todayFilter = DAY_FILTERS[(new Date().getDay() + 6) % 7];
 
-export function useAnimeSchedule() {
+export function useAnimeSchedule({ alwaysOpen = false } = {}) {
     const { volume, malUsername, setMalError, setMalLoading, setMalSuccess } = useSettingsStore(useShallow(s => ({ volume: s.volume, malUsername: s.malUsername, setMalError: s.setMalError, setMalLoading: s.setMalLoading, setMalSuccess: s.setMalSuccess })));
 
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(alwaysOpen);
     const [expandedAnime, setExpandedAnime] = useState(null);
     const [activeDay, setActiveDay] = useState(todayFilter);
 
@@ -38,8 +38,9 @@ export function useAnimeSchedule() {
     const trailerIframeRef = useRef(null);
     const prevMalUsername = useRef(malUsername);
 
-    // Idle / Escape → close sidebar
+    // Idle / Escape → close sidebar (disabled in always-open / embedded mode)
     useEffect(() => {
+        if (alwaysOpen) return;
         const closeSidebar = () => setIsSidebarOpen(false);
         const handleKeyDown = (e) => { if (e.key === 'Escape') closeSidebar(); };
         window.addEventListener('app-idle', closeSidebar);
@@ -48,7 +49,7 @@ export function useAnimeSchedule() {
             window.removeEventListener('app-idle', closeSidebar);
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, []);
+    }, [alwaysOpen]);
 
     // Click-outside collapse for expanded card
     useEffect(() => {
@@ -173,7 +174,7 @@ export function useAnimeSchedule() {
 
     // Sidebar day change → fetch that day's schedule
     useEffect(() => {
-        if (!isSidebarOpen) return;
+        if (!isSidebarOpen && !alwaysOpen) return;
         let isMounted = true;
         const loadSidebarData = async () => {
             setSidebarLoading(true);
@@ -192,7 +193,7 @@ export function useAnimeSchedule() {
         };
         loadSidebarData();
         return () => { isMounted = false; };
-    }, [activeDay, isSidebarOpen]);
+    }, [activeDay, isSidebarOpen, alwaysOpen]);
 
     // Trailer: auto-unmute when a new trailer opens (if user preference is unmuted)
     useEffect(() => {

@@ -2,6 +2,7 @@ import './Clock.css';
 import { memo, useState, useEffect, useRef } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 export default memo(function Clock() {
     const { clockMode, use24hClock } = useSettingsStore(useShallow(s => ({ clockMode: s.clockMode, use24hClock: s.use24hClock })));
@@ -121,13 +122,7 @@ export default memo(function Clock() {
         };
     }, [clockMode]);
 
-    const [isPhone, setIsPhone] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches);
-    useEffect(() => {
-        const mq = window.matchMedia('(max-width: 768px)');
-        const handler = (e) => setIsPhone(e.matches);
-        mq.addEventListener('change', handler);
-        return () => mq.removeEventListener('change', handler);
-    }, []);
+    const isPhone = useMediaQuery('(max-width: 768px)');
 
     const analogSize = clockMode === 'analog'
         ? (isPhone ? 120 : 150)
