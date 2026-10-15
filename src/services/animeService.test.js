@@ -4,6 +4,7 @@ import {
   getScheduleCache,
   setScheduleCache,
   parseMALItems,
+  parseMALRssItems,
   getJstDayRange,
   parseAniListSchedule,
   fetchDaySchedule,
@@ -57,6 +58,53 @@ describe('animeService', () => {
         watched_eps: 5
       }];
       expect(parseMALItems(raw)).toEqual(expected);
+    });
+  });
+
+  describe('parseMALRssItems', () => {
+    it('returns empty array if input is not array', () => {
+      expect(parseMALRssItems(null)).toEqual([]);
+      expect(parseMALRssItems(undefined)).toEqual([]);
+    });
+
+    it('filters out non-watching items and parses watching shows with episode count', () => {
+      const items = [
+        {
+          title: 'Show 1 - TV',
+          link: 'https://myanimelist.net/anime/111/show1',
+          description: 'Watching - 5 of 12 episodes',
+          thumbnail: 'thumb1.jpg'
+        },
+        {
+          title: 'Show 2 - TV',
+          link: 'https://myanimelist.net/anime/222/show2',
+          description: 'Completed - 12 of 12 episodes'
+        },
+        {
+          title: 'Show 3 - Movie',
+          url: 'https://myanimelist.net/anime/333/show3',
+          content_html: 'Watching - 1 of 1 episodes'
+        }
+      ];
+
+      expect(parseMALRssItems(items)).toEqual([
+        {
+          mal_id: 111,
+          url: 'https://myanimelist.net/anime/111/show1',
+          image_url: 'thumb1.jpg',
+          title: 'Show 1',
+          score: 'N/A',
+          watched_eps: 5
+        },
+        {
+          mal_id: 333,
+          url: 'https://myanimelist.net/anime/333/show3',
+          image_url: '',
+          title: 'Show 3',
+          score: 'N/A',
+          watched_eps: 1
+        }
+      ]);
     });
   });
 
@@ -224,6 +272,72 @@ describe('animeService', () => {
       const data2 = await fetchUserWatchingList(null);
       expect(data1).toEqual([]);
       expect(data2).toEqual([]);
+    });
+
+    it('successfully fetches and maps data from Feed2Json', async () => {
+      globalThis.fetch.mockImplementation((url) => {
+        if (url.includes('feed2json.org')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              items: [
+                {
+                  title: 'Feed2Json Title - TV',
+                  url: 'https://myanimelist.net/anime/777/feedshow',
+                  content_html: 'Watching - 4 of 12 episodes'
+                }
+              ]
+            })
+          });
+        }
+        return Promise.reject(new Error('Proxy error'));
+      });
+
+      const list = await fetchUserWatchingList('feedUser');
+      expect(list).toEqual([
+        {
+          mal_id: 777,
+          url: 'https://myanimelist.net/anime/777/feedshow',
+          image_url: '',
+          title: 'Feed2Json Title',
+          score: 'N/A',
+          watched_eps: 4
+        }
+      ]);
+    });
+
+    it('successfully fetches and maps data from Rss2Json', async () => {
+      globalThis.fetch.mockImplementation((url) => {
+        if (url.includes('api.rss2json.com')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              status: 'ok',
+              items: [
+                {
+                  title: 'Rss2Json Title - TV',
+                  link: 'https://myanimelist.net/anime/888/rssshow',
+                  description: 'Watching - 9 of 12 episodes',
+                  thumbnail: 'thumb.jpg'
+                }
+              ]
+            })
+          });
+        }
+        return Promise.reject(new Error('Proxy error'));
+      });
+
+      const list = await fetchUserWatchingList('rssUser');
+      expect(list).toEqual([
+        {
+          mal_id: 888,
+          url: 'https://myanimelist.net/anime/888/rssshow',
+          image_url: 'thumb.jpg',
+          title: 'Rss2Json Title',
+          score: 'N/A',
+          watched_eps: 9
+        }
+      ]);
     });
 
     it('successfully fetches and maps data from AllOrigins raw', async () => {

@@ -4,6 +4,8 @@ import {
     ALLORIGINS_BASE,
     ALLORIGINS_RAW_BASE,
     CODETABS_BASE,
+    RSS2JSON_BASE,
+    FEED2JSON_BASE,
     SCHEDULE_CACHE_KEY,
     WATCHING_CACHE_KEY,
     fetchWithRetry,
@@ -39,6 +41,33 @@ export function parseMALItems(raw) {
         score: a.anime_score_val || 'N/A',
         watched_eps: a.num_watched_episodes,
     }));
+}
+
+export function parseMALRssItems(items) {
+    if (!Array.isArray(items)) return [];
+    const results = [];
+    for (const item of items) {
+        const text = String(item.content_html || item.description || item.summary || '');
+        if (!text.toLowerCase().includes('watching')) continue;
+        const link = String(item.url || item.link || item.guid || '');
+        const match = link.match(/\/anime\/(\d+)/);
+        const malId = match ? parseInt(match[1], 10) : null;
+        if (!malId) continue;
+
+        let watchedEps = 0;
+        const epMatch = text.match(/Watching\s*-\s*(\d+)/i);
+        if (epMatch) watchedEps = parseInt(epMatch[1], 10);
+
+        results.push({
+            mal_id: malId,
+            url: link.startsWith('http') ? link : `https://myanimelist.net${link}`,
+            image_url: item.thumbnail || '',
+            title: (item.title || '').replace(/\s*-\s*(TV|Movie|OVA|ONA|Special)$/i, '').trim(),
+            score: 'N/A',
+            watched_eps: watchedEps,
+        });
+    }
+    return results;
 }
 
 export function getLocalDayRange(dayFilter, timeZone = 'Europe/Lisbon') {
@@ -343,9 +372,9 @@ export async function fetchUserWatchingList(malUsername) {
         return cachedEntry.data;
     }
 
-    const cacheBust = `&_=${Date.now()}`;
-    const malPath = `/animelist/${cleanUsername}/load.json?offset=0&status=1${cacheBust}`;
+    const malPath = `/animelist/${cleanUsername}/load.json?offset=0&status=1`;
     const malUrl = `https://myanimelist.net${malPath}`;
+    const malRssUrl = `https://myanimelist.net/rss.php?type=rw&u=${cleanUsername}`;
 
     const isLocalEnv = () => {
         if (typeof window === 'undefined') return true;
@@ -361,6 +390,30 @@ export async function fetchUserWatchingList(malUsername) {
             throw new Error('Invalid MAL response format');
         }
         const parsed = parseMALItems(data);
+        malMemoryCache.set(cleanUsername, { data: parsed, ts: Date.now() });
+        return parsed;
+    };
+
+    const makeRss2JsonRequest = async () => {
+        const res = await fetch(RSS2JSON_BASE + encodeURIComponent(malRssUrl), { cache: 'no-store' });
+        if (!res.ok) throw new Error(`rss2json status ${res.status}`);
+        const data = await res.json();
+        if (data.status !== 'ok' || !Array.isArray(data.items)) {
+            throw new Error(data.message || 'rss2json failed');
+        }
+        const parsed = parseMALRssItems(data.items);
+        malMemoryCache.set(cleanUsername, { data: parsed, ts: Date.now() });
+        return parsed;
+    };
+
+    const makeFeed2JsonRequest = async () => {
+        const res = await fetch(FEED2JSON_BASE + encodeURIComponent(malRssUrl), { cache: 'no-store' });
+        if (!res.ok) throw new Error(`feed2json status ${res.status}`);
+        const data = await res.json();
+        if (!Array.isArray(data.items)) {
+            throw new Error('feed2json invalid format');
+        }
+        const parsed = parseMALRssItems(data.items);
         malMemoryCache.set(cleanUsername, { data: parsed, ts: Date.now() });
         return parsed;
     };
@@ -437,7 +490,7 @@ export async function fetchUserWatchingList(malUsername) {
     return fetchWithRetry(async () => {
         if (customProxy.trim()) {
             try {
-                return await fetchWithTimeout(makeCustomProxyRequest(customProxy), 25000);
+                return await fetchWithTimeout(makeCustomProxyRequest(customProxy), 15000);
             } catch (err) {
                 console.warn('Custom MAL proxy failed, attempting standard channels...', err);
             }
@@ -445,7 +498,7 @@ export async function fetchUserWatchingList(malUsername) {
 
         if (isLocalEnv()) {
             try {
-                return await fetchWithTimeout(makeLocalProxyRequest(), 25000);
+                return await fetchWithTimeout(makeLocalProxyRequest(), 15000);
             } catch {
                 // If local proxy failed, continue to fallback proxies
             }
@@ -453,11 +506,13 @@ export async function fetchUserWatchingList(malUsername) {
 
         return await fetchWithTimeout(
             Promise.any([
+                makeFeed2JsonRequest(),
+                makeRss2JsonRequest(),
                 makeAlloriginsRequest(),
                 makeAlloriginsRawRequest(),
                 makeCodetabsRequest(),
             ]),
-            25000
+            15000
         );
     }, 0, 0).catch(e => {
         console.error('MAL fetch timed out or failed:', e);
