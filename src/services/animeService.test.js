@@ -7,12 +7,14 @@ import {
   getJstDayRange,
   parseAniListSchedule,
   fetchDaySchedule,
-  fetchUserWatchingList
+  fetchUserWatchingList,
+  clearMalMemoryCache
 } from './animeService';
 
 describe('animeService', () => {
   beforeEach(() => {
     localStorage.clear();
+    clearMalMemoryCache();
     vi.stubGlobal('fetch', vi.fn());
   });
 

@@ -313,10 +313,21 @@ function fetchWithTimeout(promise, ms) {
     return Promise.race([promise, timeout]);
 }
 
+const malMemoryCache = new Map();
+
+export function clearMalMemoryCache() {
+    malMemoryCache.clear();
+}
+
 export async function fetchUserWatchingList(malUsername) {
     if (!malUsername || malUsername.trim() === '') return [];
 
-    const cleanUsername = encodeURIComponent(malUsername.trim());
+    const cleanUsername = encodeURIComponent(malUsername.trim().toLowerCase());
+    const cachedEntry = malMemoryCache.get(cleanUsername);
+    if (cachedEntry && (Date.now() - cachedEntry.ts < 5 * 60 * 1000)) {
+        return cachedEntry.data;
+    }
+
     const cacheBust = `&_=${Date.now()}`;
     const malPath = `/animelist/${cleanUsername}/load.json?offset=0&status=1${cacheBust}`;
     const malUrl = `https://myanimelist.net${malPath}`;
@@ -328,7 +339,9 @@ export async function fetchUserWatchingList(malUsername) {
         if (!Array.isArray(data)) {
             throw new Error('Invalid MAL response format');
         }
-        return parseMALItems(data);
+        const parsed = parseMALItems(data);
+        malMemoryCache.set(cleanUsername, { data: parsed, ts: Date.now() });
+        return parsed;
     };
 
     const makeCorsproxyioRequest = async () => {
@@ -339,7 +352,9 @@ export async function fetchUserWatchingList(malUsername) {
         if (!Array.isArray(data)) {
             throw new Error('Invalid MAL response format');
         }
-        return parseMALItems(data);
+        const parsed = parseMALItems(data);
+        malMemoryCache.set(cleanUsername, { data: parsed, ts: Date.now() });
+        return parsed;
     };
 
     const makeAlloriginsRequest = async () => {
@@ -364,7 +379,9 @@ export async function fetchUserWatchingList(malUsername) {
         if (!Array.isArray(parsed)) {
             throw new Error('Invalid MAL response format');
         }
-        return parseMALItems(parsed);
+        const result = parseMALItems(parsed);
+        malMemoryCache.set(cleanUsername, { data: result, ts: Date.now() });
+        return result;
     };
 
     const makeCodetabsRequest = async () => {
@@ -375,20 +392,22 @@ export async function fetchUserWatchingList(malUsername) {
         if (!Array.isArray(data)) {
             throw new Error('Invalid MAL response format');
         }
-        return parseMALItems(data);
+        const parsed = parseMALItems(data);
+        malMemoryCache.set(cleanUsername, { data: parsed, ts: Date.now() });
+        return parsed;
     };
 
     return fetchWithRetry(async () => {
         try {
-            return await fetchWithTimeout(makeLocalProxyRequest(), 3000);
+            return await fetchWithTimeout(makeLocalProxyRequest(), 25000);
         } catch {
             try {
-                return await fetchWithTimeout(makeCorsproxyioRequest(), 2500);
+                return await fetchWithTimeout(makeCorsproxyioRequest(), 5000);
             } catch {
                 console.warn('Primary MAL proxy failed or timed out, trying fallbacks...');
                 return await fetchWithTimeout(
                     Promise.any([makeAlloriginsRequest(), makeCodetabsRequest()]),
-                    4500
+                    6000
                 );
             }
         }
