@@ -208,21 +208,35 @@
 /* Main Container Box */
 .today-anime-box {
     margin-top: var(--space-3);
-    background: var(--surface-30); border-radius: var(--radius-lg);
-    padding: var(--space-2); border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: var(--radius-lg);
+    padding: 14px 10px 12px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     animation: fadeSlideIn 0.5s ease 0.4s both;
     display: flex; flex-direction: column;
     position: relative;
 }
 .tab-header {
     display: flex; justify-content: space-between; align-items: center;
-    font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;
-    color: rgba(255,255,255,0.5); margin-bottom: 12px;
+    font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.2px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 10px;
+    padding: 0 4px;
 }
-.tab-title { font-weight: 600; color: var(--accent-color); }
+.tab-title {
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    color: var(--accent-color);
+    letter-spacing: 1px;
+}
 .info-badge-container {
     position: relative;
     display: inline-flex;
+    align-items: center;
     margin-left: 8px;
     cursor: help;
     outline: none;
@@ -369,7 +383,7 @@
 
 .tab-list {
     display: flex; flex-direction: column; gap: 8px;
-    padding: 4px 10px 4px 10px;
+    padding: 0 2px;
     overflow-y: auto;
     max-height: 540px;
     scrollbar-width: thin;
@@ -381,17 +395,17 @@
 .tab-item {
     display: flex; flex-direction: column; gap: 0; padding: 0;
     text-decoration: none; color: white; cursor: pointer;
-    border-radius: var(--radius-md);
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-radius: 10px;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     animation: fadeSlideIn 0.4s ease both; overflow: hidden;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     flex-shrink: 0;
 }
 .tab-item-main {
     display: flex; align-items: center; gap: 12px;
-    padding: 8px 10px;
+    padding: 8px 12px;
 }
 .tab-item:nth-child(1) { animation-delay: 0.45s; }
 .tab-item:nth-child(2) { animation-delay: 0.50s; }
@@ -400,11 +414,10 @@
 .tab-item:nth-child(5) { animation-delay: 0.65s; }
 
 .tab-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
-    translate: 0 -2px;
-    scale: 1.01;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 210, 106, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 .tab-item.expanded {
     background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
@@ -413,35 +426,41 @@
 }
 
 .tab-img-container {
-    width: 48px; height: 68px; border-radius: var(--radius-sm);
+    width: 48px; height: 68px; border-radius: 6px;
     overflow: hidden; flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .tab-item img {
     width: 100%; height: 100%; object-fit: cover;
     transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 .tab-item:hover img {
-    transform: scale(1.08);
+    transform: scale(1.06);
 }
 
-.tab-item-info { flex: 1; overflow: hidden; min-width: 0; }
+.tab-item-info {
+    flex: 1; overflow: hidden; min-width: 0;
+    display: flex; flex-direction: column; justify-content: center;
+}
 .tab-item-title {
-    font-size: 0.95rem; font-weight: 600; white-space: nowrap;
+    font-size: 0.92rem; font-weight: 600; white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;
-    transition: text-shadow 0.3s ease;
+    color: #ffffff;
+    transition: text-shadow 0.2s ease;
 }
 .tab-item:hover .tab-item-title {
-    text-shadow: 0 0 10px rgba(255,255,255,0.3);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
 }
 .tab-item-meta {
-    font-size: 0.82rem; opacity: 0.85;
+    font-size: 0.8rem; color: var(--text-secondary);
     font-variant-numeric: lining-nums tabular-nums;
     font-feature-settings: "lnum" 1, "tnum" 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0;
+    display: flex; align-items: center;
 }
 .tab-item-meta span {
     display: inline-block;
@@ -449,6 +468,12 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+.tab-item-timer {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    margin-left: 10px;
 }
 .tab-item-timer .anime-countdown {
     margin-top: 0;
@@ -540,16 +565,30 @@
 .anime-mal-link:hover { text-decoration: underline; }
 
 .anime-countdown {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 4px 10px; background: var(--accent-glow);
-    color: var(--accent-color); border-radius: 20px; font-weight: 700; font-family: var(--font-family);
-    font-size: 0.82rem; margin-top: 8px; border: 1px solid var(--accent-color);
-    box-shadow: 0 0 10px var(--accent-glow);
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px;
+    background: rgba(255, 210, 106, 0.12);
+    color: var(--accent-color);
+    border-radius: 20px;
+    font-weight: 700;
+    font-family: var(--font-family);
+    font-size: 0.78rem;
+    letter-spacing: 0.2px;
+    margin-top: 8px;
+    border: 1px solid rgba(255, 210, 106, 0.5);
+    box-shadow: 0 0 10px rgba(255, 210, 106, 0.15);
     width: fit-content;
     align-self: flex-start;
     font-variant-numeric: lining-nums tabular-nums;
     font-feature-settings: "lnum" 1, "tnum" 1;
+    transition: all 0.2s ease;
 }
 .anime-countdown svg {
     animation: pulseGlow 2s infinite;
+    flex-shrink: 0;
+}
+.tab-item:hover .anime-countdown {
+    border-color: var(--accent-color);
+    background: rgba(255, 210, 106, 0.18);
+    box-shadow: 0 0 14px rgba(255, 210, 106, 0.25);
 }

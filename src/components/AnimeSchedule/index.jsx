@@ -38,7 +38,7 @@ export default memo(function AnimeSchedule() {
             {showTop5Anime && (
                 <div className="today-anime-box" id="todayAnimeBox">
                     <div className="tab-header">
-                        <span className="tab-title" style={{ display: 'flex', alignItems: 'center' }}>
+                        <span className="tab-title">
                             Today's Launch
                             <div className="info-badge-container" tabIndex={0} aria-label="Sorting Info">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="info-icon">

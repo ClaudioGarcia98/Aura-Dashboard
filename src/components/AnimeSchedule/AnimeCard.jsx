@@ -139,13 +139,13 @@ export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching,
                 <div className="tab-img-container">
                     <img src={anime.images?.jpg?.small_image_url} alt={anime.title} loading="lazy" decoding="async" />
                 </div>
-                <div className="tab-item-info" style={{ flex: 1, minWidth: 0 }}>
+                <div className="tab-item-info">
                     <div className="tab-item-title">{anime.title}</div>
                     <div className="tab-item-meta">
                         <span>⭐ {anime.score || 'N/A'} • 🕒 {formatBroadcastTime(anime.broadcast?.time)}</span>
                     </div>
                 </div>
-                <div className="tab-item-timer" style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                <div className="tab-item-timer">
                     <CountdownBadge broadcast={anime.broadcast} />
                 </div>
             </div>
