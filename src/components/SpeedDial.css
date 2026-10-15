@@ -6,19 +6,20 @@
 .speed-dial-item {
     display: flex; align-items: center; justify-content: center;
     width: 48px; height: 48px; border-radius: var(--radius-lg);
-    background: var(--surface-30);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    background: rgba(16, 16, 22, 0.75);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255,255,255,0.12);
     text-decoration: none;
     transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .speed-dial-item img,
 .speed-dial-item svg {
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .speed-dial-item:hover {
-    background: var(--surface-hover);
-    border-color: rgba(255,255,255,0.3);
+    background: rgba(24, 24, 32, 0.9);
+    border-color: rgba(255, 210, 106, 0.4);
     transform: translateY(-3px) scale(1.06);
     box-shadow: 0 8px 20px rgba(0,0,0,0.35), 0 0 16px var(--accent-glow);
 }
@@ -123,16 +124,16 @@
 .speed-dial-add-btn {
     display: flex; align-items: center; justify-content: center;
     width: 48px; height: 48px; border-radius: var(--radius-lg);
-    background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
-    border: 1px dashed rgba(255, 255, 255, 0.22);
+    background: rgba(16, 16, 22, 0.6);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px dashed rgba(255, 255, 255, 0.25);
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
     padding: 0;
 }
 .speed-dial-add-btn:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(24, 24, 32, 0.85);
     border-color: var(--accent-color);
     color: var(--accent-color);
     transform: translateY(-3px) scale(1.06);

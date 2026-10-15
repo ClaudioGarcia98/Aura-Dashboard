@@ -217,22 +217,31 @@
     align-items: center;
     gap: 14px;
     padding: 14px 16px;
-    background: rgba(14, 14, 14, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(16, 16, 22, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-lg);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     color: var(--text-primary);
     cursor: pointer;
     text-align: left;
     transition: var(--transition-standard);
-    box-shadow: var(--shadow-ambient);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .weather-inline-card.loading {
     cursor: default;
     pointer-events: none;
 }
+.weather-inline-card:hover {
+    background: rgba(22, 22, 30, 0.9);
+    border-color: rgba(255, 210, 106, 0.35);
+}
+.weather-inline-card.expanded {
+    border-color: var(--accent-color);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4), 0 0 14px var(--accent-glow);
+}
 .weather-inline-card:active {
-    background: rgba(20, 20, 20, 0.7);
+    background: rgba(26, 26, 36, 0.95);
 }
 .weather-inline-icon {
     display: flex;
@@ -264,7 +273,7 @@
     display: flex;
     align-items: center;
     color: var(--text-secondary);
-    transition: transform 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     flex-shrink: 0;
 }
 .weather-inline-chevron.open {
@@ -275,12 +284,24 @@
     overflow: hidden;
     max-height: 0;
     opacity: 0;
-    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, margin 0.35s ease;
+    background: rgba(16, 16, 22, 0.88);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    padding: 0 16px;
+    transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, margin 0.3s ease, padding 0.3s ease;
 }
 .weather-inline-details.open {
-    max-height: 520px;
+    max-height: 560px;
     opacity: 1;
     margin-top: 10px;
+    padding: 14px 16px;
+}
+.weather-inline-details .weather-forecast-day {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* ── Responsive Mobile (fixed widget + clamped panel) ── */

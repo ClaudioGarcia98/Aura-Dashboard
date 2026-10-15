@@ -750,3 +750,42 @@
         right: 436px;
     }
 }
+
+/* ── Compact layout overrides for AnimeSchedule ────── */
+.compact-home .today-anime-box {
+    background: linear-gradient(180deg, rgba(16, 16, 22, 0.88) 0%, rgba(10, 10, 16, 0.94) 100%);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-xl);
+    padding: 18px 14px;
+}
+.compact-home .today-anime-box .tab-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+.compact-home .today-anime-box .tab-item:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 210, 106, 0.35);
+}
+
+.anime-embedded .as-days {
+    background: rgba(16, 16, 22, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.anime-embedded .anime-card {
+    background: linear-gradient(180deg, rgba(16, 16, 22, 0.85) 0%, rgba(12, 12, 16, 0.92) 100%);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.anime-embedded .as-header-titles h2 {
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+.anime-embedded .as-subtitle {
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+}
