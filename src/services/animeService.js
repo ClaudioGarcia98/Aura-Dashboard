@@ -63,7 +63,7 @@ export function getJstDayRange(dayFilter) {
     return { startUtcSec, endUtcSec };
 }
 
-export function formatBroadcastTime(timeStr, dayName) {
+export function formatBroadcastTime(timeStr) {
     if (!timeStr) return '?';
     const parts = timeStr.split(':');
     if (parts.length < 2) return timeStr;
@@ -71,55 +71,15 @@ export function formatBroadcastTime(timeStr, dayName) {
     const minutes = parseInt(parts[1], 10);
     if (isNaN(hours) || isNaN(minutes)) return timeStr;
 
-    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const shortDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
+    // Convert JST (UTC+9) to Portugal time (Europe/Lisbon)
     const now = new Date();
-    let jstDayIdx = -1;
-    if (dayName) {
-        const clean = dayName.toLowerCase().replace(/s$/, '');
-        jstDayIdx = days.indexOf(clean);
-    }
-
-    const nowUtcMs = now.getTime();
-    const jstNowMs = nowUtcMs + 9 * 3600 * 1000;
-    const jstNowDate = new Date(jstNowMs);
-    const currentJstDayIdx = jstNowDate.getUTCDay();
-
-    let diffDays = 0;
-    if (jstDayIdx !== -1) {
-        diffDays = jstDayIdx - currentJstDayIdx;
-    }
-
-    const targetJstMs = jstNowMs + diffDays * 86400 * 1000;
-    const targetDate = new Date(targetJstMs);
-    const y = targetDate.getUTCFullYear();
-    const m = targetDate.getUTCMonth();
-    const d = targetDate.getUTCDate();
-
-    // The UTC moment of broadcast (JST is UTC+9, so UTC = hours - 9)
-    const broadcastUtc = new Date(Date.UTC(y, m, d, hours - 9, minutes));
-
-    // Convert to Portugal (Europe/Lisbon)
-    const ptFormatter = new Intl.DateTimeFormat('en-GB', {
+    const utcDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hours - 9, minutes));
+    const ptTime = utcDate.toLocaleTimeString('en-GB', {
         timeZone: 'Europe/Lisbon',
-        weekday: 'short',
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,
     });
-    const partsFormatted = ptFormatter.formatToParts(broadcastUtc);
-    const ptDay = partsFormatted.find(p => p.type === 'weekday')?.value;
-    const ptHour = partsFormatted.find(p => p.type === 'hour')?.value;
-    const ptMinute = partsFormatted.find(p => p.type === 'minute')?.value;
-    const ptTime = `${ptHour}:${ptMinute}`;
-
-    const jstDayName = shortDays[jstDayIdx !== -1 ? jstDayIdx : currentJstDayIdx];
-
-    // If broadcast day in Portugal differs from Japan (e.g. Wed 16:45 PT vs Thu 00:45 JST)
-    if (ptDay && jstDayName && ptDay !== jstDayName) {
-        return `${ptDay} ${ptTime} PT / ${jstDayName} ${timeStr} JST`;
-    }
 
     return `${ptTime} PT / ${timeStr} JST`;
 }

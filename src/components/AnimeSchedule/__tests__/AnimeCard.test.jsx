@@ -317,6 +317,15 @@ describe('AnimeCard — CountdownBadge', () => {
         render(<AnimeCard {...defaultProps} anime={anime} />);
         expect(screen.getByText('Out Now!')).toBeTruthy();
     });
+
+    it('shows exact countdown without artificial 90-minute delay', () => {
+        const now = new Date('2026-06-01T10:00:00Z'); // 19:00 JST Monday
+        vi.setSystemTime(now);
+        // Airing at 23:30 JST Monday (4h 30m away)
+        const anime = { ...baseAnime, broadcast: { time: '23:30', day: 'monday' } };
+        render(<AnimeCard {...defaultProps} anime={anime} />);
+        expect(screen.getByText('4h 30m')).toBeTruthy();
+    });
 });
 
 describe('formatBroadcastTime helper', () => {
@@ -338,10 +347,10 @@ describe('formatBroadcastTime helper', () => {
         expect(result).toMatch(/\d{2}:\d{2} PT \/ 23:30 JST/);
     });
 
-    it('includes day prefix when Portugal broadcast day differs from Japan day', () => {
-        const result = formatBroadcastTime('00:45', 'Thursdays');
-        expect(result).toContain('Wed');
-        expect(result).toContain('Thu');
+    it('formats single-line PT and JST format without day wrap', () => {
+        const result = formatBroadcastTime('00:45');
+        expect(result).not.toContain('Wed');
+        expect(result).not.toContain('Thu');
         expect(result).toContain('00:45 JST');
         expect(result).toContain('16:45 PT');
     });

@@ -17,7 +17,6 @@ const calculateTimeLeft = (broadcast) => {
     broadcastTime.setUTCDate(broadcastTime.getUTCDate() + daysUntil);
 
     let target = new Date(broadcastTime.getTime());
-    target.setUTCMinutes(target.getUTCMinutes() + 90);
 
     let pastRelease = new Date(target.getTime());
     while (pastRelease.getTime() > jstNow.getTime()) {
@@ -105,7 +104,7 @@ export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching,
                     <div className="anime-info">
                         <div className="anime-title">{anime.title}</div>
                         <div className="anime-time">
-                            <span>🕒 {formatBroadcastTime(anime.broadcast?.time, anime.broadcast?.day)}{anime.score ? ` • ⭐ ${anime.score}` : ''}</span>
+                            <span>🕒 {formatBroadcastTime(anime.broadcast?.time)}{anime.score ? ` • ⭐ ${anime.score}` : ''}</span>
                         </div>
                         <CountdownBadge broadcast={anime.broadcast} />
                     </div>
@@ -143,7 +142,7 @@ export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching,
                 <div className="tab-item-info" style={{ flex: 1, minWidth: 0 }}>
                     <div className="tab-item-title">{anime.title}</div>
                     <div className="tab-item-meta">
-                        <span>⭐ {anime.score || 'N/A'} • 🕒 {formatBroadcastTime(anime.broadcast?.time, anime.broadcast?.day)}</span>
+                        <span>⭐ {anime.score || 'N/A'} • 🕒 {formatBroadcastTime(anime.broadcast?.time)}</span>
                     </div>
                 </div>
                 <div className="tab-item-timer" style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>

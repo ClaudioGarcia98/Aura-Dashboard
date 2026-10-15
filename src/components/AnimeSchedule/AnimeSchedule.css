@@ -371,7 +371,8 @@
     display: flex; flex-direction: column; gap: 8px;
     padding: 4px 10px 4px 10px;
     overflow-y: auto;
-    max-height: 480px;
+    max-height: 540px;
+    scrollbar-width: thin;
 }
 .tab-list::-webkit-scrollbar { width: 4px; }
 .tab-list::-webkit-scrollbar-track { background: transparent; }
@@ -424,7 +425,7 @@
     transform: scale(1.08);
 }
 
-.tab-item-info { flex: 1; overflow: hidden; }
+.tab-item-info { flex: 1; overflow: hidden; min-width: 0; }
 .tab-item-title {
     font-size: 0.95rem; font-weight: 600; white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;
@@ -434,14 +435,24 @@
     text-shadow: 0 0 10px rgba(255,255,255,0.3);
 }
 .tab-item-meta {
-    font-size: 0.85rem; opacity: 0.85; display: flex; flex-direction: column; gap: 2px;
+    font-size: 0.82rem; opacity: 0.85;
     font-variant-numeric: lining-nums tabular-nums;
     font-feature-settings: "lnum" 1, "tnum" 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 .tab-item-meta span {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tab-item-timer .anime-countdown {
+    margin-top: 0;
+    white-space: nowrap;
 }
 
 /* Skeleton Loaders */
