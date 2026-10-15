@@ -97,6 +97,8 @@ export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching,
                         <img
                             src={anime.images?.jpg?.image_url || anime.images?.jpg?.large_image_url || anime.images?.jpg?.small_image_url}
                             alt={anime.title}
+                            loading="lazy"
+                            decoding="async"
                         />
                     </div>
                     <div className="anime-info">
@@ -116,7 +118,7 @@ export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching,
                                 ))}
                             </div>
                             <p className="anime-synopsis-text">{anime.synopsis || 'No synopsis available.'}</p>
-                            <a href={anime.url} target="_blank" rel="noopener noreferrer" className="anime-mal-link">
+                            <a href={anime.url} target="_blank" rel="noopener noreferrer" className="anime-mal-link" onClick={(e) => e.stopPropagation()}>
                                 View on MyAnimeList ↗
                             </a>
                         </div>
@@ -135,7 +137,7 @@ export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching,
         >
             <div className="tab-item-main">
                 <div className="tab-img-container">
-                    <img src={anime.images?.jpg?.small_image_url} alt={anime.title} />
+                    <img src={anime.images?.jpg?.small_image_url} alt={anime.title} loading="lazy" decoding="async" />
                 </div>
                 <div className="tab-item-info" style={{ flex: 1, minWidth: 0 }}>
                     <div className="tab-item-title">{anime.title}</div>
@@ -151,7 +153,7 @@ export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching,
                 <div className="tab-synopsis-panel">
                     <div className="tab-synopsis-inner">
                         <p className="anime-synopsis-text">{anime.synopsis || 'No synopsis available.'}</p>
-                        <a href={anime.url} target="_blank" rel="noopener noreferrer" className="anime-mal-link">
+                        <a href={anime.url} target="_blank" rel="noopener noreferrer" className="anime-mal-link" onClick={(e) => e.stopPropagation()}>
                             View on MyAnimeList ↗
                         </a>
                     </div>

@@ -1,5 +1,5 @@
 import './Quote.css';
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useRef } from 'react';
 
 const ANIME_QUOTES = [
     { text: "A lesson without pain is meaningless. For you cannot gain anything without sacrificing something else in return.", author: "Edward Elric", anime: "Fullmetal Alchemist" },
@@ -30,8 +30,12 @@ export default memo(function Quote() {
         return ANIME_QUOTES[randomIndex];
     });
     const [opacity, setOpacity] = useState(1);
+    const transitionTimerRef = useRef(null);
+    const isGeneratingRef = useRef(false);
 
     const generateNewQuote = async () => {
+        if (isGeneratingRef.current) return;
+        isGeneratingRef.current = true;
         setOpacity(0);
         
         let newQuote = null;
@@ -56,15 +60,20 @@ export default memo(function Quote() {
             newQuote = ANIME_QUOTES[randomIndex];
         }
 
-        setTimeout(() => {
+        if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+        transitionTimerRef.current = setTimeout(() => {
             setQuoteObj(newQuote);
             setOpacity(1);
+            isGeneratingRef.current = false;
         }, 300);
     };
 
     useEffect(() => {
         const intervalId = setInterval(generateNewQuote, 60 * 60 * 1000);
-        return () => clearInterval(intervalId);
+        return () => {
+            clearInterval(intervalId);
+            if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+        };
     }, []);
 
     if (!quoteObj) return null;

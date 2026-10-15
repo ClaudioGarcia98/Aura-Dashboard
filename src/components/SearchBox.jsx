@@ -177,7 +177,7 @@ export default memo(function SearchBox() {
             saveHistory(trimmed, url, activeEngine.name);
             window.open(url, '_blank');
         } else {
-            const urlPat = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?($|\?)/i;
+            const urlPat = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)(\?.*)?$/i;
             const ipPat  = /^https?:\/\/|^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?/;
             let url;
             if (urlPat.test(trimmed) || ipPat.test(trimmed)) {

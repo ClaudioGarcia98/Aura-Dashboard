@@ -151,6 +151,10 @@ export default memo(function LofiPlayer() {
         }
     };
 
+    const originParam = typeof window !== 'undefined' && window.location.origin && window.location.origin !== 'null'
+        ? `&origin=${encodeURIComponent(window.location.origin)}`
+        : '';
+
     return (
         <div className="lofi-player">
             {/* Hidden iframe that actually plays the music */}
@@ -158,7 +162,7 @@ export default memo(function LofiPlayer() {
                 ref={iframeRef}
                 width="0" 
                 height="0" 
-                src={`https://www.youtube.com/embed/${lofiId}?enablejsapi=1&autoplay=0&controls=0&showinfo=0&rel=0&origin=${window.location.origin}`}
+                src={`https://www.youtube.com/embed/${lofiId}?enablejsapi=1&autoplay=0&controls=0&showinfo=0&rel=0${originParam}`}
                 allow="autoplay; encrypted-media"
                 style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', border: 'none' }}
                 title="Lofi Background Stream"

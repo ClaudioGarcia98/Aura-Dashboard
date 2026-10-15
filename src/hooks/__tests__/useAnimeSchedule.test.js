@@ -1,13 +1,13 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useAnimeSchedule } from './useAnimeSchedule';
-import { fetchDaySchedule } from '../services/animeService';
+import { useAnimeSchedule } from '../useAnimeSchedule';
+import { fetchDaySchedule } from '../../services/animeService';
 
 vi.mock('zustand/react/shallow', () => ({
   useShallow: (f) => f,
 }));
 
-vi.mock('../stores/useSettingsStore', () => ({
+vi.mock('../../stores/useSettingsStore', () => ({
   useSettingsStore: vi.fn((selector) => {
     const mockSettings = {
       malUsername: 'test',
@@ -20,7 +20,7 @@ vi.mock('../stores/useSettingsStore', () => ({
   }),
 }));
 
-vi.mock('../services/animeService', () => ({
+vi.mock('../../services/animeService', () => ({
   fetchDaySchedule: vi.fn(),
   fetchUserWatchingList: vi.fn().mockResolvedValue([]),
 }));

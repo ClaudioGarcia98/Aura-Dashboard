@@ -60,8 +60,9 @@ function fetchWithTimeout(promise, ms) {
 export async function fetchUserWatchingList(malUsername) {
     if (!malUsername || malUsername.trim() === '') return [];
 
+    const cleanUsername = encodeURIComponent(malUsername.trim());
     const cacheBust = `&_=${Date.now()}`;
-    const malUrl = `https://myanimelist.net/animelist/${malUsername}/load.json?offset=0&status=1${cacheBust}`;
+    const malUrl = `https://myanimelist.net/animelist/${cleanUsername}/load.json?offset=0&status=1${cacheBust}`;
 
     const makeCorsproxyioRequest = async () => {
         const res = await fetch(CORSPROXY_IO_BASE + encodeURIComponent(malUrl), { cache: 'no-store' });

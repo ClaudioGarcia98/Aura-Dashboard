@@ -284,6 +284,7 @@ export default memo(function WeatherWidget() {
                 const unitStr = useCelsius ? '°C' : '°F';
                 const weatherData = {
                     iconType,
+                    weatherCode: c.weather_code,
                     temp: Math.round(c.temperature_2m) + unitStr,
                     feelsLike: Math.round(c.apparent_temperature) + unitStr,
                     humidity: c.relative_humidity_2m + '%',
