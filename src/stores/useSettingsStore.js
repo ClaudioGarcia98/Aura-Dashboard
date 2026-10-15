@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { safeJsonParse } from '../utils/storage';
 
 const DEFAULT_STATIONS = [
     { videoId: 'lTRiuFIWV54', name: 'Lofi Girl' },
@@ -26,8 +27,8 @@ export const useSettingsStore = create(
             lofiId:           localStorage.getItem('dash_lofi_id')              || 'Gu-g8FRG4Zs',
             lofiStations:     DEFAULT_STATIONS.map((s, i) => ({ id: i + 1, ...s })),
             volume:           parseFloat(localStorage.getItem('dash_volume'))   || 0.2,
-            speedDials:       (() => { try { const stored = JSON.parse(localStorage.getItem('dash_speed_dials') || '[]'); return Array.isArray(stored) ? stored : []; } catch { return []; } })(),
-            customEngines:    (() => { try { return JSON.parse(localStorage.getItem('dash_custom_engines') || '[]'); } catch { return []; } })(),
+            speedDials:       (() => { const stored = safeJsonParse(localStorage.getItem('dash_speed_dials'), []); return Array.isArray(stored) ? stored : []; })(),
+            customEngines:    safeJsonParse(localStorage.getItem('dash_custom_engines'), []),
             showWeatherWidget: localStorage.getItem('dash_show_weather')        !== 'false',
             showQuote:        localStorage.getItem('dash_show_quote')           !== 'false',
             showSearchBox:    localStorage.getItem('dash_show_search')          !== 'false',
@@ -59,13 +60,7 @@ export const useSettingsStore = create(
             setSpeedDials:        (valOrFn)         => set((state) => {
                 const current = Array.isArray(state.speedDials) ? state.speedDials : [];
                 const next = typeof valOrFn === 'function' ? valOrFn(current) : valOrFn;
-                const safeNext = Array.isArray(next) ? next : [];
-                try {
-                    localStorage.setItem('dash_speed_dials', JSON.stringify(safeNext));
-                } catch {
-                    // ignore storage errors
-                }
-                return { speedDials: safeNext };
+                return { speedDials: Array.isArray(next) ? next : [] };
             }),
             setCustomEngines:     (customEngines)   => set({ customEngines }),
             setBackgroundUrl:     (backgroundUrl)   => set({ backgroundUrl }),

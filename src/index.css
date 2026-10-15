@@ -198,16 +198,5 @@ body {
     .search-container {
         max-width: 100%;
     }
-    .sidebar {
-        width: 100%;
-        max-width: 100%;
-        right: 0;
-        border-left: none;
-    }
-    .bottom-widgets {
-        bottom: var(--space-4);
-        right: var(--space-4);
-        flex-direction: column;
-        align-items: flex-end;
-    }
 }
+

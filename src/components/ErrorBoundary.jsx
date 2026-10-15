@@ -36,6 +36,7 @@ export default class ErrorBoundary extends Component {
                 }}>
                     <span>Something went wrong with this component.</span>
                     <button
+                        type="button"
                         onClick={() => this.setState({ hasError: false, error: null })}
                         style={{
                             padding: '4px 10px',

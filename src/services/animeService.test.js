@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { SCHEDULE_CACHE_KEY } from './api';
 import {
   getScheduleCache,
   setScheduleCache,
@@ -18,7 +19,7 @@ describe('animeService', () => {
   describe('cache operations', () => {
     it('returns empty object if cache is empty or invalid JSON', () => {
       expect(getScheduleCache()).toEqual({});
-      localStorage.setItem('dash_anime_schedule_v2', 'invalid');
+      localStorage.setItem(SCHEDULE_CACHE_KEY, 'invalid json {[');
       expect(getScheduleCache()).toEqual({});
     });
 

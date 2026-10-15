@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { FONTS } from '../context/settingsConstants';
+import { FONTS } from '../constants/settingsConstants';
 import { useSettingsStore } from '../stores/useSettingsStore';
 
 export function useFontEffect() {

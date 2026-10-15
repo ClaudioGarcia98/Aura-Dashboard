@@ -2,6 +2,7 @@ import './SearchBox.css';
 import { memo, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
+import { safeJsonParse, safeJsonStringify } from '../utils/storage';
 
 const ENGINES = {
     'yt ':    { name:'YouTube',    bg:'#FF0000', fg:'#fff', url: q=>`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}` },
@@ -53,12 +54,14 @@ export default memo(function SearchBox() {
     const origQueryRef = useRef('');
 
     const loadRecent = () => {
-        let h = JSON.parse(localStorage.getItem('dash_recent') || '[]');
+        let rawH = safeJsonParse(localStorage.getItem('dash_recent'), []);
+        if (!Array.isArray(rawH)) rawH = [];
         let needsSave = false;
-        h = h.map(item => {
+        const h = rawH.map(item => {
+            if (!item || typeof item !== 'object') return { query: String(item || ''), engineName: 'Google' };
             if (!item.engineName) {
                 needsSave = true;
-                if (item.query.includes(': ')) {
+                if (item.query && item.query.includes(': ')) {
                     const parts = item.query.split(': ');
                     item.engineName = parts[0];
                     item.query = parts.slice(1).join(': ');
@@ -67,8 +70,8 @@ export default memo(function SearchBox() {
                 }
             }
             return item;
-        });
-        if (needsSave) localStorage.setItem('dash_recent', JSON.stringify(h));
+        }).filter(item => item && item.query);
+        if (needsSave) localStorage.setItem('dash_recent', safeJsonStringify(h));
         setRecent(h);
     };
 
@@ -100,19 +103,21 @@ export default memo(function SearchBox() {
     }, []);
 
     const saveHistory = (q, url, engineName = 'Google') => {
-        let h = JSON.parse(localStorage.getItem('dash_recent') || '[]');
-        h = h.filter(x => x.query !== q);
+        let rawH = safeJsonParse(localStorage.getItem('dash_recent'), []);
+        let h = Array.isArray(rawH) ? rawH : [];
+        h = h.filter(x => x && x.query !== q);
         h.unshift({ query: q, url, engineName });
         const newH = h.slice(0, 8);
-        localStorage.setItem('dash_recent', JSON.stringify(newH));
+        localStorage.setItem('dash_recent', safeJsonStringify(newH));
         setRecent(newH);
     };
 
     const removeHistory = (e, q) => {
         e.stopPropagation();
-        let h = JSON.parse(localStorage.getItem('dash_recent') || '[]');
-        h = h.filter(x => x.query !== q);
-        localStorage.setItem('dash_recent', JSON.stringify(h));
+        let rawH = safeJsonParse(localStorage.getItem('dash_recent'), []);
+        let h = Array.isArray(rawH) ? rawH : [];
+        h = h.filter(x => x && x.query !== q);
+        localStorage.setItem('dash_recent', safeJsonStringify(h));
         setRecent(h);
         if (h.length === 0) setShowSuggestions(false);
     };
@@ -165,6 +170,13 @@ export default memo(function SearchBox() {
         const s = document.createElement('script');
         s.id = 'gss';
         s.src = src;
+        s.onerror = () => {
+            s.remove();
+            if (pendingCbName.current === cbName) {
+                delete window[cbName];
+                pendingCbName.current = null;
+            }
+        };
         document.body.appendChild(s);
     };
 
@@ -370,6 +382,7 @@ export default memo(function SearchBox() {
                                 type="button"
                                 className="sug-add" 
                                 title="Add to Speed Dial" 
+                                aria-label="Add to Speed Dial"
                                 onClick={(e) => addToSpeedDial(e, item)}
                             >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -384,7 +397,7 @@ export default memo(function SearchBox() {
                         {recent.length > 0 && <li className="sug-group">Recent</li>}
                         {recent.map((item, idx) => (
                             <li 
-                                key={item.query}
+                                key={item.query} 
                                 className={idx === focusIdx ? 'selected' : ''}
                                 onClick={() => {
                                     const engKey = Object.keys(combinedEngines).find(k => combinedEngines[k].name === item.engineName);
@@ -403,7 +416,15 @@ export default memo(function SearchBox() {
                                     <span className="sug-icon">🕒</span>
                                 )}
                                 <span className="sug-text">{item.engineName}: {item.query}</span>
-                                <button className="sug-remove" title="Remove" onClick={(e) => removeHistory(e, item.query)}>×</button>
+                                <button 
+                                    type="button" 
+                                    className="sug-remove" 
+                                    title="Remove" 
+                                    aria-label={`Remove ${item.query} from history`}
+                                    onClick={(e) => removeHistory(e, item.query)}
+                                >
+                                    ×
+                                </button>
                             </li>
                         ))}
                     </>

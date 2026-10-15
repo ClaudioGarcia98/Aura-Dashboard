@@ -42,7 +42,9 @@ export default memo(function SpeedDial() {
             // Create an invisible image to hide the native browser drag ghost
             const dragImg = new Image(0, 0);
             dragImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-            e.dataTransfer.setDragImage(dragImg, 0, 0);
+            if (typeof e.dataTransfer.setDragImage === 'function') {
+                e.dataTransfer.setDragImage(dragImg, 0, 0);
+            }
         }
         
         // Initial mouse pos
@@ -94,6 +96,7 @@ export default memo(function SpeedDial() {
             <nav className="speed-dial" aria-label="Quick Links">
                 {safeSpeedDials.length === 0 ? (
                     <button 
+                        type="button"
                         className="add-dial-empty-btn"
                         onClick={() => window.dispatchEvent(new Event('open-settings-dials'))}
                         title="Add Speed Dial"
@@ -171,6 +174,7 @@ export default memo(function SpeedDial() {
                                     </a>
                                     {!isDragged && (
                                         <button 
+                                            type="button"
                                             className="speed-dial-delete"
                                             onClick={(e) => {
                                                 e.preventDefault();
@@ -178,6 +182,7 @@ export default memo(function SpeedDial() {
                                                 setSpeedDials(safeSpeedDials.filter(d => d.id !== link.id));
                                             }}
                                             title="Remove Speed Dial"
+                                            aria-label="Remove Speed Dial"
                                         >
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -189,6 +194,7 @@ export default memo(function SpeedDial() {
                             );
                         })}
                         <button 
+                            type="button"
                             className="speed-dial-add-btn"
                             onClick={() => window.dispatchEvent(new Event('open-settings-dials'))}
                             title="Add Speed Dial"

@@ -3,9 +3,10 @@ import { useSettingsStore } from '../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
 import { fetchDaySchedule, fetchUserWatchingList } from '../services/animeService';
 import { WATCHING_CACHE_KEY } from '../services/api';
+import { safeJsonParse } from '../utils/storage';
 
 const DAY_FILTERS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-const getPortugalDayFilter = () => {
+export const getPortugalDayFilter = () => {
     try {
         const ptDay = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Lisbon', weekday: 'long' }).format(new Date()).toLowerCase();
         return DAY_FILTERS.includes(ptDay) ? ptDay : DAY_FILTERS[(new Date().getDay() + 6) % 7];
@@ -13,14 +14,14 @@ const getPortugalDayFilter = () => {
         return DAY_FILTERS[(new Date().getDay() + 6) % 7];
     }
 };
-const todayFilter = getPortugalDayFilter();
 
 export function useAnimeSchedule() {
     const { volume, malUsername, setMalError, setMalLoading, setMalSuccess } = useSettingsStore(useShallow(s => ({ volume: s.volume, malUsername: s.malUsername, setMalError: s.setMalError, setMalLoading: s.setMalLoading, setMalSuccess: s.setMalSuccess })));
 
+    const [todayDay, setTodayDay] = useState(getPortugalDayFilter);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [expandedAnime, setExpandedAnime] = useState(null);
-    const [activeDay, setActiveDay] = useState(todayFilter);
+    const [activeDay, setActiveDay] = useState(todayDay);
 
     const [todayData, setTodayData] = useState([]);
     const [todayLoading, setTodayLoading] = useState(true);
@@ -72,22 +73,45 @@ export function useAnimeSchedule() {
         return () => document.removeEventListener('mousedown', handleCollapseClick);
     }, [expandedAnime]);
 
+    // Check day rollover every minute and when window regains focus
+    useEffect(() => {
+        const checkDay = () => {
+            const currentDay = getPortugalDayFilter();
+            setTodayDay(prev => {
+                if (prev !== currentDay) {
+                    setActiveDay(currentDay);
+                    return currentDay;
+                }
+                return prev;
+            });
+        };
+
+        const interval = setInterval(checkDay, 60000);
+        window.addEventListener('focus', checkDay);
+        document.addEventListener('visibilitychange', checkDay);
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', checkDay);
+            document.removeEventListener('visibilitychange', checkDay);
+        };
+    }, []);
+
     // Initial data load: today schedule + cached watching → then fresh watching in bg
     useEffect(() => {
         let isMounted = true;
 
         const loadInitialData = async () => {
             let cachedWatching = [];
-            try {
-                const cached = JSON.parse(localStorage.getItem(WATCHING_CACHE_KEY) || '[]');
-                if (cached.length > 0 && typeof cached[0] === 'object') cachedWatching = cached;
-            } catch {
+            const cached = safeJsonParse(localStorage.getItem(WATCHING_CACHE_KEY), []);
+            if (Array.isArray(cached) && cached.length > 0 && typeof cached[0] === 'object') {
+                cachedWatching = cached;
+            } else if (cached !== null && localStorage.getItem(WATCHING_CACHE_KEY)) {
                 localStorage.removeItem(WATCHING_CACHE_KEY);
             }
             if (isMounted) setUserWatching(cachedWatching);
 
             try {
-                const tData = await fetchDaySchedule(todayFilter);
+                const tData = await fetchDaySchedule(todayDay);
                 const uniqueToday = Array.from(new Map(tData.map(item => [item.mal_id, item])).values());
                 if (isMounted) { setTodayData(uniqueToday); setTodayError(false); }
             } catch {
@@ -131,7 +155,7 @@ export function useAnimeSchedule() {
             document.removeEventListener('click', handleClickOutside);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [todayDay]);
 
     // MAL username change → debounced refresh
     useEffect(() => {

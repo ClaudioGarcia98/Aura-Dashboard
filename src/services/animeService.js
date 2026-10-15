@@ -343,7 +343,13 @@ export async function fetchUserWatchingList(malUsername) {
             throw new Error(`Target returned status ${wrapper.status.http_code}`);
         }
 
-        const parsed = JSON.parse(wrapper.contents);
+        let parsed;
+        try {
+            parsed = typeof wrapper.contents === 'string' ? JSON.parse(wrapper.contents) : wrapper.contents;
+        } catch {
+            throw new Error('Failed to parse MAL proxy response JSON');
+        }
+
         if (!Array.isArray(parsed)) {
             throw new Error('Invalid MAL response format');
         }

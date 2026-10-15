@@ -11,6 +11,7 @@ export default memo(function LofiPlayer() {
     const [title, setTitle] = useState('Loading...');
     const iframeRef = useRef(null);
     const shouldAutoPlayRef = useRef(false); // tracks intent across iframe reloads
+    const playTimeoutRef = useRef(null);
 
     const stationsList = useMemo(() =>
         lofiStations.map(s => ({ id: s.videoId, name: s.name || null })),
@@ -19,6 +20,13 @@ export default memo(function LofiPlayer() {
     const hasStations = stationsList.length > 0;
     const knownStation = stationsList.find(s => s.id === lofiId);
     const displayTitle = knownStation?.name ? knownStation.name : title;
+
+    // Cleanup play timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
+        };
+    }, []);
 
     // Close menu if all stations are deleted while it's open
     useEffect(() => {
@@ -140,7 +148,8 @@ export default memo(function LofiPlayer() {
             }), '*');
             if (isPlaying || shouldAutoPlayRef.current) {
                 shouldAutoPlayRef.current = false;
-                setTimeout(() => {
+                if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
+                playTimeoutRef.current = setTimeout(() => {
                     if (iframeRef.current && iframeRef.current.contentWindow) {
                         iframeRef.current.contentWindow.postMessage(JSON.stringify({
                             event: 'command', func: 'playVideo', args: []
@@ -178,6 +187,7 @@ export default memo(function LofiPlayer() {
                         <div className="lofi-station-list">
                             {stationsList.map(station => (
                                 <button 
+                                    type="button"
                                     key={station.id}
                                     className={`lofi-station-btn ${lofiId === station.id ? 'active' : ''}`}
                                     onClick={() => {
@@ -208,7 +218,7 @@ export default memo(function LofiPlayer() {
                 )}
 
                 <div className="lofi-ui">
-                    <button className="lofi-play-btn" onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
+                    <button type="button" className="lofi-play-btn" onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
                         {isPlaying ? (
                             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                                 <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
@@ -231,6 +241,7 @@ export default memo(function LofiPlayer() {
                         }}
                         role="button"
                         tabIndex={0}
+                        aria-label="Change station"
                         title="Click to change station"
                     >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

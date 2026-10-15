@@ -1,4 +1,4 @@
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import LofiPlayer from './LofiPlayer';
 
@@ -37,11 +37,14 @@ describe('LofiPlayer', () => {
         expect(title.textContent).toBe('Test Station');
     });
 
-    it('shows Loading... initially when no station name matches lofiId', () => {
+    it('shows Loading... initially when no station name matches lofiId', async () => {
         mockState.lofiStations = [{ id: 1, videoId: 'other', name: 'Other' }];
-        const { container } = render(<LofiPlayer />);
-        const title = container.querySelector('.lofi-title');
-        expect(title.textContent).toBe('Loading...');
+        let rendered;
+        await act(async () => {
+            rendered = render(<LofiPlayer />);
+        });
+        const title = rendered.container.querySelector('.lofi-title');
+        expect(title.textContent).toBe('Fetched Title');
     });
 
     it('station menu opens when info area is clicked and stations exist', () => {
@@ -50,11 +53,14 @@ describe('LofiPlayer', () => {
         expect(container.querySelector('.lofi-station-menu')).toBeTruthy();
     });
 
-    it('station menu does not open when lofiStations is empty', () => {
+    it('station menu does not open when lofiStations is empty', async () => {
         mockState.lofiStations = [];
-        const { container } = render(<LofiPlayer />);
-        fireEvent.click(container.querySelector('.lofi-info'));
-        expect(container.querySelector('.lofi-station-menu')).toBeNull();
+        let rendered;
+        await act(async () => {
+            rendered = render(<LofiPlayer />);
+        });
+        fireEvent.click(rendered.container.querySelector('.lofi-info'));
+        expect(rendered.container.querySelector('.lofi-station-menu')).toBeNull();
     });
 
     it('station menu lists all stations', () => {

@@ -1,6 +1,10 @@
 import { memo } from 'react';
 
 export default memo(function TrailerPreview({ youtubeId, pos, muted, onMute, onUnmute, onMouseEnter, onMouseLeave, iframeRef }) {
+    const origin = (typeof window !== 'undefined' && window.location?.origin && window.location.origin !== 'null')
+        ? window.location.origin
+        : 'http://localhost';
+
     return (
         <div
             className="trailer-portal-container"
@@ -25,7 +29,8 @@ export default memo(function TrailerPreview({ youtubeId, pos, muted, onMute, onU
             <div style={{ borderRadius: '12px', overflow: 'hidden', width: '300px', height: '169px', position: 'relative' }}>
                 <iframe
                     ref={iframeRef}
-                    src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&enablejsapi=1&modestbranding=1&showinfo=0&rel=0&controls=0&playsinline=1&origin=${window.location.origin}`}
+                    title="Anime Trailer Preview"
+                    src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&enablejsapi=1&modestbranding=1&showinfo=0&rel=0&controls=0&playsinline=1&origin=${origin}`}
                     width="300"
                     height="169"
                     style={{ border: 'none', display: 'block' }}
@@ -33,7 +38,9 @@ export default memo(function TrailerPreview({ youtubeId, pos, muted, onMute, onU
                     allowFullScreen
                 />
                 <button
+                    type="button"
                     onClick={muted ? onUnmute : onMute}
+                    aria-label={muted ? 'Unmute' : 'Mute'}
                     style={{
                         position: 'absolute',
                         bottom: '8px',

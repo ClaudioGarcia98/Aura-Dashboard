@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
+import { getBackgroundBlob } from '../services/db';
 import defaultVideo from '../assets/animated_gif.mp4';
 
 export function useBackgroundLoader() {
@@ -9,23 +10,7 @@ export function useBackgroundLoader() {
     useEffect(() => {
         let blobUrl = null;
 
-        const loadBlob = async () => {
-            try {
-                const db = await new Promise((res, rej) => {
-                    const r = indexedDB.open('dashDB', 1);
-                    r.onupgradeneeded = e => e.target.result.createObjectStore('s');
-                    r.onsuccess = e => res(e.target.result);
-                    r.onerror = e => rej(e.target.error);
-                });
-                return await new Promise((res, rej) => {
-                    const r = db.transaction('s', 'readonly').objectStore('s').get('bg');
-                    r.onsuccess = e => res(e.target.result || null);
-                    r.onerror = e => rej(e.target.error);
-                });
-            } catch { return null; }
-        };
-
-        loadBlob().then(blob => {
+        getBackgroundBlob().then(blob => {
             if (blob) {
                 blobUrl = URL.createObjectURL(blob);
                 setBackgroundUrl(blobUrl);

@@ -117,7 +117,10 @@ describe('App Orchestrator Component', () => {
     expect(screen.queryByTestId('lofi-player')).toBeNull();
   });
 
-  it('manages idle state transitions', () => {
+  it('manages idle state transitions and dispatches app-idle', () => {
+    const idleSpy = vi.fn();
+    window.addEventListener('app-idle', idleSpy);
+
     render(<App />);
     
     act(() => {
@@ -125,20 +128,19 @@ describe('App Orchestrator Component', () => {
     });
 
     expect(document.documentElement.style.getPropertyValue('--ui-opacity')).toBe('1');
-    expect(document.body.classList.contains('idle')).toBe(false);
 
     act(() => {
       vi.advanceTimersByTime(120000);
     });
 
     expect(document.documentElement.style.getPropertyValue('--ui-opacity')).toBe('0.2');
-    expect(document.body.classList.contains('idle')).toBe(true);
+    expect(idleSpy).toHaveBeenCalled();
 
     act(() => {
       fireEvent.mouseMove(window);
     });
 
     expect(document.documentElement.style.getPropertyValue('--ui-opacity')).toBe('1');
-    expect(document.body.classList.contains('idle')).toBe(false);
+    window.removeEventListener('app-idle', idleSpy);
   });
 });
