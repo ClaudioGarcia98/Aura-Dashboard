@@ -1,6 +1,6 @@
 /* ── Search ────────────────────────────────────────── */
 .search-container {
-    position: relative; margin-bottom: var(--space-1); width: 100%;
+    position: relative; margin-bottom: var(--space-2); width: 100%;
     z-index: 50; /* must be above speed-dial and quote */
     animation: fadeSlideIn 0.5s ease 0.23s both;
 }
