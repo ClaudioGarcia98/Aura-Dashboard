@@ -1,9 +1,9 @@
 /* ── Greeting ──────────────────────────────────────── */
 #greeting {
-    font-size: 1.3rem; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 4px;
+    font-size: 1.25rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 3.5px;
     margin-bottom: var(--space-1); color: var(--accent-color);
-    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    text-shadow: 0 0 20px var(--accent-glow), 0 2px 8px rgba(0,0,0,0.5);
     transition: color 0.5s ease;
-    animation: fadeSlideIn 0.5s ease 0.08s both;
+    animation: fadeSlideIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
 }

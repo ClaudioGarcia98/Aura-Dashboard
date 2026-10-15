@@ -42,6 +42,18 @@
 .lofi-play-btn:active {
     transform: scale(0.94);
 }
+.lofi-play-btn.playing {
+    box-shadow: 0 0 16px var(--accent-glow);
+    animation: pulseGlow 2.5s infinite;
+}
+.lofi-chevron {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+}
+.lofi-chevron.open {
+    transform: rotate(180deg);
+    color: var(--accent-color);
+    opacity: 1 !important;
+}
 .lofi-info {
     display: flex; flex-direction: column; justify-content: center;
     width: 180px;

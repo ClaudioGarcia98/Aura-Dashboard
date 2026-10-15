@@ -37,19 +37,19 @@
 /* ── Settings Panel ────────────────────────────────── */
 .settings-panel {
     position: absolute; bottom: 88px; left: var(--space-4);
-    width: 340px; max-height: 78vh; overflow-y: auto;
+    width: 350px; max-height: 78vh; overflow-y: auto;
     background: linear-gradient(180deg, rgba(16, 16, 20, 0.96) 0%, rgba(10, 10, 14, 0.98) 100%);
-    backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
-    border: 1px solid rgba(255, 255, 255, 0.09); border-radius: var(--radius-lg);
+    backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
+    border: 1px solid rgba(255, 255, 255, 0.12); border-radius: var(--radius-lg);
     padding: var(--space-3);
-    transform: translateY(20px); opacity: 0; visibility: hidden;
+    transform: translateY(16px) scale(0.98); opacity: 0; visibility: hidden;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     pointer-events: auto; z-index: 19;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
-.settings-panel::-webkit-scrollbar { width: 3px; }
+.settings-panel::-webkit-scrollbar { width: 4px; }
 .settings-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 2px; }
-.settings-panel.open { transform: translateY(0); opacity: 1; visibility: visible; }
+.settings-panel.open { transform: translateY(0) scale(1); opacity: 1; visibility: visible; }
 .sp-title {
     font-size: 1rem; font-weight: 700; letter-spacing: 1px;
     color: var(--accent-color);
@@ -101,7 +101,11 @@
     font-size: 0.85rem; font-family: inherit;
     transition: var(--transition-standard);
 }
-.sp-group input[type="text"]:focus { border-color: var(--accent-color); background: var(--surface-hover); }
+.sp-group input[type="text"]:focus {
+    border-color: var(--accent-color);
+    background: var(--surface-hover);
+    box-shadow: 0 0 14px var(--accent-glow);
+}
 
 .sp-group input[type="text"].mal-error { border-color: #ff6b6b !important; }
 .sp-group input[type="text"].mal-error:focus,
@@ -168,15 +172,25 @@ input[type="range"]::-moz-range-thumb:hover {
     display: flex; align-items: center; gap: 5px;
     white-space: nowrap;
 }
-.pill:hover { background: rgba(255,255,255,0.13); color: white; border-color: rgba(255,255,255,0.25); transform: translateY(-1px); }
+.pill:hover {
+    background: rgba(255,255,255,0.13);
+    color: white;
+    border-color: rgba(255,255,255,0.3);
+    transform: translateY(-1px);
+}
 .pill.active {
     background: var(--accent-color);
     border-color: var(--accent-color);
     color: #0c0c0e; font-weight: 700;
-    box-shadow: 0 2px 10px rgba(255, 210, 106, 0.3);
+    box-shadow: 0 2px 12px var(--accent-glow);
 }
 .tdot {
-    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    box-shadow: 0 0 6px currentColor;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.pill:hover .tdot {
+    transform: scale(1.25);
 }
 
 /* ── GIF Picker ────────────────────────────────────── */

@@ -16,12 +16,12 @@ export default memo(function TrailerPreview({ youtubeId, pos, muted, onMute, onU
                 height: '169px',
                 background: '#000',
                 borderRadius: '12px',
-                boxShadow: '0 10px 40px rgba(0,0,0,0.8)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                boxShadow: '0 16px 48px rgba(0,0,0,0.85), 0 0 24px rgba(0,0,0,0.5)',
+                border: '1px solid rgba(255,255,255,0.15)',
                 zIndex: 99999,
                 overflow: 'hidden',
                 pointerEvents: 'auto',
-                animation: 'fadeSlideIn 0.3s ease both',
+                animation: 'scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both',
             }}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}

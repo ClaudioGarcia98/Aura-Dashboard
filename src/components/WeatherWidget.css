@@ -74,14 +74,14 @@
     border-radius: var(--radius-lg); padding: 14px;
     pointer-events: auto;
     transform-origin: top right;
-    transform: scaleY(0.95) translateY(-6px);
+    transform: scale(0.96) translateY(-8px);
     opacity: 0; visibility: hidden;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     z-index: 40;
 }
 .weather-panel.open {
-    transform: scaleY(1) translateY(0);
+    transform: scale(1) translateY(0);
     opacity: 1; visibility: visible;
 }
 .wd-row {
@@ -190,12 +190,15 @@
 .weather-icon-sun {
     animation: weatherSpin 15s linear infinite;
     transform-origin: center;
+    will-change: transform;
 }
 .weather-icon-cloud {
     animation: weatherFloat 4s ease-in-out infinite;
+    will-change: transform;
 }
 .weather-icon-rain {
     animation: weatherBob 2s ease-in-out infinite;
+    will-change: transform;
 }
 
 #weatherTemp, #wFeels, #wHumidity, #wWind, #wSunrise, #wSunset, .weather-forecast-temps {

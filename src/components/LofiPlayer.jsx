@@ -218,7 +218,7 @@ export default memo(function LofiPlayer() {
                 )}
 
                 <div className="lofi-ui">
-                    <button type="button" className="lofi-play-btn" onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
+                    <button type="button" className={`lofi-play-btn ${isPlaying ? 'playing' : ''}`} onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
                         {isPlaying ? (
                             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                                 <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
@@ -244,8 +244,13 @@ export default memo(function LofiPlayer() {
                         aria-label="Change station"
                         title="Click to change station"
                     >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span className="lofi-title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', width: '100%' }} title={displayTitle}>{displayTitle}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span className="lofi-title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', maxWidth: '155px' }} title={displayTitle}>{displayTitle}</span>
+                        {hasStations && (
+                            <svg className={`lofi-chevron ${showMenu ? 'open' : ''}`} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.6, flexShrink: 0, transition: 'transform 0.2s ease' }}>
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        )}
                     </div>
                     <span className="lofi-status">
                         {isPlaying ? (
