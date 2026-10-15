@@ -1,5 +1,5 @@
 import { memo, useState, useEffect } from 'react';
-import { formatBroadcastTime } from '../../services/animeService';
+import { formatBroadcastTime, extractTrailerId } from '../../services/animeService';
 
 const calculateTimeLeft = (broadcast, airingAt) => {
     if (airingAt && typeof airingAt === 'number') {
@@ -92,13 +92,18 @@ function useExpandToggle(anime, variant, isExpanded, onToggleExpand) {
 
 export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching, onToggleExpand, onMouseEnter, onMouseLeave }) {
     const { idPrefix, handleToggle } = useExpandToggle(anime, variant, isExpanded, onToggleExpand);
+    const trailerId = extractTrailerId(anime);
 
     const sharedInteraction = {
         onClick: handleToggle,
         onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleToggle(); } },
         role: 'button',
         tabIndex: 0,
-        onMouseEnter: (e) => onMouseEnter(e, anime),
+        onMouseEnter: (e) => {
+            if (!isExpanded && onMouseEnter) {
+                onMouseEnter(e, anime);
+            }
+        },
         onMouseLeave,
     };
 
@@ -134,6 +139,17 @@ export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching,
                                     <span key={g.mal_id} className="anime-tag">{g.name}</span>
                                 ))}
                             </div>
+                            {trailerId && isExpanded && (
+                                <div className="anime-card-trailer" onClick={(e) => e.stopPropagation()}>
+                                    <iframe
+                                        title={`${anime.title} Trailer`}
+                                        src={`https://www.youtube.com/embed/${trailerId}?enablejsapi=1&modestbranding=1&rel=0&playsinline=1`}
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                        loading="lazy"
+                                    />
+                                </div>
+                            )}
                             <p className="anime-synopsis-text">{anime.synopsis || 'No synopsis available.'}</p>
                             <a href={anime.url} target="_blank" rel="noopener noreferrer" className="anime-mal-link" onClick={(e) => e.stopPropagation()}>
                                 View on MyAnimeList ↗
@@ -169,6 +185,17 @@ export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching,
             <div className="tab-synopsis-wrapper">
                 <div className="tab-synopsis-panel">
                     <div className="tab-synopsis-inner">
+                        {trailerId && isExpanded && (
+                            <div className="anime-card-trailer" onClick={(e) => e.stopPropagation()}>
+                                <iframe
+                                    title={`${anime.title} Trailer`}
+                                    src={`https://www.youtube.com/embed/${trailerId}?enablejsapi=1&modestbranding=1&rel=0&playsinline=1`}
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                    loading="lazy"
+                                />
+                            </div>
+                        )}
                         <p className="anime-synopsis-text">{anime.synopsis || 'No synopsis available.'}</p>
                         <a href={anime.url} target="_blank" rel="noopener noreferrer" className="anime-mal-link" onClick={(e) => e.stopPropagation()}>
                             View on MyAnimeList ↗

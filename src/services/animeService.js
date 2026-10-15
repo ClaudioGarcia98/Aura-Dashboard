@@ -203,6 +203,20 @@ export function parseAniListSchedule(airingSchedules, dayFilter) {
     return mapped;
 }
 
+export function extractTrailerId(anime) {
+    if (!anime) return null;
+    let yid = anime.trailer?.youtube_id;
+    if (!yid && anime.trailer?.embed_url) {
+        const match = anime.trailer.embed_url.match(/embed\/([^?]+)/);
+        if (match) yid = match[1];
+    }
+    if (!yid && anime.trailer?.url) {
+        const match = anime.trailer.url.match(/(?:v=|youtu\.be\/)([^&?#]+)/);
+        if (match) yid = match[1];
+    }
+    return yid || null;
+}
+
 export async function fetchDaySchedule(dayFilter) {
     const cache = getScheduleCache();
     const entry = cache[dayFilter];

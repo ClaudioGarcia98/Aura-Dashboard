@@ -372,3 +372,63 @@ describe('formatBroadcastTime helper', () => {
         expect(result).toBe('15:30 PT / 23:30 JST');
     });
 });
+
+describe('AnimeCard — in-card embedded trailer', () => {
+    const animeWithTrailer = {
+        ...baseAnime,
+        trailer: {
+            youtube_id: 'sampleYt123',
+            embed_url: 'https://www.youtube.com/embed/sampleYt123',
+            url: 'https://www.youtube.com/watch?v=sampleYt123'
+        }
+    };
+
+    it('renders iframe trailer inside card when isExpanded is true (sidebar variant)', () => {
+        const { container } = render(
+            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="sidebar" isExpanded={true} />
+        );
+        const trailerBox = container.querySelector('.anime-card-trailer');
+        expect(trailerBox).toBeTruthy();
+        const iframe = trailerBox.querySelector('iframe');
+        expect(iframe).toBeTruthy();
+        expect(iframe.src).toContain('sampleYt123');
+    });
+
+    it('renders iframe trailer inside card when isExpanded is true (today variant)', () => {
+        const { container } = render(
+            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="today" isExpanded={true} />
+        );
+        const trailerBox = container.querySelector('.anime-card-trailer');
+        expect(trailerBox).toBeTruthy();
+        const iframe = trailerBox.querySelector('iframe');
+        expect(iframe).toBeTruthy();
+        expect(iframe.src).toContain('sampleYt123');
+    });
+
+    it('does not render iframe trailer when isExpanded is false', () => {
+        const { container } = render(
+            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="sidebar" isExpanded={false} />
+        );
+        expect(container.querySelector('.anime-card-trailer')).toBeNull();
+    });
+
+    it('clicking on trailer container stops propagation and does not toggle expand', () => {
+        const onToggleExpand = vi.fn();
+        const { container } = render(
+            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="sidebar" isExpanded={true} onToggleExpand={onToggleExpand} />
+        );
+        const trailerBox = container.querySelector('.anime-card-trailer');
+        expect(trailerBox).toBeTruthy();
+        fireEvent.click(trailerBox);
+        expect(onToggleExpand).not.toHaveBeenCalled();
+    });
+
+    it('does not call onMouseEnter when card is already expanded', () => {
+        const onMouseEnter = vi.fn();
+        const { container } = render(
+            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="sidebar" isExpanded={true} onMouseEnter={onMouseEnter} />
+        );
+        fireEvent.mouseEnter(container.firstChild);
+        expect(onMouseEnter).not.toHaveBeenCalled();
+    });
+});

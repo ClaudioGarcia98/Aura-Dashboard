@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
-import { fetchDaySchedule, fetchUserWatchingList } from '../services/animeService';
+import { fetchDaySchedule, fetchUserWatchingList, extractTrailerId } from '../services/animeService';
 import { WATCHING_CACHE_KEY } from '../services/api';
 import { safeJsonParse } from '../utils/storage';
 
@@ -274,16 +274,13 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
 
     // Trailer hover handlers
     const handleMouseEnter = useCallback((e, anime) => {
+        // Touch screens / mobile devices: do not show floating hover preview
+        if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(hover: none)').matches) {
+            return;
+        }
+
         clearTimeout(hideTimer.current);
-        let yid = anime.trailer?.youtube_id;
-        if (!yid && anime.trailer?.embed_url) {
-            const match = anime.trailer.embed_url.match(/embed\/([^?]+)/);
-            if (match) yid = match[1];
-        }
-        if (!yid && anime.trailer?.url) {
-            const match = anime.trailer.url.match(/(?:v=|youtu\.be\/)([^&?#]+)/);
-            if (match) yid = match[1];
-        }
+        const yid = extractTrailerId(anime);
         if (!yid) { setPreviewTrailer(null); return; }
 
         const rect = e.currentTarget.getBoundingClientRect();
