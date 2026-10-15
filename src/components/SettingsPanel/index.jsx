@@ -248,6 +248,9 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                                 placeholder="MAL username (e.g., claclo98)"
                                 value={malUsername}
                                 onChange={(e) => setMalUsername(e.target.value)}
+                                spellCheck={false}
+                                autoCapitalize="none"
+                                autoCorrect="off"
                                 style={{ paddingRight: '30px' }}
                             />
                             <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
@@ -267,7 +270,7 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                             </div>
                         </div>
                         {malError && !malLoading && <div style={{ color: '#ff6b6b', fontSize: '11px', marginTop: '4px', paddingLeft: '2px' }}>Username not found or failed to load.</div>}
-                        {malSuccess && !malLoading && !malError && <div style={{ color: '#4caf50', fontSize: '11px', marginTop: '4px', paddingLeft: '2px' }}>Verified</div>}
+                        {malSuccess && !malLoading && !malError && <div style={{ color: '#4caf50', fontSize: '11px', marginTop: '4px', paddingLeft: '2px' }}>Connected &amp; Verified</div>}
                     </div>
                 </div>
 

@@ -129,10 +129,19 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
                     } else if (!malUsername) {
                         localStorage.removeItem(WATCHING_CACHE_KEY);
                     }
-                    if (isMounted) setUserWatching(freshWatching);
+                    if (isMounted) {
+                        setUserWatching(freshWatching);
+                        if (malUsername && malUsername.trim()) {
+                            setMalSuccess(true);
+                            setMalError(false);
+                        }
+                    }
                 }
             } catch {
-                // Silently fall back to cached
+                if (isMounted && malUsername && malUsername.trim()) {
+                    setMalError(true);
+                    setMalSuccess(false);
+                }
             }
         };
 
@@ -164,7 +173,6 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
         prevMalUsername.current = malUsername;
 
         let isMounted = true;
-        let successTimeoutId = null;
         setMalError(false);
         setMalSuccess(false);
 
@@ -184,9 +192,6 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
                         setUserWatching(freshWatching);
                         setMalError(false);
                         setMalSuccess(true);
-                        successTimeoutId = setTimeout(() => {
-                            if (isMounted) setMalSuccess(false);
-                        }, 3000);
                     }
                 }
             } catch {
@@ -200,7 +205,6 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
         return () => {
             isMounted = false;
             clearTimeout(timeoutId);
-            if (successTimeoutId) clearTimeout(successTimeoutId);
         };
     }, [malUsername, setMalError, setMalLoading, setMalSuccess]);
 
