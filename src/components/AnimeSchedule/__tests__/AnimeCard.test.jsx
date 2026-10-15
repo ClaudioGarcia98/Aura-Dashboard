@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import AnimeCard from '../AnimeCard.jsx';
+import { formatBroadcastTime } from '../../../services/animeService';
 
 vi.mock('../AnimeCard.jsx', async (importOriginal) => importOriginal());
 
@@ -315,5 +316,25 @@ describe('AnimeCard — CountdownBadge', () => {
         const anime = { ...baseAnime, broadcast: { time: `${h}:${m}`, day } };
         render(<AnimeCard {...defaultProps} anime={anime} />);
         expect(screen.getByText('Out Now!')).toBeTruthy();
+    });
+});
+
+describe('formatBroadcastTime helper', () => {
+    it('returns "?" for null or empty string', () => {
+        expect(formatBroadcastTime(null)).toBe('?');
+        expect(formatBroadcastTime('')).toBe('?');
+        expect(formatBroadcastTime(undefined)).toBe('?');
+    });
+
+    it('returns original string if format is invalid', () => {
+        expect(formatBroadcastTime('invalid')).toBe('invalid');
+        expect(formatBroadcastTime('abc:def')).toBe('abc:def');
+    });
+
+    it('formats valid JST time with PT and JST labels', () => {
+        const result = formatBroadcastTime('23:30');
+        expect(result).toContain('23:30 JST');
+        expect(result).toContain('PT');
+        expect(result).toMatch(/\d{2}:\d{2} PT \/ 23:30 JST/);
     });
 });

@@ -9,12 +9,23 @@ import {
 } from './api.js';
 
 export function getScheduleCache() {
-    try { return JSON.parse(localStorage.getItem(SCHEDULE_CACHE_KEY) || '{}'); }
+    try {
+        if (typeof localStorage !== 'undefined') {
+            return JSON.parse(localStorage.getItem(SCHEDULE_CACHE_KEY) || '{}');
+        }
+        return {};
+    }
     catch { return {}; }
 }
 
 export function setScheduleCache(cache) {
-    localStorage.setItem(SCHEDULE_CACHE_KEY, JSON.stringify(cache));
+    try {
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(SCHEDULE_CACHE_KEY, JSON.stringify(cache));
+        }
+    } catch {
+        // Silently ignore storage quota or permission restrictions
+    }
 }
 
 export function parseMALItems(raw) {
@@ -50,6 +61,27 @@ export function getJstDayRange(dayFilter) {
     const endUtcSec = startUtcSec + 86400;
 
     return { startUtcSec, endUtcSec };
+}
+
+export function formatBroadcastTime(timeStr) {
+    if (!timeStr) return '?';
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return timeStr;
+    const hours = parseInt(parts[0], 10);
+    const minutes = parseInt(parts[1], 10);
+    if (isNaN(hours) || isNaN(minutes)) return timeStr;
+
+    // Convert JST (UTC+9) to Portugal time (Europe/Lisbon)
+    const now = new Date();
+    const utcDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hours - 9, minutes));
+    const ptTime = utcDate.toLocaleTimeString('en-GB', {
+        timeZone: 'Europe/Lisbon',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    });
+
+    return `${ptTime} PT / ${timeStr} JST`;
 }
 
 export function parseAniListSchedule(airingSchedules, dayFilter) {
