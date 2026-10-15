@@ -126,27 +126,36 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
                 if (isMounted) setTodayLoading(false);
             }
 
+            if (!cleanUser) {
+                if (isMounted) {
+                    setMalSuccess(false);
+                    setMalError(false);
+                }
+                return;
+            }
+
             try {
                 const freshWatching = await fetchUserWatchingList(malUsername);
-                if (freshWatching) {
-                    if (freshWatching.length > 0) {
-                        localStorage.setItem(WATCHING_CACHE_KEY, JSON.stringify(freshWatching));
-                        localStorage.setItem('dash_anime_watching_user', cleanUser);
-                    } else if (!malUsername) {
-                        localStorage.removeItem(WATCHING_CACHE_KEY);
-                        localStorage.removeItem('dash_anime_watching_user');
-                    }
+                if (freshWatching && freshWatching.length > 0) {
+                    localStorage.setItem(WATCHING_CACHE_KEY, JSON.stringify(freshWatching));
+                    localStorage.setItem('dash_anime_watching_user', cleanUser);
                     if (isMounted) {
                         setUserWatching(freshWatching);
-                        if (malUsername && malUsername.trim()) {
-                            setMalSuccess(true);
-                            setMalError(false);
-                        }
+                        setMalSuccess(true);
+                        setMalError(false);
+                    }
+                } else {
+                    localStorage.removeItem(WATCHING_CACHE_KEY);
+                    localStorage.removeItem('dash_anime_watching_user');
+                    if (isMounted) {
+                        setUserWatching([]);
+                        setMalSuccess(false);
+                        setMalError(true);
                     }
                 }
             } catch {
                 if (isMounted && malUsername && malUsername.trim()) {
-                    if (cachedWatching && cachedWatching.length > 0) {
+                    if (cachedWatching && cachedWatching.length > 0 && cleanUser === cachedUser) {
                         setMalSuccess(true);
                         setMalError(false);
                     } else {
@@ -186,27 +195,33 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
 
         let isMounted = true;
         setMalError(false);
-        setMalSuccess(false);
-
-        if (!malUsername || malUsername.trim() === '') return;
-
         const refreshWatching = async () => {
+            if (!malUsername || malUsername.trim() === '') {
+                if (isMounted) setUserWatching([]);
+                localStorage.removeItem(WATCHING_CACHE_KEY);
+                localStorage.removeItem('dash_anime_watching_user');
+                return;
+            }
+
             if (isMounted) setMalLoading(true);
             const cleanUser = malUsername.trim().toLowerCase();
             try {
                 const freshWatching = await fetchUserWatchingList(malUsername);
-                if (freshWatching) {
-                    if (freshWatching.length > 0) {
-                        localStorage.setItem(WATCHING_CACHE_KEY, JSON.stringify(freshWatching));
-                        localStorage.setItem('dash_anime_watching_user', cleanUser);
-                    } else {
-                        localStorage.removeItem(WATCHING_CACHE_KEY);
-                        localStorage.removeItem('dash_anime_watching_user');
-                    }
+                if (freshWatching && freshWatching.length > 0) {
+                    localStorage.setItem(WATCHING_CACHE_KEY, JSON.stringify(freshWatching));
+                    localStorage.setItem('dash_anime_watching_user', cleanUser);
                     if (isMounted) {
                         setUserWatching(freshWatching);
                         setMalError(false);
                         setMalSuccess(true);
+                    }
+                } else {
+                    localStorage.removeItem(WATCHING_CACHE_KEY);
+                    localStorage.removeItem('dash_anime_watching_user');
+                    if (isMounted) {
+                        setUserWatching([]);
+                        setMalError(true);
+                        setMalSuccess(false);
                     }
                 }
             } catch {
@@ -280,7 +295,23 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
     }, [volume, previewTrailer, trailerMuted]);
 
     // Derived: today display list (watching-prioritized top-5)
-    const userWatchingIds = userWatching.map(u => Number(u.mal_id)).filter(id => !isNaN(id) && id > 0);
+    const userWatchingIds = (() => {
+        const ids = new Set(userWatching.map(u => Number(u.mal_id)).filter(id => !isNaN(id) && id > 0));
+        const normalize = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const watchingTitles = userWatching.map(u => normalize(u.title)).filter(Boolean);
+
+        if (watchingTitles.length > 0) {
+            const allCandidates = [...todayData, ...sidebarData];
+            for (const anime of allCandidates) {
+                if (!anime || !anime.mal_id) continue;
+                const aTitle = normalize(anime.title);
+                if (aTitle && watchingTitles.some(wt => wt.includes(aTitle) || aTitle.includes(wt))) {
+                    ids.add(Number(anime.mal_id));
+                }
+            }
+        }
+        return Array.from(ids);
+    })();
     const displayList = (() => {
         if (!todayData || todayData.length === 0) return [];
         const watchedToday = todayData

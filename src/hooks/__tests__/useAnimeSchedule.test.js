@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useAnimeSchedule, getPortugalDayFilter } from '../useAnimeSchedule';
-import { fetchDaySchedule } from '../../services/animeService';
+import { fetchDaySchedule, fetchUserWatchingList } from '../../services/animeService';
 
 vi.mock('zustand/react/shallow', () => ({
     useShallow: (f) => f,
@@ -117,4 +117,40 @@ describe('useAnimeSchedule hook', () => {
         expect(result.current.trailerMuted).toBe(true);
         expect(localStorage.getItem('dash_trailer_muted')).toBe('true');
     });
+
+    it('sets malError when watching list is empty for a username', async () => {
+        fetchDaySchedule.mockResolvedValue([]);
+        fetchUserWatchingList.mockResolvedValue([]);
+
+        renderHook(() => useAnimeSchedule());
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(1100);
+        });
+
+        // malUsername was 'test', but returned 0 items
+        expect(fetchUserWatchingList).toHaveBeenCalledWith('test');
+    });
+
+    it('includes title-matched anime in userWatchingIds even if mal_id differs', async () => {
+        const mockSchedule = [
+            { mal_id: 99999, title: 'Hyouken no Majutsushi ga Sekai wo Suberu II', score: 8.0 }
+        ];
+        fetchDaySchedule.mockResolvedValue(mockSchedule);
+        fetchUserWatchingList.mockResolvedValue([
+            { mal_id: 64254, title: 'Hyouken no Majutsushi ga Sekai wo Suberu II' }
+        ]);
+
+        const { result } = renderHook(() => useAnimeSchedule());
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(1100);
+        });
+
+        // 64254 is the MAL ID from watching list
+        expect(result.current.userWatchingIds).toContain(64254);
+        // 99999 is the AniList mal_id matched by normalized title
+        expect(result.current.userWatchingIds).toContain(99999);
+    });
 });
+

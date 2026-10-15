@@ -9,6 +9,7 @@ import {
     SCHEDULE_CACHE_KEY,
     fetchWithRetry,
 } from './api.js';
+import defaultWatchingData from '../assets/defaultWatching.json';
 
 export function getScheduleCache() {
     try {
@@ -367,7 +368,8 @@ export function clearMalMemoryCache() {
 export async function fetchUserWatchingList(malUsername) {
     if (!malUsername || malUsername.trim() === '') return [];
 
-    const cleanUsername = encodeURIComponent(malUsername.trim().toLowerCase());
+    const rawUsername = malUsername.trim().toLowerCase();
+    const cleanUsername = encodeURIComponent(rawUsername);
     const cachedEntry = malMemoryCache.get(cleanUsername);
     if (cachedEntry && (Date.now() - cachedEntry.ts < 5 * 60 * 1000)) {
         return cachedEntry.data;
@@ -391,9 +393,7 @@ export async function fetchUserWatchingList(malUsername) {
         if (!Array.isArray(data)) {
             throw new Error('Invalid MAL response format');
         }
-        const parsed = parseMALItems(data);
-        malMemoryCache.set(cleanUsername, { data: parsed, ts: Date.now() });
-        return parsed;
+        return parseMALItems(data);
     };
 
     const makeRss2JsonRequest = async () => {
@@ -403,9 +403,7 @@ export async function fetchUserWatchingList(malUsername) {
         if (data.status !== 'ok' || !Array.isArray(data.items)) {
             throw new Error(data.message || 'rss2json failed');
         }
-        const parsed = parseMALRssItems(data.items);
-        malMemoryCache.set(cleanUsername, { data: parsed, ts: Date.now() });
-        return parsed;
+        return parseMALRssItems(data.items);
     };
 
     const makeFeed2JsonRequest = async () => {
@@ -415,9 +413,7 @@ export async function fetchUserWatchingList(malUsername) {
         if (!Array.isArray(data.items)) {
             throw new Error('feed2json invalid format');
         }
-        const parsed = parseMALRssItems(data.items);
-        malMemoryCache.set(cleanUsername, { data: parsed, ts: Date.now() });
-        return parsed;
+        return parseMALRssItems(data.items);
     };
 
     const makeCustomProxyRequest = async (proxyBase) => {
@@ -430,9 +426,7 @@ export async function fetchUserWatchingList(malUsername) {
         if (!res.ok) throw new Error(`Custom proxy status ${res.status}`);
         const data = await res.json();
         if (!Array.isArray(data)) throw new Error('Invalid MAL response format');
-        const parsed = parseMALItems(data);
-        malMemoryCache.set(cleanUsername, { data: parsed, ts: Date.now() });
-        return parsed;
+        return parseMALItems(data);
     };
 
     const makeAlloriginsRequest = async () => {
@@ -457,9 +451,7 @@ export async function fetchUserWatchingList(malUsername) {
         if (!Array.isArray(parsed)) {
             throw new Error('Invalid MAL response format');
         }
-        const result = parseMALItems(parsed);
-        malMemoryCache.set(cleanUsername, { data: result, ts: Date.now() });
-        return result;
+        return parseMALItems(parsed);
     };
 
     const makeAlloriginsRawRequest = async () => {
@@ -469,9 +461,7 @@ export async function fetchUserWatchingList(malUsername) {
         if (!Array.isArray(data)) {
             throw new Error('Invalid MAL response format');
         }
-        const parsed = parseMALItems(data);
-        malMemoryCache.set(cleanUsername, { data: parsed, ts: Date.now() });
-        return parsed;
+        return parseMALItems(data);
     };
 
     const makeCodetabsRequest = async () => {
@@ -482,39 +472,70 @@ export async function fetchUserWatchingList(malUsername) {
         if (!Array.isArray(data)) {
             throw new Error('Invalid MAL response format');
         }
-        const parsed = parseMALItems(data);
-        malMemoryCache.set(cleanUsername, { data: parsed, ts: Date.now() });
-        return parsed;
+        return parseMALItems(data);
     };
 
     const customProxy = (typeof localStorage !== 'undefined' ? localStorage.getItem('dash_mal_proxy') : '') || '';
 
-    return fetchWithRetry(async () => {
-        if (customProxy.trim()) {
-            try {
-                return await fetchWithTimeout(makeCustomProxyRequest(customProxy), 15000);
-            } catch (err) {
-                console.warn('Custom MAL proxy failed, attempting standard channels...', err);
+    const isOwner = rawUsername === 'claclo98';
+    const baseList = isOwner && Array.isArray(defaultWatchingData) ? defaultWatchingData : [];
+
+    try {
+        const liveItems = await fetchWithRetry(async () => {
+            if (customProxy.trim()) {
+                try {
+                    return await fetchWithTimeout(makeCustomProxyRequest(customProxy), 6000);
+                } catch (err) {
+                    console.warn('Custom MAL proxy failed, attempting standard channels...', err);
+                }
             }
+
+            if (isLocalEnv()) {
+                try {
+                    return await fetchWithTimeout(makeLocalProxyRequest(), 6000);
+                } catch {
+                    // Continue to fallback proxies
+                }
+            }
+
+            return await fetchWithTimeout(
+                Promise.any([
+                    makeRss2JsonRequest(),
+                    makeFeed2JsonRequest(),
+                    makeAlloriginsRequest(),
+                    makeAlloriginsRawRequest(),
+                    makeCodetabsRequest(),
+                ]),
+                6000
+            );
+        }, 0, 0);
+
+        let finalResult = [];
+        if (isOwner) {
+            const map = new Map();
+            for (const item of baseList) {
+                if (item && item.mal_id) map.set(Number(item.mal_id), item);
+            }
+            if (Array.isArray(liveItems)) {
+                for (const item of liveItems) {
+                    if (item && item.mal_id) {
+                        const existing = map.get(Number(item.mal_id));
+                        map.set(Number(item.mal_id), { ...existing, ...item });
+                    }
+                }
+            }
+            finalResult = Array.from(map.values());
+        } else {
+            finalResult = Array.isArray(liveItems) ? liveItems : [];
         }
 
-        if (isLocalEnv()) {
-            try {
-                return await fetchWithTimeout(makeLocalProxyRequest(), 15000);
-            } catch {
-                // If local proxy failed, continue to fallback proxies
-            }
+        malMemoryCache.set(cleanUsername, { data: finalResult, ts: Date.now() });
+        return finalResult;
+    } catch (err) {
+        if (isOwner && baseList.length > 0) {
+            malMemoryCache.set(cleanUsername, { data: baseList, ts: Date.now() });
+            return baseList;
         }
-
-        return await fetchWithTimeout(
-            Promise.any([
-                makeFeed2JsonRequest(),
-                makeRss2JsonRequest(),
-                makeAlloriginsRequest(),
-                makeAlloriginsRawRequest(),
-                makeCodetabsRequest(),
-            ]),
-            15000
-        );
-    }, 0, 0);
+        throw err;
+    }
 }

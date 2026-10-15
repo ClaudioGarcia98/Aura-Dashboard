@@ -517,9 +517,47 @@ describe('animeService', () => {
       localStorage.removeItem('dash_mal_proxy');
     });
 
+    it('returns bundled defaultWatching data for claclo98 if network fails', async () => {
+      globalThis.fetch.mockRejectedValue(new Error('Network failure'));
+      const list = await fetchUserWatchingList('claclo98');
+      expect(Array.isArray(list)).toBe(true);
+      expect(list.length).toBeGreaterThan(0);
+      expect(list.some(a => a.mal_id === 64254)).toBe(true);
+    });
+
+    it('returns empty list for a user who has no watching anime in RSS feed', async () => {
+      globalThis.fetch.mockImplementation((url) => {
+        if (url.includes('api.rss2json.com')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              status: 'ok',
+              items: [
+                {
+                  title: 'Completed Anime - Movie',
+                  link: 'https://myanimelist.net/anime/57555/cm',
+                  description: 'Completed - 1 of 1 episodes',
+                },
+                {
+                  title: 'Plan to Watch Anime - TV',
+                  link: 'https://myanimelist.net/anime/57658/jjk',
+                  description: 'Plan to Watch - 0 of 12 episodes',
+                }
+              ]
+            })
+          });
+        }
+        return Promise.reject(new Error('Proxy error'));
+      });
+
+      const list = await fetchUserWatchingList('claclo');
+      expect(list).toEqual([]);
+    });
+
     it('throws error when all proxies fail', async () => {
       globalThis.fetch.mockRejectedValue(new Error('All proxies dead'));
       await expect(fetchUserWatchingList('offlineUser')).rejects.toThrow();
     });
   });
 });
+

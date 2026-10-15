@@ -275,7 +275,7 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                             </div>
                         </div>
                         {malLoading && <div style={{ color: 'var(--text-secondary, #aaa)', fontSize: '11px', marginTop: '4px', paddingLeft: '2px' }}>Connecting to MyAnimeList…</div>}
-                        {malError && !malLoading && <div style={{ color: '#ff6b6b', fontSize: '11px', marginTop: '4px', paddingLeft: '2px' }}>Username not found or failed to load.</div>}
+                        {malError && !malLoading && <div style={{ color: '#ff6b6b', fontSize: '11px', marginTop: '4px', paddingLeft: '2px' }}>Username not found or has no watching anime.</div>}
                         {malSuccess && !malLoading && !malError && <div style={{ color: '#4caf50', fontSize: '11px', marginTop: '4px', paddingLeft: '2px' }}>Connected &amp; Verified</div>}
                     </div>
                 </div>
