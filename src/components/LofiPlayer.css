@@ -8,19 +8,20 @@
 }
 .lofi-ui {
     display: flex; align-items: center; gap: var(--space-2);
-    background: rgba(14, 14, 14, 0.9);
-    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-    padding: var(--space-1) var(--space-2) var(--space-1) var(--space-1);
+    background: rgba(14, 14, 18, 0.85);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    padding: 6px 16px 6px 6px;
     border-radius: var(--radius-xl);
-    border: 1px solid rgba(255,255,255,0.1);
-    box-shadow: var(--shadow-elevated);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     cursor: pointer;
-    transition: var(--transition-standard);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .lofi-ui:hover {
-    background: rgba(20,20,20,0.95);
-    border-color: var(--accent-color);
-    box-shadow: var(--shadow-elevated), 0 0 10px rgba(255,210,106,0.2);
+    background: rgba(20, 20, 26, 0.95);
+    border-color: rgba(255, 210, 106, 0.35);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 16px rgba(255, 210, 106, 0.2);
+    transform: translateY(-2px);
 }
 .lofi-play-btn {
     width: 36px; height: 36px;
@@ -30,56 +31,90 @@
     border: none;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+    box-shadow: 0 2px 8px rgba(255, 210, 106, 0.3);
+    flex-shrink: 0;
 }
-.lofi-ui:hover .lofi-play-btn {
-    transform: scale(1.05);
+.lofi-play-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 14px rgba(255, 210, 106, 0.6);
+}
+.lofi-play-btn:active {
+    transform: scale(0.94);
 }
 .lofi-info {
     display: flex; flex-direction: column; justify-content: center;
+    width: 180px;
+    user-select: none;
+    cursor: pointer;
+    flex-shrink: 0;
 }
 .lofi-title {
-    font-size: 0.85rem; font-weight: bold;
-    display: block; line-height: 1.2;
+    font-size: 0.85rem; font-weight: 600;
+    color: var(--text-primary);
+    display: block; line-height: 1.25;
+    letter-spacing: -0.01em;
 }
 .lofi-status {
-    font-size: 0.7rem; opacity: 0.6;
+    font-size: 0.7rem; opacity: 0.7;
+    color: var(--text-secondary);
     display: block; line-height: 1.2;
 }
 
 /* Station Menu */
 .lofi-station-menu {
     position: absolute;
-    bottom: calc(100% + 15px);
+    bottom: calc(100% + 12px);
     left: 50%;
     transform: translateX(-50%);
-    width: 200px;
-    background: rgba(15, 15, 15, 0.95);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 220px;
+    max-height: 280px;
+    background: rgba(14, 14, 18, 0.96);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 16px;
     padding: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-    animation: menuFadeIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 210, 106, 0.08);
+    animation: menuFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     z-index: 60;
+    display: flex;
+    flex-direction: column;
 }
 @keyframes menuFadeIn {
-    from { opacity: 0; transform: translate(-50%, 10px); }
-    to { opacity: 1; transform: translate(-50%, 0); }
+    from { opacity: 0; transform: translate(-50%, 8px) scale(0.97); }
+    to { opacity: 1; transform: translate(-50%, 0) scale(1); }
 }
 .lofi-station-header {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 10px;
-    padding-left: 8px;
+    letter-spacing: 1.2px;
+    margin-bottom: 8px;
+    padding: 0 4px;
     font-weight: 700;
 }
 .lofi-station-list {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    padding-right: 2px;
+}
+.lofi-station-list::-webkit-scrollbar {
+    width: 4px;
+}
+.lofi-station-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+.lofi-station-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+.lofi-station-list::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-color);
 }
 .lofi-station-btn {
     display: flex;
@@ -87,28 +122,31 @@
     gap: 10px;
     width: 100%;
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     color: var(--text-primary);
-    padding: 10px;
+    padding: 8px 10px;
     border-radius: 10px;
     font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
     text-align: left;
 }
 .lofi-station-btn:hover {
     background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 .lofi-station-btn.active {
     background: rgba(255, 210, 106, 0.15);
+    border-color: rgba(255, 210, 106, 0.3);
     color: var(--accent-color);
+    font-weight: 600;
 }
 .lofi-station-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.8;
+    opacity: 0.85;
 }
 
 /* Audio Visualizer */
@@ -140,4 +178,18 @@
 @keyframes fadeSlideUp {
     from { opacity: 0; transform: translate(-50%, 20px); }
     to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .lofi-player {
+        bottom: 20px;
+    }
+    .lofi-info {
+        width: 130px;
+    }
+    .lofi-station-menu {
+        width: 200px;
+        max-height: 220px;
+    }
 }

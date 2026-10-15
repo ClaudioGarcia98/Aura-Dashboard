@@ -231,7 +231,6 @@ export default memo(function LofiPlayer() {
                         }}
                         role="button"
                         tabIndex={0}
-                        style={{ width: '180px', flexShrink: 0, cursor: 'pointer' }} 
                         title="Click to change station"
                     >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
