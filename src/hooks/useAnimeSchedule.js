@@ -275,7 +275,7 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
     // Trailer hover handlers
     const handleMouseEnter = useCallback((e, anime) => {
         // Touch screens / mobile devices: do not show floating hover preview
-        if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(hover: none)').matches) {
+        if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse), (max-width: 1024px)').matches) {
             return;
         }
 

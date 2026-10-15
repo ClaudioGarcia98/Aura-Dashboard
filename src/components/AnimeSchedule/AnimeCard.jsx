@@ -1,5 +1,6 @@
 import { memo, useState, useEffect } from 'react';
 import { formatBroadcastTime, extractTrailerId } from '../../services/animeService';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const calculateTimeLeft = (broadcast, airingAt) => {
     if (airingAt && typeof airingAt === 'number') {
@@ -90,7 +91,18 @@ function useExpandToggle(anime, variant, isExpanded, onToggleExpand) {
     return { idPrefix, handleToggle };
 }
 
-export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching, onToggleExpand, onMouseEnter, onMouseLeave }) {
+export default memo(function AnimeCard({
+    anime,
+    variant,
+    isExpanded,
+    isWatching,
+    isMobile: isMobileProp,
+    onToggleExpand,
+    onMouseEnter,
+    onMouseLeave,
+}) {
+    const isTouchOrMobileMedia = useMediaQuery('(hover: none), (pointer: coarse), (max-width: 1024px)');
+    const isTouchOrMobile = isMobileProp !== undefined ? isMobileProp : isTouchOrMobileMedia;
     const { idPrefix, handleToggle } = useExpandToggle(anime, variant, isExpanded, onToggleExpand);
     const trailerId = extractTrailerId(anime);
 
@@ -100,11 +112,15 @@ export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching,
         role: 'button',
         tabIndex: 0,
         onMouseEnter: (e) => {
-            if (!isExpanded && onMouseEnter) {
+            if (!isTouchOrMobile && !isExpanded && onMouseEnter) {
                 onMouseEnter(e, anime);
             }
         },
-        onMouseLeave,
+        onMouseLeave: (e) => {
+            if (!isTouchOrMobile && onMouseLeave) {
+                onMouseLeave(e);
+            }
+        },
     };
 
     if (variant === 'sidebar') {
@@ -139,7 +155,7 @@ export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching,
                                     <span key={g.mal_id} className="anime-tag">{g.name}</span>
                                 ))}
                             </div>
-                            {trailerId && isExpanded && (
+                            {isTouchOrMobile && trailerId && isExpanded && (
                                 <div className="anime-card-trailer" onClick={(e) => e.stopPropagation()}>
                                     <iframe
                                         title={`${anime.title} Trailer`}
@@ -185,7 +201,7 @@ export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching,
             <div className="tab-synopsis-wrapper">
                 <div className="tab-synopsis-panel">
                     <div className="tab-synopsis-inner">
-                        {trailerId && isExpanded && (
+                        {isTouchOrMobile && trailerId && isExpanded && (
                             <div className="anime-card-trailer" onClick={(e) => e.stopPropagation()}>
                                 <iframe
                                     title={`${anime.title} Trailer`}

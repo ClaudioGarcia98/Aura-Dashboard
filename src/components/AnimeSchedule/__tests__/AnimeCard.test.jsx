@@ -383,9 +383,9 @@ describe('AnimeCard — in-card embedded trailer', () => {
         }
     };
 
-    it('renders iframe trailer inside card when isExpanded is true (sidebar variant)', () => {
+    it('renders iframe trailer inside card when isExpanded is true on mobile (sidebar variant)', () => {
         const { container } = render(
-            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="sidebar" isExpanded={true} />
+            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="sidebar" isExpanded={true} isMobile={true} />
         );
         const trailerBox = container.querySelector('.anime-card-trailer');
         expect(trailerBox).toBeTruthy();
@@ -394,9 +394,9 @@ describe('AnimeCard — in-card embedded trailer', () => {
         expect(iframe.src).toContain('sampleYt123');
     });
 
-    it('renders iframe trailer inside card when isExpanded is true (today variant)', () => {
+    it('renders iframe trailer inside card when isExpanded is true on mobile (today variant)', () => {
         const { container } = render(
-            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="today" isExpanded={true} />
+            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="today" isExpanded={true} isMobile={true} />
         );
         const trailerBox = container.querySelector('.anime-card-trailer');
         expect(trailerBox).toBeTruthy();
@@ -405,9 +405,16 @@ describe('AnimeCard — in-card embedded trailer', () => {
         expect(iframe.src).toContain('sampleYt123');
     });
 
-    it('does not render iframe trailer when isExpanded is false', () => {
+    it('does not render iframe trailer on desktop even when isExpanded is true', () => {
         const { container } = render(
-            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="sidebar" isExpanded={false} />
+            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="sidebar" isExpanded={true} isMobile={false} />
+        );
+        expect(container.querySelector('.anime-card-trailer')).toBeNull();
+    });
+
+    it('does not render iframe trailer when isExpanded is false on mobile', () => {
+        const { container } = render(
+            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="sidebar" isExpanded={false} isMobile={true} />
         );
         expect(container.querySelector('.anime-card-trailer')).toBeNull();
     });
@@ -415,7 +422,7 @@ describe('AnimeCard — in-card embedded trailer', () => {
     it('clicking on trailer container stops propagation and does not toggle expand', () => {
         const onToggleExpand = vi.fn();
         const { container } = render(
-            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="sidebar" isExpanded={true} onToggleExpand={onToggleExpand} />
+            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="sidebar" isExpanded={true} isMobile={true} onToggleExpand={onToggleExpand} />
         );
         const trailerBox = container.querySelector('.anime-card-trailer');
         expect(trailerBox).toBeTruthy();
@@ -423,10 +430,28 @@ describe('AnimeCard — in-card embedded trailer', () => {
         expect(onToggleExpand).not.toHaveBeenCalled();
     });
 
-    it('does not call onMouseEnter when card is already expanded', () => {
+    it('does not call onMouseEnter on mobile devices', () => {
         const onMouseEnter = vi.fn();
         const { container } = render(
-            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="sidebar" isExpanded={true} onMouseEnter={onMouseEnter} />
+            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="sidebar" isExpanded={false} isMobile={true} onMouseEnter={onMouseEnter} />
+        );
+        fireEvent.mouseEnter(container.firstChild);
+        expect(onMouseEnter).not.toHaveBeenCalled();
+    });
+
+    it('calls onMouseEnter on desktop when not expanded', () => {
+        const onMouseEnter = vi.fn();
+        const { container } = render(
+            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="sidebar" isExpanded={false} isMobile={false} onMouseEnter={onMouseEnter} />
+        );
+        fireEvent.mouseEnter(container.firstChild);
+        expect(onMouseEnter).toHaveBeenCalledWith(expect.anything(), animeWithTrailer);
+    });
+
+    it('does not call onMouseEnter when card is already expanded on desktop', () => {
+        const onMouseEnter = vi.fn();
+        const { container } = render(
+            <AnimeCard {...defaultProps} anime={animeWithTrailer} variant="sidebar" isExpanded={true} isMobile={false} onMouseEnter={onMouseEnter} />
         );
         fireEvent.mouseEnter(container.firstChild);
         expect(onMouseEnter).not.toHaveBeenCalled();

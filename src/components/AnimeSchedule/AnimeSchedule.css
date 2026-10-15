@@ -646,7 +646,7 @@
     transform: translateX(2px);
 }
 
-/* ── In-Card Embedded Trailer (Mobile & Expanded) ── */
+/* ── In-Card Embedded Trailer (Mobile & Touch Screens only) ── */
 .anime-card-trailer {
     position: relative;
     width: 100%;
@@ -668,8 +668,15 @@
     display: block;
 }
 
-/* Hide floating hover preview on touch screens */
-@media (hover: none) {
+/* Desktop with mouse cursor: hide in-card trailer */
+@media (hover: hover) and (pointer: fine) and (min-width: 1025px) {
+    .anime-card-trailer {
+        display: none !important;
+    }
+}
+
+/* Mobile & touch screens: hide floating hover preview */
+@media (hover: none), (pointer: coarse), (max-width: 1024px) {
     .trailer-portal-container {
         display: none !important;
     }
