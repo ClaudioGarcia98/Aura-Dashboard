@@ -318,7 +318,18 @@ export async function fetchUserWatchingList(malUsername) {
 
     const cleanUsername = encodeURIComponent(malUsername.trim());
     const cacheBust = `&_=${Date.now()}`;
-    const malUrl = `https://myanimelist.net/animelist/${cleanUsername}/load.json?offset=0&status=1${cacheBust}`;
+    const malPath = `/animelist/${cleanUsername}/load.json?offset=0&status=1${cacheBust}`;
+    const malUrl = `https://myanimelist.net${malPath}`;
+
+    const makeLocalProxyRequest = async () => {
+        const res = await fetch(`/api/mal${malPath}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`Proxy status ${res.status}`);
+        const data = await res.json();
+        if (!Array.isArray(data)) {
+            throw new Error('Invalid MAL response format');
+        }
+        return parseMALItems(data);
+    };
 
     const makeCorsproxyioRequest = async () => {
         const res = await fetch(CORSPROXY_IO_BASE + encodeURIComponent(malUrl), { cache: 'no-store' });
@@ -369,13 +380,17 @@ export async function fetchUserWatchingList(malUsername) {
 
     return fetchWithRetry(async () => {
         try {
-            return await fetchWithTimeout(makeCorsproxyioRequest(), 2500);
+            return await fetchWithTimeout(makeLocalProxyRequest(), 3000);
         } catch {
-            console.warn('Primary MAL proxy failed or timed out, trying fallbacks...');
-            return await fetchWithTimeout(
-                Promise.any([makeAlloriginsRequest(), makeCodetabsRequest()]),
-                4500
-            );
+            try {
+                return await fetchWithTimeout(makeCorsproxyioRequest(), 2500);
+            } catch {
+                console.warn('Primary MAL proxy failed or timed out, trying fallbacks...');
+                return await fetchWithTimeout(
+                    Promise.any([makeAlloriginsRequest(), makeCodetabsRequest()]),
+                    4500
+                );
+            }
         }
     }, 0, 0).catch(e => {
         console.error('MAL fetch timed out or failed:', e);
