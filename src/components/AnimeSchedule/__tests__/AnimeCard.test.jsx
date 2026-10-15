@@ -326,6 +326,16 @@ describe('AnimeCard — CountdownBadge', () => {
         render(<AnimeCard {...defaultProps} anime={anime} />);
         expect(screen.getByText('4h 30m')).toBeTruthy();
     });
+
+    it('uses exact airingAt timestamp for countdown when provided', () => {
+        const now = new Date('2026-06-01T10:00:00Z');
+        vi.setSystemTime(now);
+        // Airing in 3 hours 15 minutes
+        const airEpoch = Math.floor((now.getTime() + (3 * 3600 + 15 * 60) * 1000) / 1000);
+        const anime = { ...baseAnime, airingAt: airEpoch };
+        render(<AnimeCard {...defaultProps} anime={anime} />);
+        expect(screen.getByText('3h 15m')).toBeTruthy();
+    });
 });
 
 describe('formatBroadcastTime helper', () => {
@@ -353,5 +363,12 @@ describe('formatBroadcastTime helper', () => {
         expect(result).not.toContain('Thu');
         expect(result).toContain('00:45 JST');
         expect(result).toContain('16:45 PT');
+    });
+
+    it('formats exact PT and JST from airingAt epoch timestamp when provided', () => {
+        // 2026-10-15 14:30:00 UTC -> 15:30 PT / 23:30 JST
+        const airEpoch = Math.floor(Date.UTC(2026, 9, 15, 14, 30) / 1000);
+        const result = formatBroadcastTime(null, airEpoch);
+        expect(result).toBe('15:30 PT / 23:30 JST');
     });
 });

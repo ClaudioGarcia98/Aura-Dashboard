@@ -1,7 +1,24 @@
 import { memo, useState, useEffect } from 'react';
 import { formatBroadcastTime } from '../../services/animeService';
 
-const calculateTimeLeft = (broadcast) => {
+const calculateTimeLeft = (broadcast, airingAt) => {
+    if (airingAt && typeof airingAt === 'number') {
+        const diff = (airingAt * 1000) - Date.now();
+        if (diff <= 0) {
+            const hoursSince = (Date.now() - (airingAt * 1000)) / (1000 * 60 * 60);
+            if (hoursSince < 24) return 'Out Now!';
+            return null;
+        }
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const m = Math.floor((diff / 1000 / 60) % 60);
+        const parts = [];
+        if (d > 0) parts.push(`${d}d`);
+        if (h > 0) parts.push(`${h}h`);
+        if (m > 0 || (d === 0 && h === 0)) parts.push(`${m}m`);
+        return parts.join(' ');
+    }
+
     if (!broadcast || !broadcast.time || !broadcast.day) return null;
     const dayMap = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 0 };
     const cleanDay = broadcast.day.toLowerCase().replace(/s$/, '');
@@ -39,13 +56,13 @@ const calculateTimeLeft = (broadcast) => {
     return parts.join(' ');
 };
 
-const CountdownBadge = memo(function CountdownBadge({ broadcast }) {
-    const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(broadcast));
+const CountdownBadge = memo(function CountdownBadge({ broadcast, airingAt }) {
+    const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(broadcast, airingAt));
     useEffect(() => {
-        if (!broadcast) return;
-        const timer = setInterval(() => setTimeLeft(calculateTimeLeft(broadcast)), 60000);
+        if (!broadcast && !airingAt) return;
+        const timer = setInterval(() => setTimeLeft(calculateTimeLeft(broadcast, airingAt)), 60000);
         return () => clearInterval(timer);
-    }, [broadcast]);
+    }, [broadcast, airingAt]);
     if (!timeLeft) return null;
     return (
         <div className="anime-countdown">
@@ -104,9 +121,9 @@ export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching,
                     <div className="anime-info">
                         <div className="anime-title">{anime.title}</div>
                         <div className="anime-time">
-                            <span>🕒 {formatBroadcastTime(anime.broadcast?.time)}{anime.score ? ` • ⭐ ${anime.score}` : ''}</span>
+                            <span>🕒 {formatBroadcastTime(anime.broadcast?.time, anime.airingAt)}{anime.score ? ` • ⭐ ${anime.score}` : ''}</span>
                         </div>
-                        <CountdownBadge broadcast={anime.broadcast} />
+                        <CountdownBadge broadcast={anime.broadcast} airingAt={anime.airingAt} />
                     </div>
                 </div>
                 <div className="synopsis-wrapper">
@@ -142,11 +159,11 @@ export default memo(function AnimeCard({ anime, variant, isExpanded, isWatching,
                 <div className="tab-item-info">
                     <div className="tab-item-title">{anime.title}</div>
                     <div className="tab-item-meta">
-                        <span>⭐ {anime.score || 'N/A'} • 🕒 {formatBroadcastTime(anime.broadcast?.time)}</span>
+                        <span>⭐ {anime.score || 'N/A'} • 🕒 {formatBroadcastTime(anime.broadcast?.time, anime.airingAt)}</span>
                     </div>
                 </div>
                 <div className="tab-item-timer">
-                    <CountdownBadge broadcast={anime.broadcast} />
+                    <CountdownBadge broadcast={anime.broadcast} airingAt={anime.airingAt} />
                 </div>
             </div>
             <div className="tab-synopsis-wrapper">

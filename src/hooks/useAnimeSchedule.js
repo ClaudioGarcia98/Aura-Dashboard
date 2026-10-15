@@ -5,7 +5,15 @@ import { fetchDaySchedule, fetchUserWatchingList } from '../services/animeServic
 import { WATCHING_CACHE_KEY } from '../services/api';
 
 const DAY_FILTERS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-const todayFilter = DAY_FILTERS[(new Date().getDay() + 6) % 7];
+const getPortugalDayFilter = () => {
+    try {
+        const ptDay = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Lisbon', weekday: 'long' }).format(new Date()).toLowerCase();
+        return DAY_FILTERS.includes(ptDay) ? ptDay : DAY_FILTERS[(new Date().getDay() + 6) % 7];
+    } catch {
+        return DAY_FILTERS[(new Date().getDay() + 6) % 7];
+    }
+};
+const todayFilter = getPortugalDayFilter();
 
 export function useAnimeSchedule() {
     const { volume, malUsername, setMalError, setMalLoading, setMalSuccess } = useSettingsStore(useShallow(s => ({ volume: s.volume, malUsername: s.malUsername, setMalError: s.setMalError, setMalLoading: s.setMalLoading, setMalSuccess: s.setMalSuccess })));

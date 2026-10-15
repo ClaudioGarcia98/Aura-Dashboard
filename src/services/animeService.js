@@ -40,30 +40,80 @@ export function parseMALItems(raw) {
     }));
 }
 
-export function getJstDayRange(dayFilter) {
+export function getLocalDayRange(dayFilter, timeZone = 'Europe/Lisbon') {
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const targetIdx = days.indexOf(dayFilter?.toLowerCase());
     if (targetIdx === -1) return null;
 
-    const nowUtcMs = Date.now();
-    const jstNowMs = nowUtcMs + 9 * 3600 * 1000;
-    const jstDate = new Date(jstNowMs);
-    const currentJstDayIdx = jstDate.getUTCDay();
+    const now = new Date();
+    const localDayName = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'long' }).format(now).toLowerCase();
+    const currentLocalIdx = days.indexOf(localDayName);
+    const diff = targetIdx - currentLocalIdx;
 
-    const diff = targetIdx - currentJstDayIdx;
-    const targetJstDate = new Date(jstNowMs + diff * 86400 * 1000);
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric'
+    }).formatToParts(now);
 
-    const year = targetJstDate.getUTCFullYear();
-    const month = targetJstDate.getUTCMonth();
-    const day = targetJstDate.getUTCDate();
+    const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+    const month = parseInt(parts.find(p => p.type === 'month').value, 10);
+    const day = parseInt(parts.find(p => p.type === 'day').value, 10);
 
-    const startUtcSec = Math.floor((Date.UTC(year, month, day, 0, 0, 0) - (9 * 3600 * 1000)) / 1000);
+    const targetDateUtc = new Date(Date.UTC(year, month - 1, day + diff));
+    const targetY = targetDateUtc.getUTCFullYear();
+    const targetM = targetDateUtc.getUTCMonth() + 1;
+    const targetD = targetDateUtc.getUTCDate();
+
+    let t = Date.UTC(targetY, targetM - 1, targetD, 0, 0, 0);
+    for (let i = 0; i < 3; i++) {
+        const checkParts = new Intl.DateTimeFormat('en-US', {
+            timeZone,
+            year: 'numeric', month: 'numeric', day: 'numeric',
+            hour: 'numeric', minute: 'numeric', second: 'numeric',
+            hour12: false
+        }).formatToParts(new Date(t));
+        const curY = parseInt(checkParts.find(p => p.type === 'year').value, 10);
+        const curM = parseInt(checkParts.find(p => p.type === 'month').value, 10);
+        const curD = parseInt(checkParts.find(p => p.type === 'day').value, 10);
+        let curH = parseInt(checkParts.find(p => p.type === 'hour').value, 10);
+        if (curH === 24) curH = 0;
+        const curMin = parseInt(checkParts.find(p => p.type === 'minute').value, 10);
+        const curS = parseInt(checkParts.find(p => p.type === 'second').value, 10);
+
+        const curT = Date.UTC(curY, curM - 1, curD, curH, curMin, curS);
+        const targetT = Date.UTC(targetY, targetM - 1, targetD, 0, 0, 0);
+        const diffMs = targetT - curT;
+        if (diffMs === 0) break;
+        t += diffMs;
+    }
+
+    const startUtcSec = Math.floor(t / 1000);
     const endUtcSec = startUtcSec + 86400;
 
     return { startUtcSec, endUtcSec };
 }
 
-export function formatBroadcastTime(timeStr) {
+export const getJstDayRange = getLocalDayRange;
+
+export function formatBroadcastTime(timeStr, airingAt) {
+    if (airingAt && typeof airingAt === 'number') {
+        const date = new Date(airingAt * 1000);
+        const ptTime = date.toLocaleTimeString('en-GB', {
+            timeZone: 'Europe/Lisbon',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        });
+        const jstTime = date.toLocaleTimeString('en-GB', {
+            timeZone: 'Asia/Tokyo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        });
+        return `${ptTime} PT / ${jstTime} JST`;
+    }
     if (!timeStr) return '?';
     const parts = timeStr.split(':');
     if (parts.length < 2) return timeStr;
@@ -141,6 +191,7 @@ export function parseAniListSchedule(airingSchedules, dayFilter) {
                 day: dayNamePlural,
                 timezone: 'Asia/Tokyo'
             },
+            airingAt: item.airingAt,
             trailer: m.trailer && m.trailer.site === 'youtube' && m.trailer.id ? {
                 youtube_id: m.trailer.id,
                 embed_url: `https://www.youtube.com/embed/${m.trailer.id}`,
