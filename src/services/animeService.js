@@ -2,9 +2,11 @@ import {
     JIKAN_BASE,
     ANILIST_GRAPHQL_ENDPOINT,
     ALLORIGINS_BASE,
+    ALLORIGINS_RAW_BASE,
     CODETABS_BASE,
     CORSPROXY_IO_BASE,
     SCHEDULE_CACHE_KEY,
+    WATCHING_CACHE_KEY,
     fetchWithRetry,
 } from './api.js';
 
@@ -346,6 +348,12 @@ export async function fetchUserWatchingList(malUsername) {
     const malPath = `/animelist/${cleanUsername}/load.json?offset=0&status=1${cacheBust}`;
     const malUrl = `https://myanimelist.net${malPath}`;
 
+    const isLocalEnv = () => {
+        if (typeof window === 'undefined') return true;
+        const host = window.location.hostname;
+        return host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.') || host.endsWith('.local');
+    };
+
     const makeLocalProxyRequest = async () => {
         const res = await fetch(`/api/mal${malPath}`, { cache: 'no-store' });
         if (!res.ok) throw new Error(`Proxy status ${res.status}`);
@@ -358,9 +366,24 @@ export async function fetchUserWatchingList(malUsername) {
         return parsed;
     };
 
+    const makeCustomProxyRequest = async (proxyBase) => {
+        let base = proxyBase.trim();
+        if (!base.endsWith('/') && !base.endsWith('?') && !base.endsWith('=')) {
+            base += '/';
+        }
+        const targetUrl = base.includes('?') ? `${base}${encodeURIComponent(malUrl)}` : `${base}${malUrl}`;
+        const res = await fetch(targetUrl, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`Custom proxy status ${res.status}`);
+        const data = await res.json();
+        if (!Array.isArray(data)) throw new Error('Invalid MAL response format');
+        const parsed = parseMALItems(data);
+        malMemoryCache.set(cleanUsername, { data: parsed, ts: Date.now() });
+        return parsed;
+    };
+
     const makeCorsproxyioRequest = async () => {
         const res = await fetch(CORSPROXY_IO_BASE + encodeURIComponent(malUrl), { cache: 'no-store' });
-        if (!res.ok) throw new Error(res.status);
+        if (!res.ok) throw new Error(String(res.status));
         const data = await res.json();
         
         if (!Array.isArray(data)) {
@@ -373,7 +396,7 @@ export async function fetchUserWatchingList(malUsername) {
 
     const makeAlloriginsRequest = async () => {
         const res = await fetch(ALLORIGINS_BASE + encodeURIComponent(malUrl), { cache: 'no-store' });
-        if (!res.ok) throw new Error(res.status);
+        if (!res.ok) throw new Error(String(res.status));
         const wrapper = await res.json();
         
         if (!wrapper || wrapper.contents === null || wrapper.contents === undefined) {
@@ -398,9 +421,21 @@ export async function fetchUserWatchingList(malUsername) {
         return result;
     };
 
+    const makeAlloriginsRawRequest = async () => {
+        const res = await fetch(ALLORIGINS_RAW_BASE + encodeURIComponent(malUrl), { cache: 'no-store' });
+        if (!res.ok) throw new Error(String(res.status));
+        const data = await res.json();
+        if (!Array.isArray(data)) {
+            throw new Error('Invalid MAL response format');
+        }
+        const parsed = parseMALItems(data);
+        malMemoryCache.set(cleanUsername, { data: parsed, ts: Date.now() });
+        return parsed;
+    };
+
     const makeCodetabsRequest = async () => {
         const res = await fetch(CODETABS_BASE + encodeURIComponent(malUrl), { cache: 'no-store' });
-        if (!res.ok) throw new Error(res.status);
+        if (!res.ok) throw new Error(String(res.status));
         const data = await res.json();
         
         if (!Array.isArray(data)) {
@@ -411,22 +446,47 @@ export async function fetchUserWatchingList(malUsername) {
         return parsed;
     };
 
+    const customProxy = (typeof localStorage !== 'undefined' ? localStorage.getItem('dash_mal_proxy') : '') || '';
+
     return fetchWithRetry(async () => {
-        try {
-            return await fetchWithTimeout(makeLocalProxyRequest(), 25000);
-        } catch {
+        if (customProxy.trim()) {
             try {
-                return await fetchWithTimeout(makeCorsproxyioRequest(), 5000);
-            } catch {
-                console.warn('Primary MAL proxy failed or timed out, trying fallbacks...');
-                return await fetchWithTimeout(
-                    Promise.any([makeAlloriginsRequest(), makeCodetabsRequest()]),
-                    6000
-                );
+                return await fetchWithTimeout(makeCustomProxyRequest(customProxy), 25000);
+            } catch (err) {
+                console.warn('Custom MAL proxy failed, attempting standard channels...', err);
             }
         }
+
+        if (isLocalEnv()) {
+            try {
+                return await fetchWithTimeout(makeLocalProxyRequest(), 25000);
+            } catch {
+                // If local proxy failed, continue to fallback proxies
+            }
+        }
+
+        return await fetchWithTimeout(
+            Promise.any([
+                makeAlloriginsRequest(),
+                makeAlloriginsRawRequest(),
+                makeCodetabsRequest(),
+                makeCorsproxyioRequest(),
+            ]),
+            25000
+        );
     }, 0, 0).catch(e => {
         console.error('MAL fetch timed out or failed:', e);
+        if (typeof localStorage !== 'undefined') {
+            try {
+                const stored = JSON.parse(localStorage.getItem(WATCHING_CACHE_KEY) || '[]');
+                if (Array.isArray(stored) && stored.length > 0) {
+                    console.info('Returning cached watching list as offline/proxy fallback');
+                    return stored;
+                }
+            } catch {
+                // Ignore storage parse errors
+            }
+        }
         throw e;
     });
 }

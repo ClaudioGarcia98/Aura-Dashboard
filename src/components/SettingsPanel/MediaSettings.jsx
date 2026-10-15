@@ -2,7 +2,8 @@ import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
 import { usePointerReorder } from '../../hooks/usePointerReorder';
-import { saveBackgroundBlob } from '../../services/db';
+import { saveBackgroundBlob, deleteBackgroundBlob } from '../../services/db';
+import defaultVideo from '../../assets/animated_gif.mp4';
 
 const extractVideoId = (val) => {
     const match = val.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]+)/);
@@ -82,6 +83,18 @@ export default memo(function MediaSettings() {
             console.error('Failed to save background blob:', err);
             setBgError('Failed to store media in local database');
         }
+    };
+
+    const handleRestoreDefaultBackground = async () => {
+        try {
+            await deleteBackgroundBlob();
+        } catch (err) {
+            console.error('Failed to delete background blob:', err);
+        }
+        setGifName('');
+        setBackgroundUrl(defaultVideo);
+        setBackgroundIsVideo(true);
+        if (bgFileInputRef.current) bgFileInputRef.current.value = '';
     };
 
     const handleAddStation = async () => {
@@ -205,7 +218,22 @@ export default memo(function MediaSettings() {
                 >
                     <span>🎞</span><span>{gifName ? 'Change GIF…' : 'Choose local GIF…'}</span>
                 </div>
-                <div className="gif-name">{gifName || 'No background set'}</div>
+                <div className="gif-name" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {gifName || 'Default (animated_gif.mp4)'}
+                    </span>
+                    {gifName && (
+                        <button
+                            type="button"
+                            className="pill"
+                            style={{ fontSize: '0.72rem', padding: '3px 8px', flexShrink: 0 }}
+                            onClick={handleRestoreDefaultBackground}
+                            title="Restore default animation"
+                        >
+                            ↺ Restore
+                        </button>
+                    )}
+                </div>
                 {bgError && (
                     <div style={{ color: '#ff6b6b', fontSize: '0.75rem', marginTop: '6px' }} role="alert">
                         {bgError}

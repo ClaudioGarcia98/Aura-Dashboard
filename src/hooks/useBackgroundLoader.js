@@ -14,11 +14,14 @@ export function useBackgroundLoader() {
             if (blob) {
                 blobUrl = URL.createObjectURL(blob);
                 setBackgroundUrl(blobUrl);
-                setBackgroundIsVideo(blob.type && blob.type.startsWith('video/'));
+                setBackgroundIsVideo(blob.type ? blob.type.startsWith('video/') : false);
             } else {
                 setBackgroundUrl(defaultVideo);
-                setBackgroundIsVideo(defaultVideo.endsWith('.mp4'));
+                setBackgroundIsVideo(true);
             }
+        }).catch(() => {
+            setBackgroundUrl(defaultVideo);
+            setBackgroundIsVideo(true);
         });
 
         return () => {

@@ -240,3 +240,24 @@ describe('MediaSettings — volume slider', () => {
         expect(mockState.setVolume).toHaveBeenCalledWith(0.6);
     });
 });
+
+describe('MediaSettings — background controls', () => {
+    it('displays default animation name when gifName is not set', () => {
+        mockState.gifName = '';
+        const { getByText } = render(<MediaSettings />);
+        expect(getByText('Default (animated_gif.mp4)')).toBeTruthy();
+    });
+
+    it('shows custom gif name and restore button when custom background is active', async () => {
+        mockState.gifName = 'my-custom-bg.gif';
+        const { getByText } = render(<MediaSettings />);
+        expect(getByText('my-custom-bg.gif')).toBeTruthy();
+        const restoreBtn = getByText('↺ Restore');
+        expect(restoreBtn).toBeTruthy();
+        fireEvent.click(restoreBtn);
+        await waitFor(() => {
+            expect(mockState.setGifName).toHaveBeenCalledWith('');
+            expect(mockState.setBackgroundIsVideo).toHaveBeenCalledWith(true);
+        });
+    });
+});

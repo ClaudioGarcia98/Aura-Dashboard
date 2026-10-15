@@ -139,8 +139,13 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
                 }
             } catch {
                 if (isMounted && malUsername && malUsername.trim()) {
-                    setMalError(true);
-                    setMalSuccess(false);
+                    if (cachedWatching && cachedWatching.length > 0) {
+                        setMalSuccess(true);
+                        setMalError(false);
+                    } else {
+                        setMalError(true);
+                        setMalSuccess(false);
+                    }
                 }
             }
         };
@@ -195,7 +200,17 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
                     }
                 }
             } catch {
-                if (isMounted) { setMalError(true); setMalSuccess(false); }
+                if (isMounted) {
+                    const fallback = safeJsonParse(localStorage.getItem(WATCHING_CACHE_KEY), []);
+                    if (Array.isArray(fallback) && fallback.length > 0) {
+                        setUserWatching(fallback);
+                        setMalSuccess(true);
+                        setMalError(false);
+                    } else {
+                        setMalError(true);
+                        setMalSuccess(false);
+                    }
+                }
             } finally {
                 if (isMounted) setMalLoading(false);
             }

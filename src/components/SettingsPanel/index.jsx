@@ -9,6 +9,7 @@ import ThemeSettings from './ThemeSettings';
 import WidgetToggles from './WidgetToggles';
 import MediaSettings from './MediaSettings';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { deleteBackgroundBlob } from '../../services/db';
 
 const getFaviconUrl = (url) => {
     try { return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=16`; }
@@ -28,6 +29,7 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
     const {
         username, setUsername,
         malUsername, setMalUsername,
+        malProxyUrl, setMalProxyUrl,
         malError, malLoading, malSuccess,
         speedDials, setSpeedDials,
         fallbackCity, setFallbackCity,
@@ -35,6 +37,7 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
     } = useSettingsStore(useShallow(s => ({
         username: s.username, setUsername: s.setUsername,
         malUsername: s.malUsername, setMalUsername: s.setMalUsername,
+        malProxyUrl: s.malProxyUrl, setMalProxyUrl: s.setMalProxyUrl,
         malError: s.malError, malLoading: s.malLoading, malSuccess: s.malSuccess,
         speedDials: s.speedDials, setSpeedDials: s.setSpeedDials,
         fallbackCity: s.fallbackCity, setFallbackCity: s.setFallbackCity,
@@ -276,6 +279,25 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                         {malLoading && <div style={{ color: 'var(--text-secondary, #aaa)', fontSize: '11px', marginTop: '4px', paddingLeft: '2px' }}>Connecting to MyAnimeList…</div>}
                         {malError && !malLoading && <div style={{ color: '#ff6b6b', fontSize: '11px', marginTop: '4px', paddingLeft: '2px' }}>Username not found or failed to load.</div>}
                         {malSuccess && !malLoading && !malError && <div style={{ color: '#4caf50', fontSize: '11px', marginTop: '4px', paddingLeft: '2px' }}>Connected &amp; Verified</div>}
+                        <div style={{ marginTop: '8px' }}>
+                            <label htmlFor="malProxyInput" style={{ fontSize: '0.72rem', opacity: 0.65 }}>
+                                Custom Proxy URL <span style={{ opacity: 0.6 }}>(optional, for Cloudflare Workers)</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="malProxyInput"
+                                placeholder="e.g. https://my-proxy.workers.dev/?url="
+                                value={malProxyUrl}
+                                onChange={(e) => {
+                                    setMalProxyUrl(e.target.value);
+                                    localStorage.setItem('dash_mal_proxy', e.target.value);
+                                }}
+                                spellCheck={false}
+                                autoCapitalize="none"
+                                autoCorrect="off"
+                                style={{ fontSize: '0.8rem', padding: '6px 10px', marginTop: '3px' }}
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -484,14 +506,37 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                                     <button type="button" className="reset-confirm-btn" onClick={async () => {
                                         localStorage.clear();
                                         sessionStorage.clear();
-                                        indexedDB.deleteDatabase('dashDB');
+                                        try {
+                                            await deleteBackgroundBlob();
+                                        } catch {
+                                            // Ignore if already deleted
+                                        }
+                                        try {
+                                            const req = indexedDB.deleteDatabase('dashDB');
+                                            await new Promise((resolve) => {
+                                                req.onsuccess = () => resolve();
+                                                req.onerror = () => resolve();
+                                                req.onblocked = () => resolve();
+                                                setTimeout(resolve, 300);
+                                            });
+                                        } catch {
+                                            // Ignore if indexedDB already cleared
+                                        }
                                         if ('caches' in window) {
-                                            const names = await caches.keys();
-                                            await Promise.all(names.map(n => caches.delete(n)));
+                                            try {
+                                                const names = await caches.keys();
+                                                await Promise.all(names.map(n => caches.delete(n)));
+                                            } catch {
+                                                // Ignore cache clearing error
+                                            }
                                         }
                                         if ('serviceWorker' in navigator) {
-                                            const regs = await navigator.serviceWorker.getRegistrations();
-                                            await Promise.all(regs.map(r => r.unregister()));
+                                            try {
+                                                const regs = await navigator.serviceWorker.getRegistrations();
+                                                await Promise.all(regs.map(r => r.unregister()));
+                                            } catch {
+                                                // Ignore service worker unregister error
+                                            }
                                         }
                                         window.location.reload();
                                     }}>Yes, Erase Everything</button>

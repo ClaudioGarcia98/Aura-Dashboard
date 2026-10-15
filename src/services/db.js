@@ -27,8 +27,14 @@ export async function getBackgroundBlob() {
             const tx = db.transaction(STORE_NAME, 'readonly');
             const store = tx.objectStore(STORE_NAME);
             const req = store.get(BG_KEY);
-            req.onsuccess = (e) => resolve(e.target.result || null);
-            req.onerror = (e) => reject(e.target.error);
+            req.onsuccess = (e) => {
+                db.close?.();
+                resolve(e.target.result || null);
+            };
+            req.onerror = (e) => {
+                db.close?.();
+                reject(e.target.error);
+            };
         });
     } catch {
         return null;
@@ -41,8 +47,14 @@ export async function saveBackgroundBlob(blob) {
         const tx = db.transaction(STORE_NAME, 'readwrite');
         const store = tx.objectStore(STORE_NAME);
         store.put(blob, BG_KEY);
-        tx.oncomplete = () => resolve();
-        tx.onerror = (e) => reject(e.target.error);
+        tx.oncomplete = () => {
+            db.close?.();
+            resolve();
+        };
+        tx.onerror = (e) => {
+            db.close?.();
+            reject(e.target.error);
+        };
     });
 }
 
@@ -53,8 +65,14 @@ export async function deleteBackgroundBlob() {
             const tx = db.transaction(STORE_NAME, 'readwrite');
             const store = tx.objectStore(STORE_NAME);
             store.delete(BG_KEY);
-            tx.oncomplete = () => resolve();
-            tx.onerror = (e) => reject(e.target.error);
+            tx.oncomplete = () => {
+                db.close?.();
+                resolve();
+            };
+            tx.onerror = (e) => {
+                db.close?.();
+                reject(e.target.error);
+            };
         });
     } catch {
         // Silently ignore if already missing

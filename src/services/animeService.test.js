@@ -366,5 +366,53 @@ describe('animeService', () => {
 
       await expect(fetchUserWatchingList('test')).rejects.toThrow();
     });
+
+    it('queries custom proxy when dash_mal_proxy is configured in localStorage', async () => {
+      localStorage.setItem('dash_mal_proxy', 'https://my-worker.workers.dev/?url=');
+      globalThis.fetch.mockImplementation((url) => {
+        if (url.startsWith('https://my-worker.workers.dev')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => [{
+              anime_id: 101,
+              anime_url: '/anime/101',
+              anime_image_path: 'worker.jpg',
+              anime_title: 'Worker Title',
+              anime_score_val: 8.8,
+              num_watched_episodes: 2
+            }]
+          });
+        }
+        return Promise.reject(new Error('Other proxy error'));
+      });
+
+      const list = await fetchUserWatchingList('workerUser');
+      expect(list).toEqual([{
+        mal_id: 101,
+        url: 'https://myanimelist.net/anime/101',
+        image_url: 'worker.jpg',
+        title: 'Worker Title',
+        score: 8.8,
+        watched_eps: 2
+      }]);
+      localStorage.removeItem('dash_mal_proxy');
+    });
+
+    it('returns stale cached list from localStorage when all proxies fail', async () => {
+      const cached = [{
+        mal_id: 55,
+        url: 'https://myanimelist.net/anime/55',
+        image_url: 'cached.jpg',
+        title: 'Cached Show',
+        score: 9.0,
+        watched_eps: 12
+      }];
+      localStorage.setItem('dash_anime_watching', JSON.stringify(cached));
+      globalThis.fetch.mockRejectedValue(new Error('All proxies dead'));
+
+      const result = await fetchUserWatchingList('offlineUser');
+      expect(result).toEqual(cached);
+      localStorage.removeItem('dash_anime_watching');
+    });
   });
 });
