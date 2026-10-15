@@ -32,7 +32,6 @@ const DEFAULTS = {
     clockMode: 'digital',
     username: 'Cláudio',
     malUsername: '',
-    malProxyUrl: '',
     fallbackCity: '',
     use24hClock: true,
     useCelsius: true,

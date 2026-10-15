@@ -226,16 +226,16 @@ describe('animeService', () => {
       expect(data2).toEqual([]);
     });
 
-    it('successfully fetches and maps data from CORSProxy.io', async () => {
+    it('successfully fetches and maps data from AllOrigins raw', async () => {
       globalThis.fetch.mockImplementation((url) => {
-        if (url.includes('corsproxy.io')) {
+        if (url.includes('api.allorigins.win/raw')) {
           return Promise.resolve({
             ok: true,
             json: async () => [{
               anime_id: 97,
               anime_url: '/anime/97',
               anime_image_path: 'img3.jpg',
-              anime_title: 'CORSProxy.io Title',
+              anime_title: 'AllOrigins Raw Title',
               anime_score_val: 9.0,
               num_watched_episodes: 5
             }]
@@ -250,7 +250,7 @@ describe('animeService', () => {
           mal_id: 97,
           url: 'https://myanimelist.net/anime/97',
           image_url: 'img3.jpg',
-          title: 'CORSProxy.io Title',
+          title: 'AllOrigins Raw Title',
           score: 9.0,
           watched_eps: 5
         }
@@ -322,19 +322,6 @@ describe('animeService', () => {
       ]);
     });
 
-    it('throws error if CORSProxy.io returns an error object instead of array', async () => {
-      globalThis.fetch.mockImplementation((url) => {
-        if (url.includes('corsproxy.io')) {
-          return Promise.resolve({
-            ok: true,
-            json: async () => ({ errors: [{ message: 'invalid request' }] })
-          });
-        }
-        return Promise.reject(new Error('Proxy error'));
-      });
-
-      await expect(fetchUserWatchingList('test')).rejects.toThrow();
-    });
 
     it('throws error if AllOrigins returns null contents', async () => {
       globalThis.fetch.mockImplementation((url) => {

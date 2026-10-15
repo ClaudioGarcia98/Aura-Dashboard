@@ -4,7 +4,6 @@ import {
     ALLORIGINS_BASE,
     ALLORIGINS_RAW_BASE,
     CODETABS_BASE,
-    CORSPROXY_IO_BASE,
     SCHEDULE_CACHE_KEY,
     WATCHING_CACHE_KEY,
     fetchWithRetry,
@@ -381,19 +380,6 @@ export async function fetchUserWatchingList(malUsername) {
         return parsed;
     };
 
-    const makeCorsproxyioRequest = async () => {
-        const res = await fetch(CORSPROXY_IO_BASE + encodeURIComponent(malUrl), { cache: 'no-store' });
-        if (!res.ok) throw new Error(String(res.status));
-        const data = await res.json();
-        
-        if (!Array.isArray(data)) {
-            throw new Error('Invalid MAL response format');
-        }
-        const parsed = parseMALItems(data);
-        malMemoryCache.set(cleanUsername, { data: parsed, ts: Date.now() });
-        return parsed;
-    };
-
     const makeAlloriginsRequest = async () => {
         const res = await fetch(ALLORIGINS_BASE + encodeURIComponent(malUrl), { cache: 'no-store' });
         if (!res.ok) throw new Error(String(res.status));
@@ -470,7 +456,6 @@ export async function fetchUserWatchingList(malUsername) {
                 makeAlloriginsRequest(),
                 makeAlloriginsRawRequest(),
                 makeCodetabsRequest(),
-                makeCorsproxyioRequest(),
             ]),
             25000
         );
