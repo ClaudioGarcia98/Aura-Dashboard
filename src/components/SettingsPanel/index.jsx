@@ -8,6 +8,7 @@ import logoUrl from '../../assets/logo.png';
 import ThemeSettings from './ThemeSettings';
 import WidgetToggles from './WidgetToggles';
 import MediaSettings from './MediaSettings';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const getFaviconUrl = (url) => {
     try { return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=16`; }
@@ -39,6 +40,9 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
         fallbackCity: s.fallbackCity, setFallbackCity: s.setFallbackCity,
         useCelsius: s.useCelsius, setUseCelsius: s.setUseCelsius,
     })));
+
+    const isTouchOrMobile = useMediaQuery('(hover: none), (pointer: coarse), (max-width: 1024px)');
+    const showShortcuts = !embedded && !isTouchOrMobile;
 
     const [isOpen, setIsOpen] = useState(false);
     const [newDialUrl, setNewDialUrl] = useState('');
@@ -411,28 +415,30 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                 </div>
 
                 {/* Keyboard Shortcuts */}
-                <div className="sp-section">
-                    <div className="sp-label">Keyboard Shortcuts</div>
-                    <div className="shortcut-list">
-                        <div className="shortcut-item"><span>Focus Search</span><kbd>Ctrl + Space</kbd></div>
-                        <div className="shortcut-item"><span>Close Suggestions</span><kbd>Esc</kbd></div>
-                        <div className="shortcut-item"><span>Navigate List</span><kbd>↑ / ↓</kbd></div>
-                        <div className="shortcut-item"><span>Clear Engine Prefix</span><kbd>Backspace</kbd></div>
+                {showShortcuts && (
+                    <div className="sp-section sp-shortcuts-section">
+                        <div className="sp-label">Keyboard Shortcuts</div>
+                        <div className="shortcut-list">
+                            <div className="shortcut-item"><span>Focus Search</span><kbd>Ctrl + Space</kbd></div>
+                            <div className="shortcut-item"><span>Close Suggestions</span><kbd>Esc</kbd></div>
+                            <div className="shortcut-item"><span>Navigate List</span><kbd>↑ / ↓</kbd></div>
+                            <div className="shortcut-item"><span>Clear Engine Prefix</span><kbd>Backspace</kbd></div>
+                        </div>
+                        <div className="sp-label" style={{ marginTop: '15px' }}>Search Prefixes</div>
+                        <div className="prefix-grid">
+                            <div className="prefix-item"><code>g </code><span>Google</span></div>
+                            <div className="prefix-item"><code>yt </code><span>YouTube</span></div>
+                            <div className="prefix-item"><code>r </code><span>Reddit</span></div>
+                            <div className="prefix-item"><code>gh </code><span>GitHub</span></div>
+                            <div className="prefix-item"><code>ddg </code><span>DuckDuckGo</span></div>
+                            <div className="prefix-item"><code>wiki </code><span>Wikipedia</span></div>
+                            <div className="prefix-item"><code>mdn </code><span>MDN</span></div>
+                            <div className="prefix-item"><code>tw </code><span>Twitter/X</span></div>
+                            <div className="prefix-item"><code>a </code><span>Amazon</span></div>
+                            <div className="prefix-item"><code>mal </code><span>MyAnimeList</span></div>
+                        </div>
                     </div>
-                    <div className="sp-label" style={{ marginTop: '15px' }}>Search Prefixes</div>
-                    <div className="prefix-grid">
-                        <div className="prefix-item"><code>g </code><span>Google</span></div>
-                        <div className="prefix-item"><code>yt </code><span>YouTube</span></div>
-                        <div className="prefix-item"><code>r </code><span>Reddit</span></div>
-                        <div className="prefix-item"><code>gh </code><span>GitHub</span></div>
-                        <div className="prefix-item"><code>ddg </code><span>DuckDuckGo</span></div>
-                        <div className="prefix-item"><code>wiki </code><span>Wikipedia</span></div>
-                        <div className="prefix-item"><code>mdn </code><span>MDN</span></div>
-                        <div className="prefix-item"><code>tw </code><span>Twitter/X</span></div>
-                        <div className="prefix-item"><code>a </code><span>Amazon</span></div>
-                        <div className="prefix-item"><code>mal </code><span>MyAnimeList</span></div>
-                    </div>
-                </div>
+                )}
 
                 {/* Backup & Restore */}
                 <div className="sp-section">

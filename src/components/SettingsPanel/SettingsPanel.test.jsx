@@ -137,4 +137,36 @@ describe('SettingsPanel', () => {
 
         expect(screen.queryByText('Are you sure you want to reset all settings?')).toBeNull();
     });
+
+    it('renders keyboard shortcuts section on desktop', () => {
+        render(<SettingsPanel embedded={false} />);
+        expect(screen.getByText('Keyboard Shortcuts')).toBeTruthy();
+        expect(screen.getByText('Focus Search')).toBeTruthy();
+        expect(screen.getByText('Search Prefixes')).toBeTruthy();
+    });
+
+    it('does not render keyboard shortcuts section when embedded in compact layout', () => {
+        render(<SettingsPanel embedded={true} />);
+        expect(screen.queryByText('Keyboard Shortcuts')).toBeNull();
+        expect(screen.queryByText('Focus Search')).toBeNull();
+    });
+
+    it('does not render keyboard shortcuts section on mobile/touch screens', () => {
+        const originalMatchMedia = window.matchMedia;
+        window.matchMedia = vi.fn().mockImplementation((query) => ({
+            matches: query.includes('max-width') || query.includes('hover: none'),
+            media: query,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+        }));
+
+        try {
+            render(<SettingsPanel embedded={false} />);
+            expect(screen.queryByText('Keyboard Shortcuts')).toBeNull();
+            expect(screen.queryByText('Focus Search')).toBeNull();
+        } finally {
+            window.matchMedia = originalMatchMedia;
+        }
+    });
 });
+

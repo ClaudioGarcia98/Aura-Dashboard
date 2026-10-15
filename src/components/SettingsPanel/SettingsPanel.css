@@ -475,3 +475,11 @@ input[type="range"]::-moz-range-thumb:hover {
         max-width: calc(100vw - 24px);
     }
 }
+
+/* ── Keyboard Shortcuts (Desktop only) ─────────────── */
+@media (hover: none), (pointer: coarse), (max-width: 1024px) {
+    .sp-shortcuts-section {
+        display: none !important;
+    }
+}
+
