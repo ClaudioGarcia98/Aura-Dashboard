@@ -337,4 +337,12 @@ describe('formatBroadcastTime helper', () => {
         expect(result).toContain('PT');
         expect(result).toMatch(/\d{2}:\d{2} PT \/ 23:30 JST/);
     });
+
+    it('includes day prefix when Portugal broadcast day differs from Japan day', () => {
+        const result = formatBroadcastTime('00:45', 'Thursdays');
+        expect(result).toContain('Wed');
+        expect(result).toContain('Thu');
+        expect(result).toContain('00:45 JST');
+        expect(result).toContain('16:45 PT');
+    });
 });

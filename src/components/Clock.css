@@ -9,6 +9,8 @@
     letter-spacing: -3px; line-height: var(--line-height-heading);
     text-shadow: 0 4px 15px rgba(0,0,0,0.6);
     transition: font-size 0.3s ease;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1;
 }
 #ampm {
     font-size: 2rem; font-weight: 700;
@@ -31,4 +33,6 @@
     color: var(--text-secondary);
     text-shadow: 0 2px 8px rgba(0,0,0,0.5);
     animation: fadeSlideIn 0.5s ease 0.18s both;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1;
 }

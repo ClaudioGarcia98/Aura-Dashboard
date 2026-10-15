@@ -169,6 +169,8 @@
 }
 .anime-time {
     font-size: 0.75rem; opacity: 0.7; display: flex; align-items: center; gap: 6px;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1;
 }
 
 /* Highlight for Watched */
@@ -433,6 +435,13 @@
 }
 .tab-item-meta {
     font-size: 0.85rem; opacity: 0.85; display: flex; flex-direction: column; gap: 2px;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1;
+}
+.tab-item-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 /* Skeleton Loaders */
@@ -527,6 +536,8 @@
     box-shadow: 0 0 10px var(--accent-glow);
     width: fit-content;
     align-self: flex-start;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1;
 }
 .anime-countdown svg {
     animation: pulseGlow 2s infinite;
