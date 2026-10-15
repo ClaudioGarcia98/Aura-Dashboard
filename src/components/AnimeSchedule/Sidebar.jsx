@@ -61,10 +61,10 @@ export default memo(function Sidebar({
                                     <line x1="12" y1="16" x2="12" y2="12"></line>
                                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                 </svg>
-                                <span className="info-tooltip sidebar-tooltip" style={{ whiteSpace: 'normal', width: '230px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 400, padding: '12px 14px' }}>
-                                    Anime schedules are based on <strong>Japan Standard Time (JST)</strong>.
+                                <span className="info-tooltip sidebar-tooltip" style={{ whiteSpace: 'normal', width: '240px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 400, padding: '12px 14px' }}>
+                                    Broadcast times are shown in <strong>Portugal time (PT)</strong> and <strong>Japan Standard Time (JST)</strong>.
                                     <br/><br/>
-                                    Depending on your timezone, the listed broadcast day might not match your local day.
+                                    Episodes are scheduled according to Portugal&apos;s local broadcast day.
                                 </span>
                             </span>
                         </span>
@@ -101,7 +101,7 @@ export default memo(function Sidebar({
                     ) : sidebarLoading ? (
                         <SkeletonList />
                     ) : sidebarData.length === 0 ? (
-                        <div style={{ opacity: 0.5, padding: '20px', textAlign: 'center', fontSize: '0.8rem' }}>No anime scheduled.</div>
+                        <div className="as-empty-state">No anime scheduled.</div>
                     ) : (
                         sidebarData.map(anime => (
                             <AnimeCard
