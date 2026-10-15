@@ -70,3 +70,23 @@
     margin: 0 auto;
     padding: 22px clamp(14px, 5vw, 28px) calc(40px + env(safe-area-inset-bottom));
 }
+
+/* ── Landscape mobile / short viewports ─────────────── */
+@media (max-height: 520px) {
+    .compact-home {
+        gap: 10px;
+        padding: 10px clamp(12px, 4vw, 24px) calc(20px + env(safe-area-inset-bottom, 0px));
+        max-width: 680px;
+    }
+    .anime-embedded {
+        padding: 8px clamp(10px, 3vw, 18px) 0;
+        max-width: 760px;
+    }
+    .anime-embedded .as-content {
+        padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+    .compact-settings {
+        padding: 10px clamp(12px, 4vw, 24px) calc(20px + env(safe-area-inset-bottom, 0px));
+        max-width: 680px;
+    }
+}

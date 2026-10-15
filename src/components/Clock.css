@@ -80,3 +80,26 @@
         margin-bottom: 4px;
     }
 }
+
+/* -- Landscape mobile / short viewports --------------- */
+@media (max-height: 520px) {
+    .clock-row {
+        gap: 6px;
+        margin-bottom: 2px;
+    }
+    #time {
+        font-size: clamp(2rem, 6vw, 2.8rem) !important;
+        letter-spacing: -1px;
+    }
+    .clock-row.mode-both #time {
+        font-size: clamp(1.6rem, 5vw, 2.2rem) !important;
+    }
+    #ampm {
+        font-size: 1rem !important;
+        margin-bottom: 4px;
+    }
+    #date {
+        font-size: 0.85rem !important;
+        margin-bottom: 6px !important;
+    }
+}

@@ -337,3 +337,39 @@
         max-height: 220px;
     }
 }
+
+/* -- Landscape mobile / short viewports --------------- */
+@media (max-height: 520px) {
+    .lofi-expanded {
+        padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+        gap: 12px;
+    }
+    .lofi-expanded-now {
+        padding: 12px 16px;
+        border-radius: var(--radius-lg);
+        gap: 4px;
+        max-width: 480px;
+    }
+    .lofi-expanded-title {
+        font-size: 1.1rem;
+    }
+    .lofi-expanded-visual {
+        height: 36px;
+    }
+    .lofi-visualizer-lg {
+        height: 32px;
+    }
+    .lofi-expanded-play {
+        width: 48px;
+        height: 48px;
+    }
+    .lofi-expanded-stations {
+        padding: 10px 12px;
+        border-radius: var(--radius-lg);
+        max-width: 480px;
+    }
+    .lofi-expanded-stations .lofi-station-btn {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+    }
+}

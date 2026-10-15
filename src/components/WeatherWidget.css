@@ -325,3 +325,32 @@
         z-index: 81;
     }
 }
+
+/* -- Landscape mobile / short viewports --------------- */
+@media (max-height: 520px) {
+    .weather-inline-card {
+        padding: 8px 12px;
+        gap: 10px;
+        border-radius: var(--radius-md);
+    }
+    .weather-inline-temp {
+        font-size: 1.2rem;
+    }
+    .weather-inline-cond {
+        font-size: 0.75rem;
+    }
+    .weather-inline-icon .weather-svg {
+        width: 24px;
+        height: 24px;
+    }
+    .weather-inline-details.open {
+        max-height: 320px;
+        padding: 10px 12px;
+    }
+    .weather-forecast-grid {
+        gap: 4px;
+    }
+    .weather-forecast-day {
+        padding: 6px 2px;
+    }
+}

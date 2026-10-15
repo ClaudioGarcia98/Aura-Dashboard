@@ -15,3 +15,12 @@
         letter-spacing: 2px;
     }
 }
+
+/* -- Landscape mobile / short viewports --------------- */
+@media (max-height: 520px) {
+    #greeting {
+        font-size: 0.85rem;
+        letter-spacing: 1.5px;
+        margin-bottom: 2px;
+    }
+}

@@ -1,0 +1,118 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import CompactLayout from '../components/CompactLayout';
+import App from '../App';
+
+vi.mock('../assets/logo.png', () => ({ default: 'logo.png' }));
+
+const { mockSettings, mockUseSettingsStore } = vi.hoisted(() => {
+    const s = {
+        showWeatherWidget: true,
+        showQuote: true,
+        showSearchBox: true,
+        showSpeedDial: true,
+        showTop5Anime: true,
+        showAnimeSidebar: true,
+        showLofiPlayer: true,
+        lofiStations: [{ id: 1, videoId: 'abc', name: 'Lofi 1' }],
+        username: 'TestUser',
+        backgroundUrl: '',
+        backgroundIsVideo: false,
+        use24hClock: true,
+        clockMode: 'digital',
+        customEngines: [],
+        speedDials: [{ id: 1, name: 'Google', url: 'https://google.com' }],
+        fallbackCity: 'London',
+        useCelsius: true,
+    };
+    const fn = vi.fn((selector) => (typeof selector === 'function' ? selector(s) : s));
+    fn.getState = vi.fn(() => s);
+    return { mockSettings: s, mockUseSettingsStore: fn };
+});
+
+vi.mock('../stores/useSettingsStore', () => ({
+    useSettingsStore: mockUseSettingsStore,
+}));
+
+vi.mock('../hooks/useBackgroundLoader', () => ({ useBackgroundLoader: vi.fn() }));
+vi.mock('../hooks/useThemeEffect', () => ({ useThemeEffect: vi.fn() }));
+vi.mock('../hooks/useFontEffect', () => ({ useFontEffect: vi.fn() }));
+
+describe('Landscape Mode & Mobile Resolutions', () => {
+    const originalInnerWidth = window.innerWidth;
+    const originalInnerHeight = window.innerHeight;
+    const originalMatchMedia = window.matchMedia;
+
+    const setViewport = (width, height) => {
+        window.innerWidth = width;
+        window.innerHeight = height;
+        window.matchMedia = vi.fn().mockImplementation((query) => {
+            const isWidthQuery = query.includes('max-width: 1024px');
+            const isHeightQuery = query.includes('max-height: 520px');
+            const isTouchQuery = query.includes('hover: none') || query.includes('pointer: coarse');
+            return {
+                matches: (isWidthQuery && width <= 1024) || (isHeightQuery && height <= 520) || isTouchQuery,
+                media: query,
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+            };
+        });
+    };
+
+    beforeEach(() => {
+        Object.assign(mockSettings, {
+            showWeatherWidget: true,
+            showQuote: true,
+            showSearchBox: true,
+            showSpeedDial: true,
+            showTop5Anime: true,
+            showAnimeSidebar: true,
+            showLofiPlayer: true,
+            lofiStations: [{ id: 1, videoId: 'abc', name: 'Lofi 1' }],
+            username: 'TestUser',
+            backgroundUrl: '',
+            backgroundIsVideo: false,
+            use24hClock: true,
+            clockMode: 'digital',
+            customEngines: [],
+            speedDials: [{ id: 1, name: 'Google', url: 'https://google.com' }],
+            fallbackCity: 'London',
+            useCelsius: true,
+        });
+    });
+
+    afterEach(() => {
+        window.innerWidth = originalInnerWidth;
+        window.innerHeight = originalInnerHeight;
+        window.matchMedia = originalMatchMedia;
+        vi.restoreAllMocks();
+    });
+
+    const resolutions = [
+        { name: 'iPhone SE (Landscape)', width: 667, height: 375 },
+        { name: 'Samsung Galaxy S20 (Landscape)', width: 800, height: 360 },
+        { name: 'iPhone 14 / 15 (Landscape)', width: 844, height: 390 },
+        { name: 'iPhone 15 Pro Max (Landscape)', width: 932, height: 430 },
+        { name: 'Pixel 7 (Landscape)', width: 915, height: 412 },
+    ];
+
+    resolutions.forEach(({ name, width, height }) => {
+        it(`renders CompactLayout cleanly on ${name} (${width}x${height})`, () => {
+            setViewport(width, height);
+            const { container } = render(<CompactLayout />);
+
+            expect(container.querySelector('.compact-root')).toBeTruthy();
+            expect(container.querySelector('.top-nav')).toBeTruthy();
+            expect(container.querySelector('.compact-home')).toBeTruthy();
+            expect(screen.getByRole('tab', { name: 'Home' })).toBeTruthy();
+        });
+    });
+
+    it('activates compact-mode body class on mobile landscape in App', () => {
+        // iPhone 14 landscape (844x390)
+        setViewport(844, 390);
+        render(<App />);
+
+        expect(document.body.classList.contains('compact-mode')).toBe(true);
+    });
+});

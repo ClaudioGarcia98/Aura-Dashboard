@@ -825,3 +825,55 @@
 .anime-embedded .as-subtitle {
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
 }
+
+/* -- Landscape mobile / short viewports --------------- */
+@media (max-height: 520px) {
+    .today-anime-box {
+        padding: 8px 10px;
+        border-radius: var(--radius-md);
+    }
+    .tab-header {
+        margin-bottom: 6px;
+    }
+    .tab-item-main {
+        padding: 6px 4px;
+        gap: 8px;
+    }
+    .tab-img-container {
+        width: 36px;
+        height: 50px;
+    }
+    .tab-item-title {
+        font-size: 0.82rem;
+    }
+    .tab-item-meta {
+        font-size: 0.72rem;
+    }
+    .anime-countdown {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+        margin-top: 4px;
+    }
+    .tab-list {
+        max-height: 180px;
+    }
+    .as-header {
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+    }
+    .as-header h2 {
+        font-size: 1.1rem;
+    }
+    .as-days {
+        margin-bottom: 8px;
+        gap: 4px;
+    }
+    .as-day-btn {
+        height: 26px;
+        font-size: 0.68rem;
+        padding: 0 8px;
+    }
+    .anime-sidebar {
+        padding: 10px 12px;
+    }
+}

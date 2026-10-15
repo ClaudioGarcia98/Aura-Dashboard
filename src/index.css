@@ -388,3 +388,10 @@ body.compact-mode {
     }
 }
 
+/* ── Landscape mobile / short viewports token overrides ── */
+@media (max-height: 520px) {
+    :root {
+        --top-nav-height: 40px;
+    }
+}
+

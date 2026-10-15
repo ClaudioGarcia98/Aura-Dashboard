@@ -483,3 +483,33 @@ input[type="range"]::-moz-range-thumb:hover {
     }
 }
 
+/* -- Landscape mobile / short viewports --------------- */
+@media (max-height: 520px) {
+    .settings-panel.embedded {
+        padding: 12px 14px;
+        border-radius: var(--radius-lg);
+    }
+    .sp-title {
+        font-size: 0.9rem;
+        padding-bottom: 4px;
+        margin-bottom: 8px;
+    }
+    .sp-section {
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+    }
+    .sp-label {
+        font-size: 0.62rem;
+        margin-bottom: 4px;
+    }
+    .pill {
+        min-height: 30px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+    }
+    .settings-panel.open {
+        max-height: 92vh;
+        max-height: 92dvh;
+    }
+}
+
