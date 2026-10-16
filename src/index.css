@@ -298,7 +298,7 @@ body.compact-mode {
 
 /* -- Responsive Mobile Styles ------------------------ */
 @media (max-width: 768px) {
-    body {
+    body:not(.compact-mode) {
         height: auto;
         min-height: 100vh;
         min-height: 100dvh;
@@ -382,7 +382,7 @@ body.compact-mode {
 
 /* -- Landscape phones / very short viewports --------- */
 @media (max-width: 1024px) and (max-height: 600px) {
-    body {
+    body:not(.compact-mode) {
         height: auto;
         min-height: 100vh;
         min-height: 100dvh;

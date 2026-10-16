@@ -10,7 +10,6 @@ Live anime airing schedules, MyAnimeList watchlist sync, ambient Lofi radio, wea
 [![Tests](https://img.shields.io/badge/Tests-526_Passing-22C55E?style=for-the-badge&logo=vitest)](https://github.com/ClaudioGarcia98/Aura-Dashboard/actions)
 [![Node](https://img.shields.io/badge/Node-%3E%3D22.12-339933?style=for-the-badge&logo=nodedotjs)](https://nodejs.org/)
 [![Buy Me A Coffee](https://img.shields.io/badge/Support-Buy_Me_a_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/claudio091s)
-[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub_Sponsors-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/ClaudioGarcia98)
 
 </div>
 
@@ -102,8 +101,7 @@ Open the local URL shown in your terminal (default `http://localhost:5173`). In 
 
 **Good Morning (Aura)** is free to use. If it brightens your daily workflow or anime tracking, consider supporting its continued development:
 
-- ☕ [**Buy Me a Coffee**](https://buymeacoffee.com/claudio091s)
-- 💖 [**GitHub Sponsors (`@ClaudioGarcia98`)**](https://github.com/sponsors/ClaudioGarcia98)
+- ☕ [**Buy Me a Coffee (`buymeacoffee.com/claudio091s`)**](https://buymeacoffee.com/claudio091s)
 
 ---
 

@@ -105,7 +105,7 @@
         height: 48px;
         z-index: 95;
     }
-    .settings-panel {
+    .settings-panel:not(.embedded) {
         position: fixed;
         left: 0;
         right: 0;
@@ -123,7 +123,7 @@
         visibility: visible;
         z-index: 100;
     }
-    .settings-panel::before {
+    .settings-panel:not(.embedded)::before {
         content: '';
         position: absolute;
         top: 8px; left: 50%;
@@ -132,7 +132,7 @@
         border-radius: 999px;
         background: rgba(255,255,255,0.25);
     }
-    .settings-panel.open {
+    .settings-panel.open:not(.embedded) {
         transform: translateY(0);
     }
     .sp-close { display: flex; }
@@ -169,9 +169,13 @@
 
 /* -- Landscape mobile / short viewports --------------- */
 @media (max-height: 520px) {
-    .settings-panel.embedded {
-        padding: 12px 14px;
+    .settings-panel.embedded,
+    .settings-panel.embedded.open {
+        padding: 14px 16px;
         border-radius: var(--radius-lg);
+        height: auto;
+        max-height: none;
+        overflow: visible;
     }
     .sp-title {
         font-size: 0.9rem;
@@ -191,7 +195,7 @@
         padding: 4px 10px;
         font-size: 0.75rem;
     }
-    .settings-panel.open {
+    .settings-panel.open:not(.embedded) {
         max-height: 92vh;
         max-height: 92dvh;
     }

@@ -45,7 +45,7 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
     const importFileInputRef = useRef(null);
 
     // Lock background scroll while the settings sheet is open (phones)
-    useBodyScrollLock(isOpen);
+    useBodyScrollLock(!embedded && isOpen);
 
     // Panel close-on-click-outside, idle, and open-dials scroll
     useEffect(() => {
