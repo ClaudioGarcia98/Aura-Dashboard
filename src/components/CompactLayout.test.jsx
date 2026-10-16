@@ -85,6 +85,14 @@ describe('CompactLayout', () => {
         expect(screen.getByTestId('compact-today-launch')).toBeTruthy();
     });
 
+    it('wraps Greeting and Clock in a compact-hero card for mobile readability', () => {
+        const { container } = render(<CompactLayout />);
+        const hero = container.querySelector('.compact-hero');
+        expect(hero).toBeTruthy();
+        expect(hero.querySelector('[data-testid="compact-greeting"]')).toBeTruthy();
+        expect(hero.querySelector('[data-testid="compact-clock"]')).toBeTruthy();
+    });
+
     it('hides navigation on downward scroll and reveals it on upward scroll or at the top', () => {
         const { container } = render(<CompactLayout />);
         const panel = screen.getByRole('tabpanel', { name: 'Home' });

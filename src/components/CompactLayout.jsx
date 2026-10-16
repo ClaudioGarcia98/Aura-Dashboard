@@ -96,8 +96,10 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
             {/* HOME */}
             <div className={`tab-panel ${activeTab === 'home' ? 'active' : ''}`} role="tabpanel" id="panel-home" aria-labelledby="tab-home" aria-label="Home">
                 <div className="compact-home">
-                    <Greeting />
-                    <Clock />
+                    <div className="compact-hero">
+                        <Greeting />
+                        <Clock />
+                    </div>
                     {showQuote && <ErrorBoundary><Quote /></ErrorBoundary>}
                     {showSearchBox && <ErrorBoundary><SearchBox /></ErrorBoundary>}
                     {showWeatherWidget && <ErrorBoundary><WeatherWidget inline /></ErrorBoundary>}

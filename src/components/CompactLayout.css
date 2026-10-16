@@ -60,6 +60,48 @@
 /* Keep the clock from overflowing the column on tablet widths */
 .compact-home .clock-row { flex-wrap: wrap; }
 
+/* ── Hero Card (Greeting + Clock) ─────────────────────── */
+.compact-hero {
+    position: relative;
+    background: linear-gradient(145deg, rgba(16, 18, 26, 0.80) 0%, rgba(10, 11, 16, 0.90) 100%);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: 22px 24px 20px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.42), var(--glass-highlight);
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    animation: fadeSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.compact-hero:hover {
+    border-color: var(--accent-border);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.48), 0 0 20px var(--accent-subtle), var(--glass-highlight);
+}
+.compact-hero #greeting {
+    margin-bottom: var(--space-1);
+}
+.compact-hero .clock-row {
+    margin-bottom: 4px;
+}
+.compact-hero #date {
+    margin-bottom: 0;
+}
+
+@media (max-width: 480px) {
+    .compact-hero {
+        padding: 18px 18px 16px;
+    }
+}
+
+@media (max-width: 360px) {
+    .compact-hero {
+        padding: 14px 14px 12px;
+        border-radius: var(--radius-lg);
+    }
+}
+
 /* ── Anime tab ──────────────────────────────────────── */
 .anime-embedded {
     height: auto;
@@ -92,6 +134,20 @@
         gap: 10px;
         padding: 10px clamp(12px, 4vw, 24px) calc(20px + env(safe-area-inset-bottom, 0px));
         max-width: 680px;
+    }
+    .compact-hero {
+        padding: 10px 16px 8px;
+        border-radius: var(--radius-lg);
+    }
+    .compact-hero #greeting {
+        margin-bottom: 2px;
+    }
+    .compact-hero .clock-row {
+        gap: 6px;
+        margin-bottom: 2px;
+    }
+    .compact-hero #date {
+        margin-bottom: 0 !important;
     }
     .anime-embedded {
         padding: 8px clamp(10px, 3vw, 18px) 0;
