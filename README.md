@@ -1,57 +1,113 @@
-# Aura
+<div align="center">
 
-A customizable React dashboard and browser start page with a clock, weather, search, bookmarks, anime schedules, and background music.
+# ✨ Good Morning — Aura Dashboard
 
-## Run locally
+**A cozy, local-first personal start page & productivity dashboard built with React, Vite, and glassmorphism.**  
+Live anime airing schedules, MyAnimeList watchlist sync, ambient Lofi radio, weather forecasts, speed dials, and dynamic video wallpapers—compiled into a single self-contained HTML artifact.
 
-Use Node.js 22.12 or newer and npm. From this project directory:
+[![Live Demo](https://img.shields.io/badge/Live_Demo-GitHub_Pages-FF7B54?style=for-the-badge&logo=github)](https://claudiogarcia98.github.io/Aura-Dashboard/)
+[![Release](https://img.shields.io/badge/Release-v1.2.0-38BDF8?style=for-the-badge)](https://github.com/ClaudioGarcia98/Aura-Dashboard/releases/tag/v1.2.0)
+[![Tests](https://img.shields.io/badge/Tests-526_Passing-22C55E?style=for-the-badge&logo=vitest)](https://github.com/ClaudioGarcia98/Aura-Dashboard/actions)
+[![Node](https://img.shields.io/badge/Node-%3E%3D22.12-339933?style=for-the-badge&logo=nodedotjs)](https://nodejs.org/)
+[![Buy Me A Coffee](https://img.shields.io/badge/Support-Buy_Me_a_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/claudiogarcia)
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub_Sponsors-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/ClaudioGarcia98)
 
+</div>
+
+---
+
+## 🖥️ Visual Showcase
+
+### Desktop Start Page (Aurora / Sunset Theme)
+![Aura Desktop Dashboard](.github/assets/desktop-hero.jpg)
+
+### Live Anime Schedule & Dynamic Glassmorphism Themes
+| 📺 Weekly Anime Schedule (`AniList` + `MAL Sync`) | 🎨 Dynamic Themes & Settings (`Aurora`, `Nord`, `Tokyo`, `Sunset`, `Forest`) |
+| :---: | :---: |
+| ![Anime Schedule Sidebar](.github/assets/desktop-schedule.jpg) | ![Dynamic Themes & Settings](.github/assets/desktop-themes.jpg) |
+
+### Mobile-First Compact Tabbed Shell
+| 📱 Mobile Home Tab | 📅 Mobile Anime Schedule Tab |
+| :---: | :---: |
+| <img src=".github/assets/mobile-home.jpg" alt="Mobile Home Tab" width="360" /> | <img src=".github/assets/mobile-schedule.jpg" alt="Mobile Anime Schedule Tab" width="360" /> |
+
+---
+
+## 🌟 Feature Matrix
+
+| Feature | What It Does | Storage & Providers |
+| :--- | :--- | :--- |
+| **🕰️ Smart Clock & Greeting** | Digital, analog, or dual clock (`12h` / `24h`) paired with time-of-day and weather-aware greetings (*Morning*, *Afternoon*, *Evening*, *Night*) and anime quotes. | Local system clock + `Zustand` (`dash_settings`) |
+| **📺 Live Anime Airing Tracker** | Displays **Today's Launch (Top 5)** on the main dashboard and a full **7-day airing calendar** converted automatically to Portugal (`Europe/Lisbon`) and Japan (`JST`) times with live countdown badges. | **AniList GraphQL API** + cached stale-safe fallback |
+| **🔗 MyAnimeList Watchlist Sync** | Connects any public MyAnimeList username—no login or API key required—and highlights every airing show on your `Watching` list with a glowing **`★ MY LIST`** badge. | Local Vite proxy (`/api/mal`) in dev · Dedicated **Cloudflare Worker v4** in prod |
+| **🎬 Device-Adaptive Trailers** | Hovering an anime card on desktop opens a floating YouTube trailer portal; expanding a card on touch/mobile embeds a responsive `16:9` trailer with automatic teardown on collapse. | YouTube IFrame API (origin-verified) |
+| **🎧 Persistent Lofi Radio** | Built-in YouTube Lofi stream player with curated stations, custom station URL support, shared global volume/mute memory, and uninterrupted playback when switching between desktop and mobile layouts. | YouTube IFrame API + `localStorage` |
+| **⛅ Weather & 3-Day Forecast** | Current conditions (`°C` / `°F`), expandable 3-day forecast, and automatic location resolution with GPS, IP geolocation, and custom fallback city support. | **Open-Meteo API** + location/units-keyed cache |
+| **🔍 Prefix Search & Speed Dials** | Multi-engine search bar with quick prefixes (`g `, `yt `, `mal `, `gh `, `r `), keyboard history navigation, opt-in data-only search suggestions, and reorderable bookmark Speed Dials. | Local history + `dash_settings` |
+| **🎨 Dynamic Glassmorphism & Video Wallpapers** | 5 reactive color themes (*Aurora*, *Nord*, *Tokyo*, *Sunset*, *Forest*) powered by CSS `color-mix()`, 6 typography presets (*Default*, *Raleway*, *Outfit*, *Nunito*, *JetBrains*, *Playfair*), and custom image/video wallpaper uploads stored offline. | **IndexedDB** (`dashDB`) for media + CSS custom properties |
+| **💾 Versioned Backups & Clean Reset** | One-click JSON export/import of validated settings and bookmarks, plus an Aura-scoped reset that cleanly restores first-time visitor defaults without touching unrelated browser storage. | Guarded `safeStorage` adapter |
+
+---
+
+## ⚡ Quick-Start Guide
+
+### Prerequisites
+- **Node.js `22.12+`** and `npm`
+
+### 1. Clone & Install
 ```sh
+git clone https://github.com/ClaudioGarcia98/Aura-Dashboard.git
+cd Aura-Dashboard
 npm ci
-npm run dev
 ```
 
-The development server is local-only by default. `npm run preview` serves the production output after a build.
+### 2. Start the Local Development Server
+```sh
+npm run dev
+```
+Open the local URL shown in your terminal (default `http://localhost:5173`). In development, Vite automatically proxies `/api/mal` requests directly to MyAnimeList.
 
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Development server with live updates |
-| `npm run lint` | Check JavaScript and React code |
-| `npm test` | Run unit and integration tests |
-| `npm run build` | Create and verify `dist/index.html` |
-| `npm run preview` | Preview the production build |
-| `npm audit` | Check current dependency advisories |
+### 3. Available Scripts
 
-## Features
+| Command | Description |
+| :--- | :--- |
+| `npm run dev` | Start the local Vite development server with HMR and `/api/mal` proxy |
+| `npm run lint` | Run ESLint across all JavaScript and React files |
+| `npm test` | Run the full Vitest unit & integration suite (`526 tests` across `43 files`) |
+| `npm run build` | Package the app into a single self-contained `dist/index.html` and verify CSP hashes |
+| `npm run preview` | Serve the production `dist/index.html` bundle locally |
+| `npm audit` | Check dependency security advisories |
 
-- Digital and analog clocks, 12/24-hour time, time-aware greetings and themes.
-- Current weather and a three-day forecast, Celsius/Fahrenheit, GPS with IP and city fallbacks.
-- Portugal-local anime schedules from AniList, including daylight-saving changes and labeled saved-schedule fallback during outages.
-- MyAnimeList watching-list synchronization using the local Vite proxy in development (`/api/mal`) and the dedicated Cloudflare Worker in production. Complete paginated JSON lists are validated and cached per username; matching saved lists remain available with their last sync time during outages. Settings offers a cache-bypassing retry and clear status feedback for rate limits or temporary unavailability.
-- Search prefixes, recent-search keyboard navigation, custom engine support through settings backups, and editable/reorderable bookmarks.
-- YouTube background radio and trailers, shared volume, station controls, and playback-failure feedback. The radio iframe stays mounted while switching between desktop and compact layouts.
-- Local image/video backgrounds, themes, optional Google Fonts, motion controls, and versioned settings backups.
+---
 
-## Storage, privacy, and offline behavior
+## 🛠️ Personalizing Your Dashboard
 
-Settings, bookmarks, and caches use browser storage; background files use IndexedDB. Storage is local to the browser and is not encrypted by this application. No account or backend is required. If storage is denied or full, ordinary dashboard settings can continue in memory; backup import reports persistence failures.
+1. **Set Your Display Name & MAL Profile**: Click the **⚙️ Settings** gear (bottom-left on desktop, top bar on mobile) and enter your display name and public **MyAnimeList username** to highlight your airing shows.
+2. **Customize Themes & Wallpapers**: Under **Theme & Typography** and **Background Media**, switch between *Aurora*, *Midnight*, *Ocean*, and *Cyberpunk* palettes or upload your own `.mp4` / `.webm` / image wallpaper (stored locally in IndexedDB).
+3. **Use Search Shortcuts**: Press `Ctrl + Space` anywhere on desktop to focus the search bar, or type a prefix (`/yt lofi hip hop`, `/mal frieren`, `/gh react`) to jump straight to your target search engine.
+4. **Backup Your Setup**: Scroll to **Backup & Restore** in Settings to export a portable `.json` snapshot of your speed dials, custom stations, and preferences.
 
-Online search suggestions are **off by default**. Enabling them sends typed text to Google through data-only requests. Browsers may block those requests, in which case local search and history still work. Bookmark favicons, fonts, weather, geolocation fallback, AniList schedules, the dedicated MAL Worker, and YouTube use external services. The MAL Worker and MyAnimeList receive only the requested public username; no account credentials or third-party CORS/RSS proxies are used.
+---
 
-Backups include validated settings and bookmarks, not background files, recent searches, or transient API caches. Old Aura `dash_*` backup files remain supported for known settings. Reset removes Aura-owned `dash_*` storage and its saved background; it does not clear other applications' caches or unregister their service workers.
+## 🔒 Privacy, Security & Architecture
 
-The production distribution is one self-contained HTML file with local scripts, styles, logo, favicon, and default video embedded. It builds without network requests or source changes. Dynamic services still need internet access. Serving the file over HTTP/HTTPS provides more consistent browser storage and media support than opening a `file:` URL; YouTube playback also depends on browser and provider restrictions.
+- **100% Local-First**: Settings, speed dials, and API caches live in your browser's `localStorage`; custom video/image backgrounds live in `IndexedDB`. No user account or cloud database is required.
+- **Privacy by Default**: Online search suggestions are **off by default** and use inert JSON requests only when explicitly enabled. MyAnimeList sync sends only the public username you type—never credentials or cookies.
+- **Single-File Production Artifact**: `scripts/single-file.js` compiles all JS, CSS, fonts metadata, and default media into a single `dist/index.html` (< 5 MB) with strict `sha256` Content-Security-Policy (`CSP`) script hashes verified by `scripts/check-build.js`.
+- **Dedicated MAL Worker Relay**: Production builds on GitHub Pages connect to a hardened Cloudflare Worker ([`workers/mal/`](workers/mal/README.md)) featuring per-IP rate limiting, request coalescing, upstream timeouts, and per-user edge caching.
 
-The default video and original high-resolution logo account for most of the bundle. The build enforces a 5 MB maximum and checks for leftover runtime asset references and matching script security hashes.
+---
 
-GitHub Pages uses the dedicated MAL Worker configured in `src/services/api.js`. The Worker is deployed separately; see [MAL Worker setup](workers/mal/README.md). It supports arbitrary public usernames, enforces rate limits and response bounds, coalesces concurrent cache misses, and caches each username/page separately for five minutes. Local development uses the Vite `/api/mal` proxy.
+## ☕ Support the Project
 
-## Architecture and verification
+**Good Morning (Aura)** is free to use. If it brightens your daily workflow or anime tracking, consider supporting its continued development:
 
-`src/components` contains views and focused settings sections; `src/hooks` owns React lifecycles; `src/services` contains network, backup, and database operations; `src/stores` contains the settings schema and persistence. Anime services are split into schedule, watching, parser, and time modules.
+- ☕ [**Buy Me a Coffee**](https://buymeacoffee.com/claudiogarcia)
+- 💖 [**GitHub Sponsors (`@ClaudioGarcia98`)**](https://github.com/sponsors/ClaudioGarcia98)
 
-The production packager is a small local Vite plugin in `scripts/single-file.js`. GitHub Actions runs lint, tests, and the artifact checks, then deploys that exact validated artifact on pushes to `main`. Deployment permissions are scoped to the deploy job.
+---
 
-## License
+## 📄 License
 
-The project is proprietary. See [LICENSE](LICENSE) for the owner's terms. Earlier README references to an MIT license were incorrect.
+Copyright © 2026 Cláudio Garcia. All Rights Reserved.  
+This project and its source code are proprietary. See [LICENSE](LICENSE) for full terms, and [SECURITY.md](.github/SECURITY.md) for repository security policies.
