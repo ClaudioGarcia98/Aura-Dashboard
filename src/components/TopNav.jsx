@@ -33,9 +33,9 @@ const ICONS = {
     settings: SettingsIcon,
 };
 
-export default memo(function TopNav({ tabs, activeTab, onTabChange, lofiPlaying }) {
+export default memo(function TopNav({ tabs, activeTab, onTabChange, lofiPlaying, onFocus }) {
     return (
-        <nav className="top-nav" aria-label="Primary">
+        <nav className="top-nav" aria-label="Primary" onFocusCapture={onFocus}>
             <div className="top-nav-brand">
                 <img src={logoUrl} alt="Aura" className="top-nav-logo" />
                 <span className="top-nav-title">Aura</span>

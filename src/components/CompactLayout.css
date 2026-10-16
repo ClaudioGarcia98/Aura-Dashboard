@@ -11,23 +11,30 @@
     pointer-events: auto;
 }
 
+/* Overlay the scrolling page so hiding the bar reclaims space without reflow. */
+.compact-root > .top-nav {
+    position: absolute;
+    inset: 0 0 auto;
+    transition: transform 0.2s ease;
+}
+.compact-root--nav-hidden > .top-nav {
+    transform: translateY(-100%);
+    pointer-events: none;
+}
+
 /* Each tab panel is the only scroll container — the page itself never scrolls,
    so the fixed background is always full-screen with nothing below it. */
 .tab-panel {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
+    padding-top: calc(var(--top-nav-height) + env(safe-area-inset-top, 0px));
+    scroll-padding-top: calc(var(--top-nav-height) + env(safe-area-inset-top, 0px));
     -webkit-overflow-scrolling: touch;
     display: none;
 }
 .tab-panel.active {
     display: block;
-}
-/* Panels whose inner content manages its own scroll (e.g. anime list) */
-.tab-panel--fill.active {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
 }
 .tab-panel::-webkit-scrollbar { width: 0; height: 0; }
 
@@ -55,7 +62,7 @@
 
 /* ── Anime tab ──────────────────────────────────────── */
 .anime-embedded {
-    height: 100%;
+    height: auto;
     display: flex;
     flex-direction: column;
     padding: 18px clamp(12px, 4vw, 22px) 0;
@@ -64,6 +71,8 @@
     margin: 0 auto;
 }
 .anime-embedded .as-content {
+    flex: none;
+    overflow: visible;
     padding-left: 0;
     padding-right: 0;
     padding-bottom: calc(28px + env(safe-area-inset-bottom));

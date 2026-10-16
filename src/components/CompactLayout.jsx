@@ -1,6 +1,6 @@
 import './CompactLayout.css';
 import ErrorBoundary from './ErrorBoundary';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -57,6 +57,26 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
 
     // If the active tab's widget was just disabled, fall back to Home.
     const activeTab = tabs.some(t => t.id === tab) ? tab : 'home';
+    const [hiddenNavTab, setHiddenNavTab] = useState(null);
+    const scrollState = useRef({ panel: null, top: 0, travel: 0 });
+    const navHidden = hiddenNavTab === activeTab;
+    const selectTab = (next) => {
+        setHiddenNavTab(null);
+        scrollState.current = { panel: null, top: 0, travel: 0 };
+        setTab(next);
+    };
+    const handleScroll = (event) => {
+        const panel = event.target;
+        // Ignore nested controls and inactive tabs.
+        if (!panel.classList.contains('tab-panel') || !panel.classList.contains('active')) return;
+        const top = Math.max(0, Math.min(panel.scrollTop, panel.scrollHeight - panel.clientHeight));
+        const previous = scrollState.current;
+        const delta = top - (previous.panel === panel ? previous.top : 0);
+        const travel = Math.sign(delta) === Math.sign(previous.travel) ? previous.travel + delta : delta;
+        scrollState.current = { panel, top, travel };
+        if (top <= 16 || travel <= -12) setHiddenNavTab(null);
+        else if (top > 64 && travel >= 12) setHiddenNavTab(activeTab);
+    };
 
     // The empty SpeedDial "+" asks to open the dial settings — jump to the tab.
     useEffect(() => {
@@ -70,8 +90,8 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
     const anime = useAnimeSchedule({ alwaysOpen: showAnimeSidebar && activeTab === 'anime', enabled: showTop5Anime || showAnimeSidebar });
 
     return (
-        <div className="compact-root" id="mainUi">
-            <TopNav tabs={tabs} activeTab={activeTab} onTabChange={setTab} lofiPlaying={lofiPlaying} />
+        <div className={`compact-root${navHidden ? ' compact-root--nav-hidden' : ''}`} id="mainUi" onScrollCapture={handleScroll}>
+            <TopNav tabs={tabs} activeTab={activeTab} onTabChange={selectTab} lofiPlaying={lofiPlaying} onFocus={() => setHiddenNavTab(null)} />
 
             {/* HOME */}
             <div className={`tab-panel ${activeTab === 'home' ? 'active' : ''}`} role="tabpanel" id="panel-home" aria-labelledby="tab-home" aria-label="Home">
@@ -100,7 +120,7 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
 
             {/* ANIME */}
             {showAnimeSidebar && (
-                <div className={`tab-panel tab-panel--fill ${activeTab === 'anime' ? 'active' : ''}`} role="tabpanel" id="panel-anime" aria-labelledby="tab-anime" aria-label="Anime">
+                <div className={`tab-panel ${activeTab === 'anime' ? 'active' : ''}`} role="tabpanel" id="panel-anime" aria-labelledby="tab-anime" aria-label="Anime">
                     <ErrorBoundary><EmbeddedAnimeList
                         activeDay={anime.activeDay}
                         setActiveDay={anime.setActiveDay}

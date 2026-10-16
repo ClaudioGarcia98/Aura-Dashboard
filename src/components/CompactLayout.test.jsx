@@ -85,6 +85,35 @@ describe('CompactLayout', () => {
         expect(screen.getByTestId('compact-today-launch')).toBeTruthy();
     });
 
+    it('hides navigation on downward scroll and reveals it on upward scroll or at the top', () => {
+        const { container } = render(<CompactLayout />);
+        const panel = screen.getByRole('tabpanel', { name: 'Home' });
+        Object.defineProperties(panel, { scrollHeight: { value: 1800 }, clientHeight: { value: 500 } });
+        const hidden = () => container.querySelector('.compact-root').classList.contains('compact-root--nav-hidden');
+        fireEvent.scroll(panel, { target: { scrollTop: 100 } });
+        expect(hidden()).toBe(true);
+        fireEvent.scroll(panel, { target: { scrollTop: 96 } });
+        expect(hidden()).toBe(true);
+        fireEvent.scroll(panel, { target: { scrollTop: 80 } });
+        expect(hidden()).toBe(false);
+        fireEvent.scroll(panel, { target: { scrollTop: 160 } });
+        expect(hidden()).toBe(true);
+        fireEvent.scroll(panel, { target: { scrollTop: 0 } });
+        expect(hidden()).toBe(false);
+    });
+
+    it('reveals navigation for keyboard focus and after switching tabs', () => {
+        const { container } = render(<CompactLayout />);
+        const panel = screen.getByRole('tabpanel', { name: 'Home' });
+        Object.defineProperties(panel, { scrollHeight: { value: 1800 }, clientHeight: { value: 500 } });
+        fireEvent.scroll(panel, { target: { scrollTop: 100 } });
+        fireEvent.focus(screen.getByRole('tab', { name: 'Home' }));
+        expect(container.querySelector('.compact-root--nav-hidden')).toBeNull();
+        fireEvent.scroll(panel, { target: { scrollTop: 200 } });
+        fireEvent.click(screen.getByRole('tab', { name: 'Anime' }));
+        expect(container.querySelector('.compact-root--nav-hidden')).toBeNull();
+    });
+
     it('switches to Settings tab when Settings tab button is clicked', () => {
         render(<CompactLayout />);
         const settingsTab = screen.getByRole('tab', { name: 'Settings' });
