@@ -40,73 +40,19 @@ it('keeps AniList-only identifiers separate from MAL identifiers', () => {
     const items = parseAniListSchedule([media(7), { ...media(7), media: { id: 7, title: { english: 'No MAL id' } } }], 'friday');
     expect(items.map(item => item.mal_id)).toEqual([7, 'anilist:7']);
 });
-it('normalizes two Japan-local schedule days into one Portugal-local day', async () => {
-    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-16T12:00:00Z'));
-    fetch.mockImplementation(async url => {
-        if (!url.includes('/schedules?')) throw new Error('AniList unavailable');
-        const friday = url.includes('filter=friday');
-        return response({ data: [
-            { mal_id: friday ? 1 : 3, title: 'Midnight', broadcast: { time: '00:00' } },
-            { mal_id: friday ? 2 : 4, title: 'Noon', broadcast: { time: '12:00' } },
-        ] });
-    });
-    const items = await fetchDaySchedule('friday');
-    expect(items.map(item => item.mal_id)).toEqual([2, 3]);
-    expect(items.every(item => Number.isFinite(item.airingAt))).toBe(true);
-});
-it('prefers a complete JSON list even when an RSS feed could answer earlier', async () => {
-    fetch.mockImplementation(async url => {
-        if (url.includes('allorigins.win/raw')) return response([{ anime_id: 42, anime_title: 'Still watching' }]);
-        if (url.includes('rss2json')) return response({ status: 'ok', items: [] });
-        throw new Error('Unavailable');
-    });
-    const items = await fetchUserWatchingList('audit');
-    expect(items[0].mal_id).toBe(42);
-    expect(fetch.mock.calls.some(([url]) => url.includes('rss2json'))).toBe(false);
-});
 it('returns a live empty owner list without resurrecting a bundled snapshot', async () => {
     fetch.mockImplementation(async url => {
-        if (url.includes('allorigins.win/raw')) return response([]);
+        if (url.startsWith('/api/mal/')) return response([]);
         throw new Error('Unavailable');
     });
     expect(await fetchUserWatchingList('claclo98')).toEqual([]);
 });
 it('paginates complete MAL lists before returning them', async () => {
     fetch.mockImplementation(async url => {
-        if (!url.includes('allorigins.win/raw')) throw new Error('Unavailable');
-        const target = decodeURIComponent(url.split('?url=')[1]);
-        return response(target.includes('offset=0&') ? Array.from({ length: 300 }, (_, i) => ({ anime_id: i + 1, anime_title: `Show ${i}` })) : [{ anime_id: 301, anime_title: 'Last page' }]);
+        if (!url.startsWith('/api/mal/')) throw new Error('Unavailable');
+        return response(url.includes('offset=0&') ? Array.from({ length: 300 }, (_, i) => ({ anime_id: i + 1, anime_title: `Show ${i}` })) : [{ anime_id: 301, anime_title: 'Last page' }]);
     });
     expect(await fetchUserWatchingList('large')).toHaveLength(301);
-});
-
-it('waits for a slow full-list response instead of prematurely falling back to RSS', async () => {
-    vi.useFakeTimers();
-    fetch.mockImplementation(url => {
-        if (url.includes('allorigins.win/raw')) return new Promise(resolve => setTimeout(() => resolve(response([{ anime_id: 42, anime_title: 'Complete list' }])), 12000));
-        return Promise.reject(new Error('Unavailable'));
-    });
-    const pending = fetchUserWatchingList('slow');
-    await vi.advanceTimersByTimeAsync(12000);
-    const data = await pending;
-    expect(data[0].mal_id).toBe(42);
-    expect(data.partial).toBeUndefined();
-    expect(fetch.mock.calls.some(([url]) => url.includes('rss2json'))).toBe(false);
-});
-
-it('bypasses a cached partial result on an explicit retry', async () => {
-    fetch.mockImplementation(async url => {
-        if (url.includes('rss2json')) return response({ status: 'ok', items: [] });
-        throw new Error('Unavailable');
-    });
-    expect((await fetchUserWatchingList('retry')).partial).toBe(true);
-    fetch.mockImplementation(async url => {
-        if (url.includes('allorigins.win/raw')) return response([{ anime_id: 7, anime_title: 'Full result' }]);
-        throw new Error('Unavailable');
-    });
-    const data = await fetchUserWatchingList('retry', { force: true });
-    expect(data[0].mal_id).toBe(7);
-    expect(data.partial).toBeUndefined();
 });
 
 it('allows the local proxy to finish a cold connection taking over 15 seconds', async () => {
@@ -120,22 +66,6 @@ it('allows the local proxy to finish a cold connection taking over 15 seconds', 
     await vi.advanceTimersByTimeAsync(16000);
     expect((await pending)[0].mal_id).toBe(9);
     expect(fetch).toHaveBeenCalledTimes(1);
-});
-
-it('expires partial results after 30 seconds so a later attempt can recover', async () => {
-    vi.useFakeTimers();
-    fetch.mockImplementation(async url => {
-        if (url.includes('rss2json')) return response({ status: 'ok', items: [] });
-        throw new Error('Unavailable');
-    });
-    await fetchUserWatchingList('recover');
-    fetch.mockImplementation(async url => {
-        if (url.includes('allorigins.win/raw')) return response([{ anime_id: 8, anime_title: 'Recovered' }]);
-        throw new Error('Unavailable');
-    });
-    expect((await fetchUserWatchingList('recover')).partial).toBe(true);
-    await vi.advanceTimersByTimeAsync(30001);
-    expect((await fetchUserWatchingList('recover'))[0].mal_id).toBe(8);
 });
 
 it('uses the dedicated relay on GitHub Pages for each entered username', async () => {
@@ -160,16 +90,5 @@ it('paginates the hosted relay and accepts an authoritative empty list', async (
     expect(await fetchUserWatchingList('large')).toHaveLength(300);
     const empty = await fetchUserWatchingList('empty');
     expect(empty).toEqual([]);
-    expect(empty.partial).toBeUndefined();
     expect(fetch).toHaveBeenCalledTimes(3);
-});
-
-it('falls back if the Worker is unavailable or still serves its Hello World placeholder', async () => {
-    vi.stubGlobal('window', { location: { hostname: 'claudiogarcia98.github.io' } });
-    fetch.mockImplementation(async url => {
-        if (url.startsWith(MAL_RELAY_BASE)) return { ok: true, json: async () => { throw new SyntaxError('Hello World is not JSON'); } };
-        if (url.includes('allorigins.win/raw')) return response([{ anime_id: 7, anime_title: 'Fallback' }]);
-        throw new Error('Unavailable');
-    });
-    expect((await fetchUserWatchingList('fallback'))[0].mal_id).toBe(7);
 });

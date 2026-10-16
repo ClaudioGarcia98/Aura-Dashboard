@@ -49,7 +49,12 @@ describe('EmbeddedAnimeList', () => {
 
     it('renders error state when sidebarError is truthy', () => {
         render(<EmbeddedAnimeList {...baseProps} sidebarError={true} />);
-        expect(screen.getByText("Couldn't connect to MyAnimeList right now.")).toBeTruthy();
+        expect(screen.getByText("Couldn't connect to AniList right now.")).toBeTruthy();
+    });
+
+    it('renders stale notice when sidebarStale is true', () => {
+        render(<EmbeddedAnimeList {...baseProps} sidebarStale={true} sidebarData={[{ mal_id: 1, title: 'Show' }]} />);
+        expect(screen.getByText(/Showing saved schedule/)).toBeTruthy();
     });
 
     it('renders skeletons when sidebarLoading is true', () => {

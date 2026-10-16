@@ -26,9 +26,10 @@ describe('fetchWithRetry', () => {
   });
 
   it('exports correct constants and cache keys', async () => {
-    const { WATCHING_CACHE_KEY, FEED2JSON_BASE, RSS2JSON_BASE } = await import('./api');
+    const { WATCHING_CACHE_KEY, SCHEDULE_CACHE_KEY, ANILIST_GRAPHQL_ENDPOINT, MAL_RELAY_BASE } = await import('./api');
     expect(WATCHING_CACHE_KEY).toBe('dash_anime_watching_v2');
-    expect(FEED2JSON_BASE).toBe('https://feed2json.org/convert?url=');
-    expect(RSS2JSON_BASE).toBe('https://api.rss2json.com/v1/api.json?rss_url=');
+    expect(SCHEDULE_CACHE_KEY).toBe('dash_anime_schedule_v3');
+    expect(ANILIST_GRAPHQL_ENDPOINT).toBe('https://graphql.anilist.co');
+    expect(MAL_RELAY_BASE).toBe('https://aura-mal-api.claudio091998.workers.dev');
   });
 });

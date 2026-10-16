@@ -87,6 +87,7 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
                             displayList={anime.displayList}
                             todayLoading={anime.todayLoading}
                             todayError={anime.todayError}
+                            todayStale={anime.todayStale}
                             expandedAnime={anime.expandedAnime}
                             setExpandedAnime={anime.setExpandedAnime}
                             userWatchingIds={anime.userWatchingIds}
@@ -106,6 +107,7 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
                         sidebarData={anime.sidebarData}
                         sidebarLoading={anime.sidebarLoading}
                         sidebarError={anime.sidebarError}
+                        sidebarStale={anime.sidebarStale}
                         expandedAnime={anime.expandedAnime}
                         setExpandedAnime={anime.setExpandedAnime}
                         userWatchingIds={anime.userWatchingIds}

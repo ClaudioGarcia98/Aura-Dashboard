@@ -1,12 +1,12 @@
 // @vitest-environment node
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
-import { handleRequest } from './worker.js';
+import { handleRequest, resetWorkerState } from './worker.js';
 
 const origin = 'https://claudiogarcia98.github.io';
-const request = (path = '/animelist/alice/load.json?offset=0&status=1', options = {}) => new Request(`https://relay.example${path}`, { headers: { Origin: origin }, ...options });
+const request = (path = '/animelist/alice/load.json?offset=0&status=1', options = {}) => new Request(`https://relay.example${path}`, { headers: { Origin: origin, ...options.headers }, ...options });
 const json = data => new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });
 const item = id => ({ anime_id: id, anime_title: `Show ${id}`, status: 1, tags: 'omit this field' });
-beforeEach(() => vi.spyOn(console, 'error').mockImplementation(() => {}));
+beforeEach(() => { resetWorkerState(); vi.spyOn(console, 'error').mockImplementation(() => {}); });
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
 it('provides a health check without contacting MAL', async () => {
@@ -21,6 +21,7 @@ it('fetches only the fixed MAL endpoint and returns sanitized fields with correc
     const result = await handleRequest(request(), { fetcher });
     expect(result.status).toBe(200);
     expect(result.headers.get('Access-Control-Allow-Origin')).toBe(origin);
+    expect(result.headers.get('Access-Control-Expose-Headers')).toContain('X-Aura-Cache');
     expect(result.headers.get('Set-Cookie')).toBeNull();
     expect(fetcher).toHaveBeenCalledWith('https://myanimelist.net/animelist/alice/load.json?offset=0&status=1', expect.objectContaining({ redirect: 'manual' }));
     const data = await result.json();
@@ -73,7 +74,15 @@ it('keeps usernames and page offsets separate in the cache', async () => {
     expect(entries.size).toBe(3);
 });
 
-it.each([[], { error: 'Private' }, [{ anime_id: 'bad', anime_title: 'Malformed' }], [{ ...item(1), status: 2 }]])('handles empty and malformed upstream lists without inventing success', async raw => {
+it.each([
+    [],
+    { error: 'Private' },
+    [{ anime_id: 'bad', anime_title: 'Malformed' }],
+    [{ ...item(1), status: 2 }],
+    [item(1), item(1)],
+    [{ ...item(1), anime_score_val: 11 }],
+    [{ ...item(1), num_watched_episodes: -1 }],
+])('handles empty and malformed upstream lists without inventing success', async raw => {
     const cache = { match: vi.fn(), put: vi.fn() };
     const result = await handleRequest(request(), { fetcher: async () => json(raw), cache });
     expect(result.status).toBe(Array.isArray(raw) && raw.length === 0 ? 200 : 502);
@@ -130,5 +139,54 @@ it('reports upstream redirects without following them to another destination', a
     const fetcher = vi.fn(async () => new Response(null, { status: 302, headers: { Location: 'https://other.example' } }));
     const result = await handleRequest(request(), { fetcher });
     expect((await result.json()).code).toBe('UPSTREAM_REDIRECT');
+    expect(fetcher).toHaveBeenCalledTimes(1);
+});
+
+it('enforces Cloudflare rate-limiter binding and fails closed if the limiter throws', async () => {
+    const fetcher = vi.fn(async () => json([item(1)]));
+    const limited = await handleRequest(request(), { fetcher, env: { RATE_LIMITER: { limit: async () => ({ success: false }) } } });
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get('Retry-After')).toBe('60');
+    expect((await limited.json()).code).toBe('RATE_LIMITED');
+
+    const broken = await handleRequest(request(), { fetcher, env: { RATE_LIMITER: { limit: async () => { throw new Error('Binding failed'); } } } });
+    expect(broken.status).toBe(503);
+    expect((await broken.json()).code).toBe('LIMITER_UNAVAILABLE');
+    expect(fetcher).not.toHaveBeenCalled();
+});
+
+it('enforces per-IP memory rate limiting when no binding is configured', async () => {
+    const fetcher = vi.fn(async () => json([item(1)]));
+    const ipReq = () => request('/animelist/alice/load.json?offset=0&status=1', { headers: { 'CF-Connecting-IP': '203.0.113.10' } });
+    for (let i = 0; i < 30; i++) {
+        expect((await handleRequest(ipReq(), { fetcher })).status).toBe(200);
+    }
+    const blocked = await handleRequest(ipReq(), { fetcher });
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get('Retry-After')).toBe('60');
+});
+
+it('rejects oversized upstream responses before parsing or caching', async () => {
+    const cache = { match: vi.fn(), put: vi.fn() };
+    const oversized = new Response('x'.repeat(1048580), { headers: { 'Content-Type': 'application/json' } });
+    const result = await handleRequest(request(), { fetcher: async () => oversized, cache });
+    expect(result.status).toBe(502);
+    expect((await result.json()).code).toBe('UPSTREAM_TOO_LARGE');
+    expect(cache.put).not.toHaveBeenCalled();
+});
+
+it('coalesces concurrent cache-miss requests for the same username and page', async () => {
+    let resolveUpstream;
+    const fetcher = vi.fn(() => new Promise(resolve => { resolveUpstream = resolve; }));
+    const p1 = handleRequest(request('/animelist/shared/load.json?offset=0&status=1'), { fetcher });
+    const p2 = handleRequest(request('/animelist/shared/load.json?offset=0&status=1'), { fetcher });
+    await Promise.resolve();
+    await Promise.resolve();
+    resolveUpstream(json([item(55)]));
+    const [r1, r2] = await Promise.all([p1, p2]);
+    expect(r1.status).toBe(200);
+    expect(r2.status).toBe(200);
+    expect((await r1.json())[0].anime_id).toBe(55);
+    expect((await r2.json())[0].anime_id).toBe(55);
     expect(fetcher).toHaveBeenCalledTimes(1);
 });

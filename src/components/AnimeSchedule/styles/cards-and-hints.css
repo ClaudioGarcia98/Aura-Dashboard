@@ -54,9 +54,9 @@
     bottom: 130%;
     left: 50%;
     transform: translateX(-50%) translateY(5px);
-    background: rgba(15, 15, 15, 0.95);
+    background: rgba(16, 18, 26, 0.96);
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
     color: var(--text-primary);
     padding: 10px 14px;
     border-radius: 8px;
@@ -70,7 +70,7 @@
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5), var(--glass-highlight);
     z-index: 100;
 }
 .info-tooltip::after {
@@ -81,7 +81,7 @@
     transform: translateX(-50%);
     border-width: 5px;
     border-style: solid;
-    border-color: rgba(15, 15, 15, 0.95) transparent transparent transparent;
+    border-color: rgba(16, 18, 26, 0.96) transparent transparent transparent;
 }
 .info-badge-container:hover .info-tooltip,
 .info-badge-container:focus-within .info-tooltip,
@@ -107,7 +107,7 @@
     top: auto;
     bottom: 100%;
     transform: none;
-    border-color: transparent transparent rgba(15, 15, 15, 0.95) transparent;
+    border-color: transparent transparent rgba(16, 18, 26, 0.96) transparent;
 }
 
 .custom-hint-card {
@@ -117,10 +117,10 @@
     bottom: auto;
     transform: translateY(-10px);
     width: 280px;
-    background: rgba(15, 15, 15, 0.95);
+    background: rgba(16, 18, 26, 0.96);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
     border-radius: 12px;
     padding: 14px;
     display: flex;
@@ -129,7 +129,7 @@
     visibility: hidden;
     pointer-events: none;
     transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6), var(--glass-highlight);
     z-index: 100;
     text-transform: none;
     letter-spacing: normal;
@@ -144,7 +144,7 @@
     transform: none;
     border-width: 6px;
     border-style: solid;
-    border-color: transparent transparent rgba(15, 15, 15, 0.95) transparent;
+    border-color: transparent transparent rgba(16, 18, 26, 0.96) transparent;
 }
 .info-badge-container:hover .custom-hint-card,
 .info-badge-container:focus-within .custom-hint-card,
@@ -176,7 +176,7 @@
     margin: 0;
 }
 
-.tab-error { font-size: 0.7rem; color: #ff6b6b; opacity: 0; transition: opacity 0.5s; font-weight: 600; background: rgba(255, 107, 107, 0.1); padding: 2px 6px; border-radius: 4px; }
+.tab-error { font-size: 0.7rem; color: var(--status-danger); opacity: 0; transition: opacity 0.5s; font-weight: 600; background: var(--status-danger-soft); padding: 2px 6px; border-radius: 4px; }
 
 .tab-list {
     display: flex; flex-direction: column; gap: 8px;
@@ -188,7 +188,7 @@
 .tab-list::-webkit-scrollbar { width: 4px; }
 .tab-list::-webkit-scrollbar-track { background: transparent; }
 .tab-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
-.tab-list::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.35); }
+.tab-list::-webkit-scrollbar-thumb:hover { background: var(--accent-border-strong); }
 .tab-item {
     display: flex; flex-direction: column; gap: 0; padding: 0;
     text-decoration: none; color: white; cursor: pointer;
@@ -212,7 +212,7 @@
 
 .tab-item:hover {
     background: rgba(255, 255, 255, 0.075);
-    border-color: rgba(255, 210, 106, 0.35);
+    border-color: var(--accent-border);
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 14px var(--accent-glow);
 }

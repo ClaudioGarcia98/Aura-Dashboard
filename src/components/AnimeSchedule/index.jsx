@@ -16,9 +16,9 @@ export default memo(function AnimeSchedule() {
     const {
         isSidebarOpen, setIsSidebarOpen,
         activeDay, setActiveDay,
-        sidebarData, sidebarLoading, sidebarError,
+        sidebarData, sidebarLoading, sidebarError, sidebarStale,
         sidebarRef, toggleRef,
-        todayLoading, todayError,
+        todayLoading, todayError, todayStale,
         displayList,
         userWatchingIds,
         expandedAnime, setExpandedAnime,
@@ -40,6 +40,7 @@ export default memo(function AnimeSchedule() {
                     displayList={displayList}
                     todayLoading={todayLoading}
                     todayError={todayError}
+                    todayStale={todayStale}
                     expandedAnime={expandedAnime}
                     setExpandedAnime={setExpandedAnime}
                     userWatchingIds={userWatchingIds}
@@ -57,6 +58,7 @@ export default memo(function AnimeSchedule() {
                     sidebarData={sidebarData}
                     sidebarLoading={sidebarLoading}
                     sidebarError={sidebarError}
+                    sidebarStale={sidebarStale}
                     expandedAnime={expandedAnime}
                     setExpandedAnime={setExpandedAnime}
                     userWatchingIds={userWatchingIds}

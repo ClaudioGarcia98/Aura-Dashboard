@@ -10,36 +10,6 @@ export function parseMALItems(raw) {
     }));
 }
 
-export function parseMALRssItems(items) {
-    if (!Array.isArray(items)) return [];
-    const results = [];
-    const seen = new Set();
-    for (const item of items) {
-        if (!item || typeof item !== 'object') continue;
-        const text = String(item.content_html || item.description || item.summary || '');
-        if (!text.toLowerCase().includes('watching')) continue;
-        const link = String(item.url || item.link || item.guid || '');
-        const match = link.match(/\/anime\/(\d+)/);
-        const malId = match ? parseInt(match[1], 10) : null;
-        if (!malId || seen.has(malId)) continue;
-        seen.add(malId);
-
-        let watchedEps = 0;
-        const epMatch = text.match(/Watching\s*-\s*(\d+)/i);
-        if (epMatch) watchedEps = parseInt(epMatch[1], 10);
-
-        results.push({
-            mal_id: malId,
-            url: link.startsWith('http') ? link : `https://myanimelist.net${link}`,
-            image_url: item.thumbnail || '',
-            title: (item.title || '').replace(/\s*-\s*(TV|Movie|OVA|ONA|Special)$/i, '').trim(),
-            score: 'N/A',
-            watched_eps: watchedEps,
-        });
-    }
-    return results;
-}
-
 export function parseAniListSchedule(airingSchedules, dayFilter) {
     if (!Array.isArray(airingSchedules)) return [];
 

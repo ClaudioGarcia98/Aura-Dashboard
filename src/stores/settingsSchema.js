@@ -11,7 +11,7 @@ export const DEFAULT_STATIONS = [
 ].map((station, i) => ({ id: i + 1, ...station }));
 
 export const DEFAULT_SETTINGS = {
-    theme: 'aurora', font: 'default', clockMode: 'digital', username: 'Cláudio',
+    theme: 'aurora', font: 'default', clockMode: 'digital', username: '',
     malUsername: '', fallbackCity: '', use24hClock: true, useCelsius: true,
     gifName: '', lofiId: 'Gu-g8FRG4Zs', lofiStations: DEFAULT_STATIONS,
     volume: 0.2, speedDials: [], customEngines: [], remoteSuggestions: false,

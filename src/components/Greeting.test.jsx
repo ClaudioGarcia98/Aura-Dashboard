@@ -65,4 +65,12 @@ describe('Greeting Component', () => {
 
         expect(screen.getByText(/Cozy rainy morning, Claudio/i)).toBeTruthy();
     });
+
+    it('renders greeting without a trailing comma when username is empty', () => {
+        mockUsername = '';
+        vi.setSystemTime(new Date(2025, 0, 1, 9, 0, 0)); // 9:00 AM
+        render(<Greeting />);
+        expect(screen.getByText('Good morning')).toBeTruthy();
+        expect(screen.queryByText(/Good morning,/i)).toBeNull();
+    });
 });

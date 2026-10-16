@@ -30,7 +30,12 @@ describe('TodayLaunch', () => {
 
     it('renders error state when todayError is truthy', () => {
         render(<TodayLaunch {...baseProps} todayError={true} />);
-        expect(screen.getByText("Couldn't connect to MyAnimeList right now.")).toBeTruthy();
+        expect(screen.getByText("Couldn't connect to AniList right now.")).toBeTruthy();
+    });
+
+    it('renders stale notice when todayStale is true', () => {
+        render(<TodayLaunch {...baseProps} todayStale={true} displayList={[{ mal_id: 1, title: 'Show' }]} />);
+        expect(screen.getByText(/Showing saved schedule/)).toBeTruthy();
     });
 
     it('renders skeletons when todayLoading is true', () => {

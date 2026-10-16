@@ -1,4 +1,7 @@
 import { DEFAULT_SETTINGS, LEGACY_KEYS, readLegacySettings, sanitizeSettings } from '../stores/settingsSchema';
+import { useSettingsStore } from '../stores/useSettingsStore';
+import { safeStorage } from '../utils/storage';
+import { clearMalMemoryCache } from './anime/watching';
 import { deleteBackgroundBlob } from './db';
 
 export function createSettingsBackup(state) {
@@ -42,8 +45,21 @@ export function restoreSettingsBackup(raw) {
 export async function resetAuraData() {
     // Do not erase settings if deleting the saved background failed.
     await deleteBackgroundBlob();
+    clearMalMemoryCache();
+    useSettingsStore.setState({
+        ...structuredClone(DEFAULT_SETTINGS),
+        backgroundUrl: null,
+        backgroundIsVideo: false,
+        malStatus: 'idle',
+        malSavedAt: null,
+        malError: false,
+        malLoading: false,
+        malSuccess: false,
+    });
     for (const storage of [globalThis.localStorage, globalThis.sessionStorage]) {
+        if (!storage) continue;
         const keys = Array.from({ length: storage.length }, (_, i) => storage.key(i));
         for (const key of keys) if (key?.startsWith('dash_')) storage.removeItem(key);
     }
+    safeStorage.clearPrefix('dash_');
 }

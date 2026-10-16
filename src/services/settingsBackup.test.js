@@ -58,13 +58,17 @@ describe('real settings persistence and backups', () => {
         expect(() => parseSettingsBackup('{"format":"aura-settings","version":99,"settings":{}}')).toThrow();
     });
 
-    it('only resets Aura storage and never touches unrelated caches or registrations', async () => {
+    it('only resets Aura storage, clears user profile fields, and never touches unrelated caches or registrations', async () => {
+        useSettingsStore.getState().setUsername('Alice');
+        useSettingsStore.getState().setMalUsername('alice_mal');
         localStorage.setItem('another-app', 'keep'); sessionStorage.setItem('another-session', 'keep');
         sessionStorage.setItem('dash_session', 'erase');
         const caches = { keys: vi.fn(), delete: vi.fn() };
         vi.stubGlobal('caches', caches);
         await resetAuraData();
         expect(deleteBackgroundBlob).toHaveBeenCalled();
+        expect(useSettingsStore.getState().username).toBe('');
+        expect(useSettingsStore.getState().malUsername).toBe('');
         expect(localStorage.getItem('dash_settings')).toBeNull();
         expect(localStorage.getItem('another-app')).toBe('keep');
         expect(sessionStorage.getItem('another-session')).toBe('keep');

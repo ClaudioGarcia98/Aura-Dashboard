@@ -1,4 +1,4 @@
-import { JIKAN_BASE, ANILIST_GRAPHQL_ENDPOINT, SCHEDULE_CACHE_KEY } from '../api';
+import { ANILIST_GRAPHQL_ENDPOINT, SCHEDULE_CACHE_KEY } from '../api';
 import { fetchJson } from '../http';
 import { safeJsonParse, safeStorage } from '../../utils/storage';
 import { getLocalDayRange } from './time';
@@ -46,30 +46,6 @@ async function aniListSchedule(day, range, signal) {
     throw new Error('Schedule pagination limit exceeded');
 }
 
-async function jikanSchedule(range, signal) {
-    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const items = [];
-    // A Portugal-local day spans parts of two Japan-local days.
-    const firstJstMidnight = Math.floor((range.startUtcSec + 9 * 3600) / 86400) * 86400 - 9 * 3600;
-    for (let midnight = firstJstMidnight; midnight < range.endUtcSec; midnight += 86400) {
-        const weekday = days[new Date((midnight + 9 * 3600) * 1000).getUTCDay()];
-        for (let page = 1; page <= 100; page++) {
-            const json = await fetchJson(`${JIKAN_BASE}/schedules?filter=${weekday}&page=${page}`, { signal });
-            if (!Array.isArray(json.data)) throw new Error('Invalid Jikan schedule');
-            for (const item of json.data) {
-                if (!item || !item.mal_id) continue;
-                const match = item.broadcast?.time?.match(/^(\d{2}):(\d{2})$/);
-                if (!match) continue; // No reliable local broadcast day without a time.
-                const airingAt = midnight + Number(match[1]) * 3600 + Number(match[2]) * 60;
-                if (airingAt >= range.startUtcSec && airingAt < range.endUtcSec) items.push({ ...item, airingAt });
-            }
-            if (!json.pagination?.has_next_page) break;
-            if (page === 100) throw new Error('Schedule pagination limit exceeded');
-        }
-    }
-    return items;
-}
-
 export async function fetchDaySchedule(day, { signal } = {}) {
     const range = getLocalDayRange(day);
     if (!range) throw new Error('Invalid schedule day');
@@ -81,12 +57,13 @@ export async function fetchDaySchedule(day, { signal } = {}) {
         data = await aniListSchedule(day, range, signal);
     } catch (error) {
         if (signal?.aborted) throw error;
-        try { data = await jikanSchedule(range, signal); }
-        catch (fallbackError) {
-            if (signal?.aborted) throw fallbackError;
-            if (matching) return entry.data;
-            throw fallbackError;
+        if (matching) {
+            const staleData = [...entry.data];
+            Object.defineProperty(staleData, 'stale', { value: true });
+            Object.defineProperty(staleData, 'savedAt', { value: entry.ts });
+            return staleData;
         }
+        throw error;
     }
     if (signal?.aborted) throw signal.reason;
     const unique = [...new Map(data.map(item => [item.mal_id, item])).values()];

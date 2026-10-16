@@ -79,7 +79,7 @@ describe('AnimeSchedule Component', () => {
         mockScheduleState.todayError = true;
         render(<AnimeSchedule />);
 
-        expect(screen.getByText(/Couldn't connect to MyAnimeList right now/i)).toBeTruthy();
+        expect(screen.getByText(/Couldn't connect to AniList right now/i)).toBeTruthy();
     });
 
     it('renders empty message when displayList is empty and not loading', () => {

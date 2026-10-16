@@ -158,7 +158,7 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                                 type="text"
                                 id="malUsernameInput"
                                 className={malError ? 'mal-error' : (malSuccess ? 'mal-success' : '')}
-                                placeholder="MAL username (e.g., claclo98)"
+                                placeholder="Your MAL username"
                                 value={malUsername}
                                 onChange={(e) => setMalUsername(e.target.value)}
                                 spellCheck={false}
@@ -175,10 +175,10 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                                     </div>
                                 )}
                                 {malError && !malLoading && (
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--status-danger)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                 )}
                                 {malSuccess && !malLoading && !malError && (
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--status-success)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                 )}
                             </div>
                         </div>

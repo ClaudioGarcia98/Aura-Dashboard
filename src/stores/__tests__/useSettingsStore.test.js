@@ -30,7 +30,7 @@ const DEFAULTS = {
     theme: 'aurora',
     font: 'default',
     clockMode: 'digital',
-    username: 'Cláudio',
+    username: '',
     malUsername: '',
     fallbackCity: '',
     use24hClock: true,
@@ -67,7 +67,7 @@ describe('useSettingsStore — initial state', () => {
         expect(s.theme).toBe('aurora');
         expect(s.font).toBe('default');
         expect(s.clockMode).toBe('digital');
-        expect(s.username).toBe('Cláudio');
+        expect(s.username).toBe('');
         expect(s.malUsername).toBe('');
         expect(s.fallbackCity).toBe('');
         expect(s.gifName).toBe('');

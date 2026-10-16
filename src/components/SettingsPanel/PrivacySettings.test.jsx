@@ -4,7 +4,7 @@ import PrivacySettings from './PrivacySettings';
 import MalConnectionStatus from './MalConnectionStatus';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 
-beforeEach(() => useSettingsStore.setState({ remoteSuggestions: false, pauseBackground: false, malUsername: 'test', malStatus: 'partial', malLoading: false, malRefreshKey: 0 }));
+beforeEach(() => useSettingsStore.setState({ remoteSuggestions: false, pauseBackground: false, malUsername: 'test', malStatus: 'stale', malLoading: false, malRefreshKey: 0 }));
 afterEach(cleanup);
 
 it('exposes named switches and updates their descriptions and actual preferences', () => {
@@ -25,11 +25,21 @@ it('exposes named switches and updates their descriptions and actual preferences
     expect(useSettingsStore.getState().pauseBackground).toBe(false);
 });
 
-it('offers a real full-list retry for a partial result', () => {
+it('offers a real full-list retry for a stale result and displays saved time when available', () => {
+    useSettingsStore.setState({ malSavedAt: Date.UTC(2026, 9, 16, 14, 30) });
     render(<MalConnectionStatus />);
-    expect(screen.getByRole('status').textContent).toContain('may miss some watching titles');
+    expect(screen.getByRole('status').textContent).toContain('Showing your saved watching list (saved');
     fireEvent.click(screen.getByRole('button', { name: 'Retry full list' }));
     expect(useSettingsStore.getState().malRefreshKey).toBe(1);
+});
+
+it('displays distinct messages for rate-limited and temporarily unavailable statuses', () => {
+    useSettingsStore.setState({ malStatus: 'rate_limited', malLoading: false });
+    const { rerender } = render(<MalConnectionStatus />);
+    expect(screen.getByRole('status').textContent).toContain('Too many requests');
+    useSettingsStore.setState({ malStatus: 'unavailable', malLoading: false });
+    rerender(<MalConnectionStatus />);
+    expect(screen.getByRole('status').textContent).toContain('temporarily unavailable');
 });
 
 it('hides retry while loading and identifies complete successful syncs', () => {

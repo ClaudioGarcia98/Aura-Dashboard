@@ -18,26 +18,26 @@
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .lofi-ui:hover {
-    background: rgba(20, 20, 26, 0.95);
-    border-color: rgba(255, 210, 106, 0.35);
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 16px rgba(255, 210, 106, 0.2);
+    background: var(--glass-card-hover);
+    border-color: var(--accent-border);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 16px var(--accent-glow);
     transform: translateY(-2px);
 }
 .lofi-play-btn {
     width: 36px; height: 36px;
     border-radius: 50%;
     background: var(--accent-color);
-    color: #111;
+    color: var(--on-accent);
     border: none;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
-    box-shadow: 0 2px 8px rgba(255, 210, 106, 0.3);
+    box-shadow: 0 2px 10px var(--accent-shadow);
     flex-shrink: 0;
 }
 .lofi-play-btn:hover {
     transform: scale(1.08);
-    box-shadow: 0 0 14px rgba(255, 210, 106, 0.6);
+    box-shadow: 0 0 16px var(--accent-border-strong);
 }
 .lofi-play-btn:active {
     transform: scale(0.94);
@@ -81,13 +81,13 @@
     transform: translateX(-50%);
     width: 220px;
     max-height: 280px;
-    background: rgba(14, 14, 18, 0.96);
+    background: var(--glass-panel);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 16px;
     padding: 12px;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 210, 106, 0.08);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 20px var(--accent-subtle), var(--glass-highlight);
     animation: menuFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     z-index: 60;
     display: flex;
@@ -149,8 +149,8 @@
     border-color: rgba(255, 255, 255, 0.1);
 }
 .lofi-station-btn.active {
-    background: rgba(255, 210, 106, 0.15);
-    border-color: rgba(255, 210, 106, 0.3);
+    background: var(--accent-soft);
+    border-color: var(--accent-border);
     color: var(--accent-color);
     font-weight: 600;
 }

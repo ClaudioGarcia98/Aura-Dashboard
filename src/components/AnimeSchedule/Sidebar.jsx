@@ -26,6 +26,7 @@ export default memo(function Sidebar({
     sidebarData,
     sidebarLoading,
     sidebarError,
+    sidebarStale = false,
     expandedAnime,
     setExpandedAnime,
     userWatchingIds,
@@ -103,9 +104,15 @@ export default memo(function Sidebar({
                     })}
                 </div>
 
+                {sidebarStale && !sidebarLoading && !sidebarError && (
+                    <div className="stale-state" role="status" style={{ fontSize: '0.75rem', opacity: 0.7, padding: '4px 16px 8px', textAlign: 'center' }}>
+                        Showing saved schedule · Live update unavailable
+                    </div>
+                )}
+
                 <div className="as-content">
                     {sidebarError ? (
-                        <div className="error-state">Couldn't connect to MyAnimeList right now.</div>
+                        <div className="error-state">Couldn't connect to AniList right now.</div>
                     ) : sidebarLoading ? (
                         <SkeletonList />
                     ) : sidebarData.length === 0 ? (

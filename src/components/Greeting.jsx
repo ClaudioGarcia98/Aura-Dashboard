@@ -48,7 +48,8 @@ export default memo(function Greeting() {
                 else if (weatherCode >= 96)                     prefix = `Wild ${t}`;
             }
 
-            setGreeting(`${prefix}, ${username}`);
+            const cleanName = typeof username === 'string' ? username.trim() : '';
+            setGreeting(cleanName ? `${prefix}, ${cleanName}` : prefix);
         };
 
         updateGreeting();

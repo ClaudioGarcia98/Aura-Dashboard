@@ -52,4 +52,12 @@ export const safeStorage = {
         try { globalThis.localStorage.removeItem(key); return true; }
         catch { return false; }
     },
+    clearPrefix(prefix = 'dash_') {
+        for (const key of [...memory.keys()]) {
+            if (key?.startsWith(prefix)) {
+                memory.delete(key);
+                pending.delete(key);
+            }
+        }
+    },
 };

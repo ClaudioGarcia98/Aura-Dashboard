@@ -3,20 +3,20 @@
     position: absolute; top: var(--space-4); right: var(--space-4);
     display: flex; align-items: center; gap: 10px;
     font-size: 0.95rem;
-    background: rgba(14, 14, 18, 0.75);
+    background: var(--glass-card);
     padding: 8px 16px;
     border-radius: var(--radius-xl);
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
     color: var(--text-primary);
     pointer-events: auto; cursor: pointer; user-select: none;
     transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
     animation: fadeSlideDown 0.5s ease 0.1s both;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), var(--glass-highlight);
 }
 .weather-widget:hover {
-    background: rgba(20, 20, 26, 0.85);
-    border-color: rgba(255, 210, 106, 0.4);
+    background: var(--glass-card-hover);
+    border-color: var(--accent-border);
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px var(--accent-glow);
 }
@@ -233,8 +233,8 @@
     pointer-events: none;
 }
 .weather-inline-card:hover {
-    background: rgba(22, 22, 30, 0.9);
-    border-color: rgba(255, 210, 106, 0.35);
+    background: var(--glass-card-hover);
+    border-color: var(--accent-border);
 }
 .weather-inline-card.expanded {
     border-color: var(--accent-color);

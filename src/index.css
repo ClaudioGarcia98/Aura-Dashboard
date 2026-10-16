@@ -5,6 +5,13 @@ button, a, [role="button"], label, summary { touch-action: manipulation; }
 :root {
     --accent-color: #FFD26A;
     --accent-glow:  rgba(255, 210, 106, 0.2);
+    --accent-subtle: color-mix(in srgb, var(--accent-color) 10%, transparent);
+    --accent-soft:   color-mix(in srgb, var(--accent-color) 16%, transparent);
+    --accent-border: color-mix(in srgb, var(--accent-color) 38%, transparent);
+    --accent-border-strong: color-mix(in srgb, var(--accent-color) 55%, transparent);
+    --accent-shadow: color-mix(in srgb, var(--accent-color) 42%, transparent);
+    --accent-gradient: linear-gradient(135deg, var(--accent-color) 0%, color-mix(in srgb, var(--accent-color) 82%, #ffffff) 100%);
+    --on-accent: #0c0c10;
     --ui-opacity:   1;
     --top-nav-height: 56px;
 
@@ -23,10 +30,22 @@ button, a, [role="button"], label, summary { touch-action: manipulation; }
     --text-primary: #F8FAFC;
     --text-secondary: #94A3B8;
 
-    /* Colors */
-    --bg-base: #0e0e0e;
+    /* Colors & Glass Surfaces */
+    --bg-base: #0b0c10;
     --surface-30: rgba(255, 255, 255, 0.05);
-    --surface-hover: rgba(255, 255, 255, 0.08);
+    --surface-hover: rgba(255, 255, 255, 0.085);
+    --glass-panel: linear-gradient(180deg, rgba(16, 18, 26, 0.96) 0%, rgba(10, 11, 16, 0.98) 100%);
+    --glass-card: rgba(16, 18, 26, 0.76);
+    --glass-card-hover: rgba(22, 25, 36, 0.90);
+    --glass-border: rgba(255, 255, 255, 0.10);
+    --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+
+    /* Semantic Status Colors */
+    --status-success: #4ade80;
+    --status-success-soft: rgba(74, 222, 128, 0.14);
+    --status-danger: #ff6b6b;
+    --status-danger-soft: rgba(255, 107, 107, 0.12);
+    --status-danger-border: rgba(255, 107, 107, 0.3);
 
     /* Radii */
     --radius-sm: 4px;
@@ -60,7 +79,7 @@ button, a, [role="button"], label, summary { touch-action: manipulation; }
     border-radius: 999px;
 }
 *::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.35);
+    background: var(--accent-border-strong);
 }
 
 /* ── Load Animations ───────────────────────────────── */
@@ -168,12 +187,12 @@ body.compact-mode {
     scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
     display: flex; flex-direction: column;
     pointer-events: auto;
-    background: linear-gradient(135deg, rgba(16, 16, 22, 0.78) 0%, rgba(10, 10, 14, 0.88) 100%);
+    background: linear-gradient(135deg, rgba(16, 18, 26, 0.78) 0%, rgba(10, 11, 16, 0.88) 100%);
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
     padding: var(--space-6); border-radius: var(--radius-xl);
-    border: 1px solid rgba(255,255,255,0.1);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), var(--glass-highlight);
     animation: fadeSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
     will-change: transform, opacity;
 }
@@ -182,7 +201,7 @@ body.compact-mode {
 }
 .container::-webkit-scrollbar { width: 4px; }
 .container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); border-radius: 4px; }
-.container::-webkit-scrollbar-thumb:hover { background: rgba(255, 210, 106, 0.35); }
+.container::-webkit-scrollbar-thumb:hover { background: var(--accent-border-strong); }
 
 .scrollable-section {
     display: flex;

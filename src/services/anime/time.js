@@ -47,8 +47,6 @@ export function getLocalDayRange(dayFilter, timeZone = 'Europe/Lisbon') {
     return { startUtcSec, endUtcSec };
 }
 
-export const getJstDayRange = getLocalDayRange;
-
 export function formatBroadcastTime(timeStr, airingAt) {
     if (airingAt && typeof airingAt === 'number') {
         const date = new Date(airingAt * 1000);

@@ -39,7 +39,7 @@
     background: rgba(255, 107, 107, 0.05);
     border: 1px dashed rgba(255, 107, 107, 0.2);
     border-radius: var(--radius-md);
-    color: #ff6b6b; font-size: 0.85rem;
+    color: var(--status-danger); font-size: 0.85rem;
 }
 
 .as-empty-state {
@@ -55,6 +55,18 @@
     border: 1px dashed rgba(255, 255, 255, 0.07);
     border-radius: 12px;
     margin-top: 10px;
+}
+
+.as-stale-note {
+    font-size: 0.72rem;
+    color: var(--accent-color);
+    background: var(--accent-subtle);
+    border: 1px solid var(--accent-border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    text-align: center;
+    font-weight: 500;
 }
 
 .tab-item.watched-highlight { margin-bottom: 4px; }
@@ -98,8 +110,8 @@
 }
 .anime-tag {
     padding: 3px 9px;
-    background: rgba(255, 210, 106, 0.08);
-    border: 1px solid rgba(255, 210, 106, 0.22);
+    background: var(--accent-subtle);
+    border: 1px solid var(--accent-border);
     color: var(--accent-color);
     border-radius: 12px;
     font-size: 0.68rem;
@@ -176,7 +188,7 @@
 .anime-countdown {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 3px 9px;
-    background: rgba(255, 210, 106, 0.12);
+    background: var(--accent-soft);
     color: var(--accent-color);
     border-radius: 20px;
     font-weight: 700;
@@ -184,8 +196,8 @@
     font-size: 0.78rem;
     letter-spacing: 0.2px;
     margin-top: 8px;
-    border: 1px solid rgba(255, 210, 106, 0.5);
-    box-shadow: 0 0 10px rgba(255, 210, 106, 0.15);
+    border: 1px solid var(--accent-border-strong);
+    box-shadow: 0 0 10px var(--accent-glow);
     width: fit-content;
     align-self: flex-start;
     font-variant-numeric: lining-nums tabular-nums;
@@ -199,6 +211,6 @@
 .tab-item:hover .anime-countdown,
 .anime-card:hover .anime-countdown {
     border-color: var(--accent-color);
-    background: rgba(255, 210, 106, 0.18);
-    box-shadow: 0 0 14px rgba(255, 210, 106, 0.25);
+    background: var(--accent-glow);
+    box-shadow: 0 0 14px var(--accent-shadow);
 }

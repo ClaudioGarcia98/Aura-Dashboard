@@ -16,7 +16,7 @@ export const getPortugalDayFilter = () => {
 };
 
 export function useAnimeSchedule({ alwaysOpen = false, enabled = true } = {}) {
-    const { volume, malUsername, setMalError, setMalLoading, setMalSuccess, setMalStatus } = useSettingsStore(useShallow(s => ({ volume: s.volume, malUsername: s.malUsername, setMalError: s.setMalError, setMalLoading: s.setMalLoading, setMalSuccess: s.setMalSuccess, setMalStatus: s.setMalStatus })));
+    const { volume, malUsername, setMalError, setMalLoading, setMalSuccess, setMalStatus, setMalSavedAt } = useSettingsStore(useShallow(s => ({ volume: s.volume, malUsername: s.malUsername, setMalError: s.setMalError, setMalLoading: s.setMalLoading, setMalSuccess: s.setMalSuccess, setMalStatus: s.setMalStatus, setMalSavedAt: s.setMalSavedAt })));
 
     const [todayDay, setTodayDay] = useState(getPortugalDayFilter);
     const [isSidebarOpen, setIsSidebarOpen] = useState(alwaysOpen);
@@ -26,13 +26,15 @@ export function useAnimeSchedule({ alwaysOpen = false, enabled = true } = {}) {
     const [todayData, setTodayData] = useState([]);
     const [todayLoading, setTodayLoading] = useState(true);
     const [todayError, setTodayError] = useState(false);
+    const [todayStale, setTodayStale] = useState(false);
 
     const [sidebarData, setSidebarData] = useState([]);
     const [sidebarLoading, setSidebarLoading] = useState(false);
     const [sidebarError, setSidebarError] = useState(false);
+    const [sidebarStale, setSidebarStale] = useState(false);
 
     const refreshKey = useSettingsStore(s => s.malRefreshKey);
-    const userWatching = useWatchingList(malUsername, enabled, { setMalLoading, setMalError, setMalSuccess, setMalStatus, refreshKey });
+    const userWatching = useWatchingList(malUsername, enabled, { setMalLoading, setMalError, setMalSuccess, setMalStatus, setMalSavedAt, refreshKey });
 
     const [previewTrailer, setPreviewTrailer] = useState(null);
     const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 });
@@ -103,9 +105,12 @@ export function useAnimeSchedule({ alwaysOpen = false, enabled = true } = {}) {
         if (!enabled) return;
         const controller = new AbortController();
         let active = true;
-        queueMicrotask(() => { if (active) { setTodayLoading(true); setTodayError(false); } });
+        queueMicrotask(() => { if (active) { setTodayLoading(true); setTodayError(false); setTodayStale(false); } });
         fetchDaySchedule(todayDay, { signal: controller.signal }).then(data => {
-            if (active) setTodayData([...new Map(data.filter(Boolean).map(item => [item.mal_id, item])).values()]);
+            if (active) {
+                setTodayStale(!!data?.stale);
+                setTodayData([...new Map(data.filter(Boolean).map(item => [item.mal_id, item])).values()]);
+            }
         }).catch(() => { if (active) setTodayError(true); })
             .finally(() => { if (active) setTodayLoading(false); });
         return () => { active = false; controller.abort(); };
@@ -128,12 +133,16 @@ export function useAnimeSchedule({ alwaysOpen = false, enabled = true } = {}) {
         const loadSidebarData = async () => {
             setSidebarLoading(true);
             setSidebarError(false);
+            setSidebarStale(false);
             try {
                 const data = await fetchDaySchedule(activeDay, { signal: controller.signal });
                 const uniqueSorted = Array.from(new Map(data.map(item => [item.mal_id, item])).values())
                     .filter(a => a.broadcast && a.broadcast.time)
                     .sort((a, b) => (a.airingAt || 0) - (b.airingAt || 0));
-                if (isMounted) setSidebarData(uniqueSorted);
+                if (isMounted) {
+                    setSidebarStale(!!data?.stale);
+                    setSidebarData(uniqueSorted);
+                }
             } catch {
                 if (isMounted) setSidebarError(true);
             } finally {
@@ -259,10 +268,10 @@ export function useAnimeSchedule({ alwaysOpen = false, enabled = true } = {}) {
         // sidebar
         isSidebarOpen, setIsSidebarOpen,
         activeDay, setActiveDay,
-        sidebarData, sidebarLoading, sidebarError,
+        sidebarData, sidebarLoading, sidebarError, sidebarStale,
         sidebarRef, toggleRef,
         // today list
-        todayLoading, todayError,
+        todayLoading, todayError, todayStale,
         displayList,
         userWatchingIds,
         // expand

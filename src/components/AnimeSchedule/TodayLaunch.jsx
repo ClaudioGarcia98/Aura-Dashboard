@@ -9,6 +9,7 @@ export default memo(function TodayLaunch({
     displayList,
     todayLoading,
     todayError,
+    todayStale = false,
     expandedAnime,
     setExpandedAnime,
     userWatchingIds,
@@ -34,9 +35,14 @@ export default memo(function TodayLaunch({
                     </div>
                 </span>
             </div>
+            {todayStale && !todayLoading && !todayError && (
+                <div className="stale-state" role="status" style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '6px' }}>
+                    Showing saved schedule · Live update unavailable
+                </div>
+            )}
             <div className="tab-list" id="tabList">
                 {todayError ? (
-                    <div className="error-state">Couldn't connect to MyAnimeList right now.</div>
+                    <div className="error-state">Couldn't connect to AniList right now.</div>
                 ) : todayLoading ? (
                     <>
                         {[1, 2, 3, 4, 5].map(i => (

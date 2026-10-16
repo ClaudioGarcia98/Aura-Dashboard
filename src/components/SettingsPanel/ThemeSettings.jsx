@@ -25,7 +25,12 @@ export default memo(function ThemeSettings() {
                             className={`pill ${theme === t ? 'active' : ''}`}
                             onClick={() => setTheme(t)}
                         >
-                            <span className="tdot" style={{ background: THEMES[t].accent || '#FFD26A' }}></span>
+                            <span
+                                className="tdot"
+                                style={{
+                                    background: THEMES[t].accent || 'linear-gradient(135deg, #FFD26A 0%, #FF9F43 35%, #54a0ff 70%, #c482fb 100%)',
+                                }}
+                            ></span>
                             {t.charAt(0).toUpperCase() + t.slice(1)}
                         </button>
                     ))}
