@@ -43,7 +43,7 @@ jobs:
         run: git diff --exit-code
 
       - name: Save validated distribution
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.repository_owner == 'ClaudioGarcia98' && github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
@@ -53,8 +53,8 @@ jobs:
     permissions:
       pages: write
       id-token: write
-    # Deploy only on pushes to the main branch
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Deploy only on pushes to the main branch of the owner's repository
+    if: github.repository_owner == 'ClaudioGarcia98' && github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
