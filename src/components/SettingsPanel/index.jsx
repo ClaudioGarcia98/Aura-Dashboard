@@ -241,6 +241,20 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                     <div className="sp-label">Danger Zone</div>
                     <button type="button" className="reset-btn" onClick={() => setConfirmReset(1)}>🗑 Reset All Settings</button>
                 </div>
+
+                {/* Support Footer */}
+                <div className="sp-section" style={{ textAlign: 'center', paddingTop: '4px', paddingBottom: '4px' }}>
+                    <a
+                        href="https://buymeacoffee.com/claudio091s"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="pill"
+                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', textDecoration: 'none', fontSize: '0.82rem' }}
+                    >
+                        <span>☕</span>
+                        <span>Support Aura on Buy Me a Coffee</span>
+                    </a>
+                </div>
             </section>
 
             {/* Reset confirm modal */}
