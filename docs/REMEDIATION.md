@@ -70,6 +70,18 @@ Privacy & Motion now uses two consistently styled rows with icons, accessible sw
 
 Nine additional tests cover slow full-list requests (including a 16-second local response), forced retries, partial-cache expiry, preservation of complete saved lists, status controls, and privacy/motion switches. Full tests, lint, and production build pass. Static hosted copies still depend on third-party proxies; this change does not guarantee provider uptime or grant access to private lists.
 
+### Dedicated multi-user MAL Worker
+
+GitHub Pages reproduced the partial-list failure: unlike local preview, it has no Vite proxy, and all three public full-list proxies timed out. Added the self-contained `workers/mal/worker.js` and configured the hosted dashboard to use `https://aura-mal-api.claudio091998.workers.dev` before public fallbacks. The Worker handles arbitrary public usernames, validates requests, restricts upstream destinations and redirects, validates results, and caches successful pages separately by username/offset for five minutes. There is no preconfigured username list or scheduled personal-data publishing.
+
+The updated suite passes **527 tests across 43 files**, including 22 additional Worker/hosted-client cases for origin/method/path restrictions, cache isolation, pagination, empty lists, malformed upstream responses, failures, and the Hello World placeholder. Lint and production artifact checks also pass. The user must replace the deployed Hello World source with the tested Worker source; live MAL availability and the updated GitHub Pages deployment remain to be verified before calling the hosted issue resolved. Setup is documented in `workers/mal/README.md`.
+
+The first public Worker deployment returned a successful health check but a 502 for a real watching-list request. Removed reliance on incoming `Request.signal`, which Cloudflare gates behind a compatibility flag, and replaced it with a standalone timeout controller. Worker health version is now 2. Added regressions for a runtime without that property and an aborted upstream deadline. **529 tests pass**; lint passes. Live version 2 deployment and real upstream validation remain pending.
+
+Public version 2 was subsequently verified, but the real MAL lookup still returned 502 immediately. The request-signal compatibility change alone did not resolve production. Version 3 distinguishes an upstream redirect, non-JSON response, network failure, and timeout; it logs the underlying connection error without returning internal exception details to visitors. Redirects are inspected but never followed. **531 tests pass**, with lint/build passing. The connected Cloudflare editor stalled with an empty embedded editor and disabled Deploy control after a reload, so version 3 still requires user deployment. No dashboard update has been committed, pushed, or published during this Worker setup; live resolution remains unverified.
+
+After the user deployed version 3, the public health check confirmed that version and a real request for `claclo98` returned **HTTP 200 with 14 valid watching entries**, including the correct `Access-Control-Allow-Origin` for the GitHub Pages site. The Worker endpoint is now live and serving the full list. The dashboard connection is ready for publication and an end-to-end hosted browser check.
+
 ## Practical limits and optional follow-up
 
 Real YouTube audio playback, every live MAL proxy, physical touch/pen gestures, browser permission prompts, and direct `file:` behavior across browsers were not exhaustively tested. Provider restrictions, autoplay rules, and suggestion CORS availability can still prevent remote features; the application now handles unavailable/partial/stale results explicitly. No deployment was performed.

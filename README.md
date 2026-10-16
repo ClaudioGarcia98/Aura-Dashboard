@@ -44,6 +44,8 @@ The production distribution is one self-contained HTML file with local scripts, 
 
 The default video and original high-resolution logo account for most of the bundle. The build enforces a 5 MB maximum and checks for leftover runtime asset references and matching script security hashes.
 
+GitHub Pages uses the dedicated MAL Worker configured in `src/services/api.js` before public proxy fallbacks. The Worker must be deployed separately; see [MAL Worker setup](workers/mal/README.md). It supports arbitrary public usernames and caches each username/page separately. Local development continues to use the Vite proxy.
+
 ## Architecture and verification
 
 `src/components` contains views and focused settings sections; `src/hooks` owns React lifecycles; `src/services` contains network, backup, and database operations; `src/stores` contains the settings schema and persistence. Anime services are split into schedule, watching, parser, and time modules.

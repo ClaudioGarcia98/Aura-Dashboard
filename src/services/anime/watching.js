@@ -1,4 +1,4 @@
-import { ALLORIGINS_BASE, ALLORIGINS_RAW_BASE, CODETABS_BASE, RSS2JSON_BASE, FEED2JSON_BASE } from '../api';
+import { MAL_RELAY_BASE, ALLORIGINS_BASE, ALLORIGINS_RAW_BASE, CODETABS_BASE, RSS2JSON_BASE, FEED2JSON_BASE } from '../api';
 import { fetchJson } from '../http';
 import { safeStorage } from '../../utils/storage';
 import { httpUrl } from '../../utils/urls';
@@ -52,6 +52,11 @@ export async function fetchUserWatchingList(username, { signal, force = false } 
     if (!data && local) {
         // MAL can take over 15 seconds to answer a cold connection through the local proxy.
         try { data = await list(offset => `/api/mal${path(offset)}`, undefined, signal, 25000); }
+        catch (error) { if (signal?.aborted) throw error; }
+    }
+    if (!data && !local) {
+        // GitHub Pages has no /api server. Use our MAL-only Worker for any username.
+        try { data = await list(offset => `${MAL_RELAY_BASE}${path(offset)}`, undefined, signal, 30000); }
         catch (error) { if (signal?.aborted) throw error; }
     }
     if (!data) {

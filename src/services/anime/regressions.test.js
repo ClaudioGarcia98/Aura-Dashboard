@@ -4,6 +4,7 @@ import { fetchDaySchedule, getScheduleCache } from './schedule';
 import { fetchUserWatchingList, clearMalMemoryCache } from './watching';
 import { parseAniListSchedule } from './parsers';
 import { SCHEDULE_CACHE_KEY } from '../api';
+import { MAL_RELAY_BASE } from '../api';
 
 beforeEach(() => { localStorage.clear(); clearMalMemoryCache(); vi.stubGlobal('fetch', vi.fn()); });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
@@ -135,4 +136,40 @@ it('expires partial results after 30 seconds so a later attempt can recover', as
     expect((await fetchUserWatchingList('recover')).partial).toBe(true);
     await vi.advanceTimersByTimeAsync(30001);
     expect((await fetchUserWatchingList('recover'))[0].mal_id).toBe(8);
+});
+
+it('uses the dedicated relay on GitHub Pages for each entered username', async () => {
+    vi.stubGlobal('window', { location: { hostname: 'claudiogarcia98.github.io' } });
+    fetch.mockImplementation(async url => {
+        if (!url.startsWith(MAL_RELAY_BASE)) throw new Error('Public proxies unavailable');
+        return response([{ anime_id: url.includes('/alice/') ? 11 : 22, anime_title: 'Full public list' }]);
+    });
+    expect((await fetchUserWatchingList('alice'))[0].mal_id).toBe(11);
+    expect((await fetchUserWatchingList('bob'))[0].mal_id).toBe(22);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch.mock.calls.every(([url]) => url.startsWith(MAL_RELAY_BASE))).toBe(true);
+});
+
+it('paginates the hosted relay and accepts an authoritative empty list', async () => {
+    vi.stubGlobal('window', { location: { hostname: 'claudiogarcia98.github.io' } });
+    fetch.mockImplementation(async url => {
+        if (!url.startsWith(MAL_RELAY_BASE)) throw new Error('Unexpected fallback');
+        return response(url.includes('offset=0&') && !url.includes('/empty/')
+            ? Array.from({ length: 300 }, (_, i) => ({ anime_id: i + 1, anime_title: `Show ${i}` })) : []);
+    });
+    expect(await fetchUserWatchingList('large')).toHaveLength(300);
+    const empty = await fetchUserWatchingList('empty');
+    expect(empty).toEqual([]);
+    expect(empty.partial).toBeUndefined();
+    expect(fetch).toHaveBeenCalledTimes(3);
+});
+
+it('falls back if the Worker is unavailable or still serves its Hello World placeholder', async () => {
+    vi.stubGlobal('window', { location: { hostname: 'claudiogarcia98.github.io' } });
+    fetch.mockImplementation(async url => {
+        if (url.startsWith(MAL_RELAY_BASE)) return { ok: true, json: async () => { throw new SyntaxError('Hello World is not JSON'); } };
+        if (url.includes('allorigins.win/raw')) return response([{ anime_id: 7, anime_title: 'Fallback' }]);
+        throw new Error('Unavailable');
+    });
+    expect((await fetchUserWatchingList('fallback'))[0].mal_id).toBe(7);
 });

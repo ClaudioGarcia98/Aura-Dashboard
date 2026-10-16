@@ -1,5 +1,6 @@
 export const JIKAN_BASE = 'https://api.jikan.moe/v4';
 export const ANILIST_GRAPHQL_ENDPOINT = 'https://graphql.anilist.co';
+export const MAL_RELAY_BASE = 'https://aura-mal-api.claudio091998.workers.dev';
 export const ALLORIGINS_BASE = 'https://api.allorigins.win/get?url=';
 export const ALLORIGINS_RAW_BASE = 'https://api.allorigins.win/raw?url=';
 export const CODETABS_BASE = 'https://api.codetabs.com/v1/proxy?quest=';
