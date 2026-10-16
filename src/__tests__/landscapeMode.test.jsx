@@ -34,6 +34,7 @@ vi.mock('../stores/useSettingsStore', () => ({
     useSettingsStore: mockUseSettingsStore,
 }));
 
+vi.mock('../hooks/useWatchingList', () => ({ useWatchingList: () => [] }));
 vi.mock('../hooks/useBackgroundLoader', () => ({ useBackgroundLoader: vi.fn() }));
 vi.mock('../hooks/useThemeEffect', () => ({ useThemeEffect: vi.fn() }));
 vi.mock('../hooks/useFontEffect', () => ({ useFontEffect: vi.fn() }));

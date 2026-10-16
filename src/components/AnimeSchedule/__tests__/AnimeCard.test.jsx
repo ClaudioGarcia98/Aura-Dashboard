@@ -70,13 +70,13 @@ describe('AnimeCard — sidebar variant rendering', () => {
 
     it('renders the MAL link with correct href', () => {
         render(<AnimeCard {...defaultProps} />);
-        const link = screen.getByRole('link', { name: /myanimelist/i });
+        const link = screen.getByRole('link', { name: /myanimelist/i, hidden: true });
         expect(link.getAttribute('href')).toBe('https://myanimelist.net/anime/1');
     });
 
     it('renders the MAL link with target _blank and rel noopener', () => {
         render(<AnimeCard {...defaultProps} />);
-        const link = screen.getByRole('link', { name: /myanimelist/i });
+        const link = screen.getByRole('link', { name: /myanimelist/i, hidden: true });
         expect(link.getAttribute('target')).toBe('_blank');
         expect(link.getAttribute('rel')).toBe('noopener noreferrer');
     });

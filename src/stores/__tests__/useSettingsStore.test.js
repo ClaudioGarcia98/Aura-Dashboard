@@ -342,9 +342,9 @@ describe('useSettingsStore — persist migration', () => {
         const { migrate } = useSettingsStore.persist.getOptions();
         const clean = {
             lofiStations: [
-                { id: 1, videoId: 'aaa', name: 'A' },
-                { id: 2, videoId: 'bbb', name: 'B' },
-                { id: 3, videoId: 'ccc', name: 'C' },
+                { id: 1, videoId: 'lTRiuFIWV54', name: 'A' },
+                { id: 2, videoId: '4xDzrJKXOOY', name: 'B' },
+                { id: 3, videoId: '5yx6BWlEVcY', name: 'C' },
             ],
         };
         const result = migrate(clean, 0);

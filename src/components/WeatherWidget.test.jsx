@@ -69,6 +69,8 @@ describe('WeatherWidget', () => {
 
     it('loads cached weather immediately if present in localStorage', () => {
         const cached = {
+            key: JSON.stringify([true, 'London']),
+            locationSource: 'gps',
             iconType: 'sun',
             weatherCode: 0,
             temp: '22°C',

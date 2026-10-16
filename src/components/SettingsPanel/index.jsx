@@ -9,58 +9,39 @@ import ThemeSettings from './ThemeSettings';
 import WidgetToggles from './WidgetToggles';
 import MediaSettings from './MediaSettings';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
-import { deleteBackgroundBlob } from '../../services/db';
-
-const getFaviconUrl = (url) => {
-    try { return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=16`; }
-    catch { return ''; }
-};
-
-const TRANSIENT_KEYS = new Set([
-    'dash_anime_schedule_v3',
-    'dash_anime_schedule_v2',
-    'dash_weather_cache',
-    'dash_geo',
-    'dash_recent',
-    'dash_watching_list',
-]);
+import { createSettingsBackup, restoreSettingsBackup, resetAuraData } from '../../services/settingsBackup';
+import WeatherSettings from './WeatherSettings';
+import SpeedDialSettings from './SpeedDialSettings';
+import PrivacySettings from './PrivacySettings';
+import MalConnectionStatus from './MalConnectionStatus';
+import { useDialog } from '../../hooks/useDialog';
+import { useCallback } from 'react';
 
 export default memo(function SettingsPanel({ embedded = false } = {}) {
     const {
         username, setUsername,
         malUsername, setMalUsername,
         malError, malLoading, malSuccess,
-        speedDials, setSpeedDials,
-        fallbackCity, setFallbackCity,
-        useCelsius, setUseCelsius,
     } = useSettingsStore(useShallow(s => ({
         username: s.username, setUsername: s.setUsername,
         malUsername: s.malUsername, setMalUsername: s.setMalUsername,
         malError: s.malError, malLoading: s.malLoading, malSuccess: s.malSuccess,
-        speedDials: s.speedDials, setSpeedDials: s.setSpeedDials,
-        fallbackCity: s.fallbackCity, setFallbackCity: s.setFallbackCity,
-        useCelsius: s.useCelsius, setUseCelsius: s.setUseCelsius,
     })));
 
     const isTouchOrMobile = useMediaQuery('(hover: none), (pointer: coarse), (max-width: 1024px)');
     const showShortcuts = !embedded && !isTouchOrMobile;
 
     const [isOpen, setIsOpen] = useState(false);
-    const [newDialUrl, setNewDialUrl] = useState('');
-    const [editingDialId, setEditingDialId] = useState(null);
-    const [editDialName, setEditDialName] = useState('');
-    const [editDialUrl, setEditDialUrl] = useState('');
-    const [citySearchText, setCitySearchText] = useState(fallbackCity);
-    const [citySuggestions, setCitySuggestions] = useState([]);
-    const [isSearchingCity, setIsSearchingCity] = useState(false);
-    const [showCityDropdown, setShowCityDropdown] = useState(false);
-    const [cityHintPos, setCityHintPos] = useState(null);
     const [confirmReset, setConfirmReset] = useState(0);
     const [popupMessage, setPopupMessage] = useState(null);
 
     const panelRef = useRef(null);
+    const modalRef = useRef(null);
+    const closePanel = useCallback(() => setIsOpen(false), []);
+    const closeModal = useCallback(() => { setConfirmReset(0); setPopupMessage(null); }, []);
+    useDialog(panelRef, !embedded && isOpen && !confirmReset && !popupMessage, closePanel);
+    useDialog(modalRef, !!confirmReset || !!popupMessage, closeModal);
     const toggleRef = useRef(null);
-    const cityHintRef = useRef(null);
     const importFileInputRef = useRef(null);
 
     // Lock background scroll while the settings sheet is open (phones)
@@ -98,48 +79,12 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
         };
     }, []);
 
-    // Sync city input when panel closes
-    useEffect(() => {
-        if (!isOpen) {
-            setCitySearchText(fallbackCity);
-            setShowCityDropdown(false);
-        }
-    }, [isOpen, fallbackCity]);
-
-    // Debounced city geocoding
-    useEffect(() => {
-        if (citySearchText === fallbackCity || !showCityDropdown) return;
-        const delayDebounceFn = setTimeout(async () => {
-            if (citySearchText.length > 2) {
-                setIsSearchingCity(true);
-                try {
-                    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(citySearchText)}&count=5`);
-                    const data = await res.json();
-                    setCitySuggestions(data.results || []);
-                } catch {
-                    setCitySuggestions([]);
-                }
-                setIsSearchingCity(false);
-            } else {
-                setCitySuggestions([]);
-            }
-        }, 500);
-        return () => clearTimeout(delayDebounceFn);
-    }, [citySearchText, fallbackCity, showCityDropdown]);
-
     const handleExportSettings = () => {
-        const settings = {};
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key.startsWith('dash_') && !TRANSIENT_KEYS.has(key)) {
-                settings[key] = localStorage.getItem(key);
-            }
-        }
-        const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+        const blob = new Blob([createSettingsBackup(useSettingsStore.getState())], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `good_morning_backup_${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `aura_backup_${new Date().toISOString().split('T')[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -147,61 +92,24 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
     const handleImportSettings = (e) => {
         const file = e.target.files[0];
         if (!file) return;
+        if (file.size > 1024 * 1024) { setPopupMessage({ title: 'Import Failed', message: 'Backup exceeds the 1 MB limit.', type: 'error' }); e.target.value = ''; return; }
         const reader = new FileReader();
         reader.onload = (evt) => {
             try {
-                const settings = JSON.parse(evt.target.result);
-                const keys = Object.keys(settings);
-                if (keys.length === 0 || !keys.some(k => k.startsWith('dash_'))) {
-                    setPopupMessage({ title: 'Import Failed', message: 'Invalid backup file format. Please ensure you are uploading a valid Good Morning backup file.', type: 'error' });
-                    return;
-                }
-                keys.forEach(k => {
-                    if (k.startsWith('dash_') && !TRANSIENT_KEYS.has(k)) {
-                        localStorage.setItem(k, settings[k]);
-                    }
-                });
+                restoreSettingsBackup(evt.target.result);
                 setPopupMessage({
                     title: 'Success!',
                     message: 'Your settings and customization have been successfully restored. The dashboard needs to reload to apply the changes.',
                     type: 'success',
                     onAction: () => window.location.reload(),
                 });
-            } catch {
-                setPopupMessage({ title: 'Import Failed', message: 'Failed to parse the backup file. It might be corrupted.', type: 'error' });
+            } catch (error) {
+                setPopupMessage({ title: 'Import Failed', message: error.message || 'Could not restore settings.', type: 'error' });
             }
         };
+        reader.onerror = () => setPopupMessage({ title: 'Import Failed', message: 'Could not read the backup file.', type: 'error' });
         reader.readAsText(file);
         e.target.value = '';
-    };
-
-    const handleAddDial = () => {
-        if (!newDialUrl.trim()) return;
-        let url = newDialUrl.trim();
-        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-        let finalName = 'Speed Dial';
-        try {
-            const host = new URL(url).hostname.replace(/^www\./, '').split('.')[0];
-            if (host) finalName = host.charAt(0).toUpperCase() + host.slice(1);
-        } catch { finalName = 'Speed Dial'; }
-        const currentList = Array.isArray(speedDials) ? speedDials : [];
-        setSpeedDials([...currentList, { id: Date.now(), name: finalName, url }]);
-        setNewDialUrl('');
-    };
-
-    const handleRemoveDial = (id) => {
-        const currentList = Array.isArray(speedDials) ? speedDials : [];
-        setSpeedDials(currentList.filter(d => d.id !== id));
-    };
-
-    const handleSaveEdit = (dialId) => {
-        const currentList = Array.isArray(speedDials) ? speedDials : [];
-        let url = editDialUrl.trim();
-        if (!url) return;
-        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-        const name = editDialName.trim() || 'Speed Dial';
-        setSpeedDials(currentList.map(d => d.id === dialId ? { ...d, name, url } : d));
-        setEditingDialId(null);
     };
 
     return (
@@ -223,7 +131,7 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
 
             {!embedded && isOpen && <div className="drawer-scrim show" onClick={() => setIsOpen(false)} aria-hidden="true" />}
 
-            <section className={`settings-panel ${embedded ? 'embedded' : ''} ${(embedded || isOpen) ? 'open' : ''}`} id="settingsPanel" ref={panelRef}>
+            <section role={embedded ? undefined : "dialog"} aria-label="Aura Settings" aria-modal={!embedded && isOpen ? true : undefined} inert={!embedded && !isOpen} tabIndex={-1} className={`settings-panel ${embedded ? 'embedded' : ''} ${(embedded || isOpen) ? 'open' : ''}`} id="settingsPanel" ref={panelRef}>
                 <div className="sp-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <img src={logoUrl} alt="Aura Logo" style={{ width: '28px', height: '28px', filter: 'drop-shadow(0 0 8px var(--accent-color))' }} />
                     Aura Settings
@@ -274,147 +182,19 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                                 )}
                             </div>
                         </div>
-                        {malLoading && <div style={{ color: 'var(--text-secondary, #aaa)', fontSize: '11px', marginTop: '4px', paddingLeft: '2px' }}>Connecting to MyAnimeList…</div>}
-                        {malError && !malLoading && <div style={{ color: '#ff6b6b', fontSize: '11px', marginTop: '4px', paddingLeft: '2px' }}>Username not found or has no watching anime.</div>}
-                        {malSuccess && !malLoading && !malError && <div style={{ color: '#4caf50', fontSize: '11px', marginTop: '4px', paddingLeft: '2px' }}>Connected &amp; Verified</div>}
+                        <MalConnectionStatus />
                     </div>
                 </div>
 
                 <WidgetToggles />
 
-                {/* Weather */}
-                <div className="sp-section">
-                    <div className="sp-label">Weather</div>
-                    <div className="sp-group" style={{ position: 'relative' }}>
-                        <label htmlFor="fallbackCityInput" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            Your City
-                            <span
-                                ref={cityHintRef}
-                                style={{ display: 'inline-flex', alignItems: 'center', cursor: 'help', lineHeight: 1 }}
-                                onMouseEnter={() => {
-                                    if (cityHintRef.current) {
-                                        const rect = cityHintRef.current.getBoundingClientRect();
-                                        setCityHintPos({ top: rect.bottom + 8, left: rect.left });
-                                    }
-                                }}
-                                onMouseLeave={() => setCityHintPos(null)}
-                            >
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="info-icon">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
-                            </span>
-                            {cityHintPos && createPortal(
-                                <div className="settings-hint-card" style={{ top: cityHintPos.top, left: cityHintPos.left }}>
-                                    <p>This is only used when your browser's GPS location is unavailable or denied.</p>
-                                </div>,
-                                document.body
-                            )}
-                        </label>
-                        <input
-                            type="text"
-                            id="fallbackCityInput"
-                            placeholder="e.g. London"
-                            value={citySearchText}
-                            onChange={(e) => { setCitySearchText(e.target.value); setShowCityDropdown(true); }}
-                            onFocus={() => { if (citySearchText) setShowCityDropdown(true); }}
-                        />
-                        {showCityDropdown && (citySuggestions.length > 0 || isSearchingCity) && (
-                            <ul className="city-suggestions-dropdown">
-                                {isSearchingCity ? (
-                                    <li className="city-suggestion-item">Searching...</li>
-                                ) : (
-                                    citySuggestions.map((s, i) => (
-                                        <li key={i} className="city-suggestion-item" onClick={() => {
-                                            const fullName = `${s.name}${s.admin1 ? ', ' + s.admin1 : ''}, ${s.country}`;
-                                            setCitySearchText(fullName);
-                                            setFallbackCity(fullName);
-                                            setShowCityDropdown(false);
-                                        }}>
-                                            <span style={{ fontWeight: 'bold' }}>{s.name}</span>
-                                            {s.admin1 && <span style={{ opacity: 0.7 }}>, {s.admin1}</span>}
-                                            <span style={{ opacity: 0.5, marginLeft: '4px' }}>({s.country})</span>
-                                        </li>
-                                    ))
-                                )}
-                            </ul>
-                        )}
-                    </div>
-                </div>
-
+                <WeatherSettings key={embedded || isOpen ? 'active' : 'closed'} active={embedded || isOpen} />
                 <ThemeSettings />
 
                 <MediaSettings />
 
-                {/* Speed Dials */}
-                <div className="sp-section" id="dials-settings-section">
-                    <div className="sp-label">Speed Dials</div>
-                    <div className="sp-group">
-                        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-                            <input
-                                type="text"
-                                placeholder="Paste URL here..."
-                                value={newDialUrl}
-                                onChange={e => setNewDialUrl(e.target.value)}
-                                style={{ flex: 1 }}
-                                onKeyDown={e => e.key === 'Enter' && handleAddDial()}
-                            />
-                            <button type="button" className="pill" onClick={handleAddDial} aria-label="Add speed dial">Add</button>
-                        </div>
-                        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                            {(!Array.isArray(speedDials) || speedDials.length === 0) ? (
-                                <li style={{ opacity: 0.5, padding: '12px 0', textAlign: 'center', fontSize: '0.8rem' }}>No speed dials added yet.</li>
-                            ) : (
-                                speedDials.map(dial => (
-                                    <li key={dial.id} className="sp-list-item" style={{ flexDirection: editingDialId === dial.id ? 'column' : 'row', gap: '8px', fontSize: '0.8rem' }}>
-                                        {editingDialId === dial.id ? (
-                                            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                                                <input type="text" value={editDialName} onChange={e => setEditDialName(e.target.value)} style={{ flex: 1 }} />
-                                                <input
-                                                    type="text"
-                                                    value={editDialUrl}
-                                                    onChange={e => setEditDialUrl(e.target.value)}
-                                                    style={{ flex: 2 }}
-                                                    onKeyDown={e => e.key === 'Enter' && handleSaveEdit(dial.id)}
-                                                />
-                                                <button type="button" className="pill" onClick={() => handleSaveEdit(dial.id)}>Save</button>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', overflow: 'hidden' }}>
-                                                    <img src={getFaviconUrl(dial.url)} style={{ width: 16, height: 16, borderRadius: 3 }} onError={e => e.target.style.display = 'none'} alt="" />
-                                                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}>{dial.name}</span>
-                                                </div>
-                                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                                                    <button type="button" onClick={() => { setEditingDialId(dial.id); setEditDialName(dial.name); setEditDialUrl(dial.url); }} className="sp-action-btn" title="Edit" aria-label="Edit speed dial">
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                            <path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                                                        </svg>
-                                                    </button>
-                                                    <button type="button" onClick={() => handleRemoveDial(dial.id)} className="sp-action-btn delete" title="Delete" aria-label="Delete speed dial">
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </>
-                                        )}
-                                    </li>
-                                ))
-                            )}
-                        </ul>
-                    </div>
-
-                    <div className="sp-section" style={{ marginTop: '15px' }}>
-                        <div className="sp-label">Temperature Unit</div>
-                        <div className="pill-row">
-                            <button type="button" className={`pill ${useCelsius ? 'active' : ''}`} onClick={() => setUseCelsius(true)}>Celsius (°C)</button>
-                            <button type="button" className={`pill ${!useCelsius ? 'active' : ''}`} onClick={() => setUseCelsius(false)}>Fahrenheit (°F)</button>
-                        </div>
-                    </div>
-                </div>
-
+                <SpeedDialSettings />
+                <PrivacySettings />
                 {/* Search & Shortcuts */}
                 <div className="sp-section">
                     {showShortcuts && (
@@ -466,7 +246,7 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
             {/* Reset confirm modal */}
             {confirmReset > 0 && createPortal(
                 <div className="reset-overlay" onClick={() => setConfirmReset(0)}>
-                    <div className="reset-modal" onClick={e => e.stopPropagation()}>
+                    <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Reset settings" tabIndex={-1} className="reset-modal" onClick={e => e.stopPropagation()}>
                         {confirmReset === 1 ? (
                             <>
                                 <p>Are you sure you want to reset all settings?</p>
@@ -483,40 +263,8 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                                 <div className="reset-modal-actions">
                                     <button type="button" className="pill" onClick={() => setConfirmReset(0)}>Go Back</button>
                                     <button type="button" className="reset-confirm-btn" onClick={async () => {
-                                        localStorage.clear();
-                                        sessionStorage.clear();
-                                        try {
-                                            await deleteBackgroundBlob();
-                                        } catch {
-                                            // Ignore if already deleted
-                                        }
-                                        try {
-                                            const req = indexedDB.deleteDatabase('dashDB');
-                                            await new Promise((resolve) => {
-                                                req.onsuccess = () => resolve();
-                                                req.onerror = () => resolve();
-                                                req.onblocked = () => resolve();
-                                                setTimeout(resolve, 300);
-                                            });
-                                        } catch {
-                                            // Ignore if indexedDB already cleared
-                                        }
-                                        if ('caches' in window) {
-                                            try {
-                                                const names = await caches.keys();
-                                                await Promise.all(names.map(n => caches.delete(n)));
-                                            } catch {
-                                                // Ignore cache clearing error
-                                            }
-                                        }
-                                        if ('serviceWorker' in navigator) {
-                                            try {
-                                                const regs = await navigator.serviceWorker.getRegistrations();
-                                                await Promise.all(regs.map(r => r.unregister()));
-                                            } catch {
-                                                // Ignore service worker unregister error
-                                            }
-                                        }
+                                        try { await resetAuraData(); }
+                                        catch { setConfirmReset(0); setPopupMessage({ title: 'Reset Failed', message: 'Could not erase saved data. Please try again.', type: 'error' }); return; }
                                         window.location.reload();
                                     }}>Yes, Erase Everything</button>
                                 </div>
@@ -530,7 +278,7 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
             {/* Import/Export popup modal */}
             {popupMessage && createPortal(
                 <div className="reset-overlay" style={{ zIndex: 1000000, animation: 'fadeSlideIn 0.2s ease-out' }}>
-                    <div className="reset-modal" style={{ textAlign: 'center', maxWidth: '350px', padding: '30px 24px', animation: 'pulseGlow 2s infinite' }}>
+                    <div ref={modalRef} role="dialog" aria-modal="true" aria-label={popupMessage.title} tabIndex={-1} className="reset-modal" style={{ textAlign: 'center', maxWidth: '350px', padding: '30px 24px', animation: 'pulseGlow 2s infinite' }}>
                         <div style={{ fontSize: '3.5rem', marginBottom: '15px', lineHeight: 1, display: 'flex', justifyContent: 'center' }}>
                             {popupMessage.type === 'success' ? (
                                 <img src={logoUrl} alt="Success" style={{ width: '64px', height: '64px', filter: 'drop-shadow(0 0 15px var(--accent-color))' }} />

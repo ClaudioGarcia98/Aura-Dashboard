@@ -9,13 +9,15 @@ function openDatabase() {
             return reject(new Error('IndexedDB is not supported'));
         }
         const req = indexedDB.open(DB_NAME, DB_VERSION);
+        let blocked = false;
+        req.onblocked = () => { blocked = true; reject(new Error('Background database is blocked by another tab')); };
         req.onupgradeneeded = (e) => {
             const db = e.target.result;
             if (!db.objectStoreNames.contains(STORE_NAME)) {
                 db.createObjectStore(STORE_NAME);
             }
         };
-        req.onsuccess = (e) => resolve(e.target.result);
+        req.onsuccess = (e) => { if (blocked) e.target.result.close?.(); else resolve(e.target.result); };
         req.onerror = (e) => reject(e.target.error);
     });
 }
@@ -51,15 +53,15 @@ export async function saveBackgroundBlob(blob) {
             db.close?.();
             resolve();
         };
-        tx.onerror = (e) => {
+        tx.onabort = tx.onerror = (e) => {
             db.close?.();
-            reject(e.target.error);
+            reject(e.target.error || new Error('Background transaction aborted'));
         };
     });
 }
 
 export async function deleteBackgroundBlob() {
-    try {
+    if (typeof indexedDB === 'undefined') return;
         const db = await openDatabase();
         return await new Promise((resolve, reject) => {
             const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -69,12 +71,9 @@ export async function deleteBackgroundBlob() {
                 db.close?.();
                 resolve();
             };
-            tx.onerror = (e) => {
+            tx.onabort = tx.onerror = (e) => {
                 db.close?.();
-                reject(e.target.error);
+                reject(e.target.error || new Error('Background deletion aborted'));
             };
         });
-    } catch {
-        // Silently ignore if already missing
-    }
 }

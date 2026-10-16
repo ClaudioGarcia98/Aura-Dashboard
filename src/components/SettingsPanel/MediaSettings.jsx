@@ -1,26 +1,20 @@
+import { safeStorage } from '../../utils/storage';
 import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
 import { usePointerReorder } from '../../hooks/usePointerReorder';
-import { saveBackgroundBlob, deleteBackgroundBlob } from '../../services/db';
-import defaultVideo from '../../assets/animated_gif.mp4';
+import BackgroundSettings from './BackgroundSettings';
+import { fetchJson } from '../../services/http';
+import { videoId as extractVideoId } from '../../utils/urls';
 
-const extractVideoId = (val) => {
-    const match = val.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]+)/);
-    return match ? match[1] : val.trim();
-};
 
 export default memo(function MediaSettings() {
     const {
         volume, setVolume,
-        gifName, setGifName,
-        setBackgroundUrl, setBackgroundIsVideo,
         lofiStations, setLofiStations,
         lofiId, setLofiId,
     } = useSettingsStore(useShallow(s => ({
         volume: s.volume, setVolume: s.setVolume,
-        gifName: s.gifName, setGifName: s.setGifName,
-        setBackgroundUrl: s.setBackgroundUrl, setBackgroundIsVideo: s.setBackgroundIsVideo,
         lofiStations: s.lofiStations, setLofiStations: s.setLofiStations,
         lofiId: s.lofiId, setLofiId: s.setLofiId,
     })));
@@ -30,71 +24,24 @@ export default memo(function MediaSettings() {
     const [editingStationId, setEditingStationId] = useState(null);
     const [editStationVideoId, setEditStationVideoId] = useState('');
     const [editStationName, setEditStationName] = useState('');
-    const [bgError, setBgError] = useState('');
-    const bgFileInputRef = useRef(null);
     const lastNonZeroVolumeRef = useRef(volume > 0 ? volume : 0.2);
 
     useEffect(() => {
         if (volume > 0) {
             lastNonZeroVolumeRef.current = volume;
-            localStorage.setItem('dash_prev_volume', String(volume));
+            safeStorage.setItem('dash_prev_volume', String(volume));
         }
     }, [volume]);
 
     const handleToggleMute = () => {
         if (volume > 0) {
             lastNonZeroVolumeRef.current = volume;
-            localStorage.setItem('dash_prev_volume', String(volume));
+            safeStorage.setItem('dash_prev_volume', String(volume));
             setVolume(0);
         } else {
-            const restored = parseFloat(localStorage.getItem('dash_prev_volume')) || lastNonZeroVolumeRef.current || 0.2;
+            const restored = parseFloat(safeStorage.getItem('dash_prev_volume')) || lastNonZeroVolumeRef.current || 0.2;
             setVolume(restored > 0 ? restored : 0.2);
         }
-    };
-
-    const handleFileChange = async (e) => {
-        const f = e.target.files[0];
-        if (!f) return;
-
-        setBgError('');
-
-        // 50MB maximum ceiling
-        if (f.size > 50 * 1024 * 1024) {
-            setBgError('File exceeds 50MB maximum limit');
-            e.target.value = '';
-            return;
-        }
-
-        // Validate MIME type
-        const isImage = f.type && f.type.startsWith('image/');
-        const isVideo = f.type && f.type.startsWith('video/');
-        if (!isImage && !isVideo) {
-            setBgError('Unsupported file type. Please choose an image or MP4 video.');
-            e.target.value = '';
-            return;
-        }
-
-        try {
-            await saveBackgroundBlob(f);
-            setBackgroundUrl(URL.createObjectURL(f));
-            setBackgroundIsVideo(isVideo);
-            setGifName(f.name);
-        } catch (err) {
-            console.error('Failed to save background blob:', err);
-            setBgError('Failed to store media in local database');
-        }
-    };
-
-    const handleRestoreDefaultBackground = async () => {
-        try {
-            await deleteBackgroundBlob();
-        } catch (err) {
-            console.error('Failed to delete background blob:', err);
-        }
-        setGifName('');
-        setBackgroundUrl(defaultVideo);
-        setBackgroundIsVideo(true);
-        if (bgFileInputRef.current) bgFileInputRef.current.value = '';
     };
 
     const handleAddStation = async () => {
@@ -103,17 +50,19 @@ export default memo(function MediaSettings() {
         let name = newStationName.trim();
         if (!name) {
             try {
-                const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
-                const data = await res.json();
+                const data = await fetchJson(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
                 name = data?.title || '';
             } catch { name = ''; }
         }
-        setLofiStations([...lofiStations, { id: Date.now(), videoId, name }]);
+        const current = useSettingsStore.getState().lofiStations;
+        if (current.some(station => station.videoId === videoId)) return;
+        setLofiStations([...current, { id: crypto.randomUUID(), videoId, name }]);
         setNewStationVideoId('');
         setNewStationName('');
     };
 
     const handleSaveEdit = (stationId) => {
+        if (!extractVideoId(editStationVideoId)) return;
         setLofiStations(lofiStations.map(s =>
             s.id === stationId
                 ? { ...s, videoId: extractVideoId(editStationVideoId), name: editStationName.trim() }
@@ -145,25 +94,6 @@ export default memo(function MediaSettings() {
     }, []);
 
     const { draggingId, startDrag } = usePointerReorder({ onReorder: handleReorder });
-
-    // One-time fix: replace any "My Saved Station" placeholder names with real YouTube titles
-    useEffect(() => {
-        const { lofiStations: current, setLofiStations: setter } = useSettingsStore.getState();
-        const stale = current.filter(s => s.name === 'My Saved Station');
-        if (stale.length === 0) return;
-        Promise.all(stale.map(async s => {
-            try {
-                const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${s.videoId}`);
-                const data = await res.json();
-                return data?.title ? { id: s.id, name: data.title } : null;
-            } catch { return null; }
-        })).then(updates => {
-            const map = new Map(updates.filter(Boolean).map(u => [u.id, u.name]));
-            if (map.size === 0) return;
-            const { lofiStations: fresh } = useSettingsStore.getState();
-            setter(fresh.map(s => map.has(s.id) ? { ...s, name: map.get(s.id) } : s));
-        });
-    }, []);
 
     return (
         <>
@@ -207,46 +137,7 @@ export default memo(function MediaSettings() {
                 </div>
             </div>
 
-            <div className="sp-section">
-                <div className="sp-label">Background</div>
-                <div
-                    className="gif-btn"
-                    onClick={() => bgFileInputRef.current?.click()}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bgFileInputRef.current?.click(); } }}
-                    role="button"
-                    tabIndex={0}
-                >
-                    <span>🎞</span><span>{gifName ? 'Change GIF…' : 'Choose local GIF…'}</span>
-                </div>
-                <div className="gif-name" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {gifName || 'Default (animated_gif.mp4)'}
-                    </span>
-                    {gifName && (
-                        <button
-                            type="button"
-                            className="pill"
-                            style={{ fontSize: '0.72rem', padding: '3px 8px', flexShrink: 0 }}
-                            onClick={handleRestoreDefaultBackground}
-                            title="Restore default animation"
-                        >
-                            ↺ Restore
-                        </button>
-                    )}
-                </div>
-                {bgError && (
-                    <div style={{ color: '#ff6b6b', fontSize: '0.75rem', marginTop: '6px' }} role="alert">
-                        {bgError}
-                    </div>
-                )}
-                <input
-                    type="file"
-                    ref={bgFileInputRef}
-                    style={{ display: 'none' }}
-                    accept="image/gif,image/webp,image/png,image/jpeg,video/mp4"
-                    onChange={handleFileChange}
-                />
-            </div>
+            <BackgroundSettings />
 
             <div className="sp-section">
                 <div className="sp-label">Lofi Stations</div>
@@ -274,7 +165,7 @@ export default memo(function MediaSettings() {
                         </div>
                     )}
                     <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                        {lofiStations.map((station) => (
+                        {lofiStations.map((station, index) => (
                             <li
                                 key={station.id}
                                 className="sp-list-item"
@@ -322,6 +213,8 @@ export default memo(function MediaSettings() {
                                             </span>
                                         </div>
                                         <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
+                                            <button type="button" className="sp-action-btn" aria-label={`Move ${station.name || station.videoId} up`} disabled={index === 0} onClick={() => handleReorder(station.id, lofiStations[index - 1].id)}>↑</button>
+                                            <button type="button" className="sp-action-btn" aria-label={`Move ${station.name || station.videoId} down`} disabled={index === lofiStations.length - 1} onClick={() => handleReorder(station.id, lofiStations[index + 1].id)}>↓</button>
                                             <a
                                                 href={`https://www.youtube.com/watch?v=${station.videoId}`}
                                                 target="_blank"

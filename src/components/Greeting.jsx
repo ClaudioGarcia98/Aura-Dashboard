@@ -1,13 +1,13 @@
 import './Greeting.css';
 import { memo, useState, useEffect } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
-import { safeJsonParse } from '../utils/storage';
+import { safeStorage, safeJsonParse } from '../utils/storage';
 
 export default memo(function Greeting() {
     const username = useSettingsStore(s => s.username);
     const [greeting, setGreeting] = useState('');
     const [weatherCode, setWeatherCode] = useState(() => {
-        const data = safeJsonParse(localStorage.getItem('dash_weather_cache'), null);
+        const data = safeJsonParse(safeStorage.getItem('dash_weather_cache'), null);
         return typeof data?.weatherCode === 'number' ? data.weatherCode : null;
     });
 

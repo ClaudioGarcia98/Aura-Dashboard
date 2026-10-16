@@ -182,6 +182,14 @@ describe('useBackgroundLoader — IndexedDB get failure', () => {
 });
 
 describe('useBackgroundLoader — cleanup', () => {
+    it('does not create URLs or change state after an unfinished load is unmounted', async () => {
+        globalThis.indexedDB = { open: makeIdbMock({ blob: new Blob(['late'], { type: 'video/mp4' }) }).open };
+        const { unmount } = renderHook(() => useBackgroundLoader());
+        unmount();
+        await act(async () => { await flushPromises(); });
+        expect(URL.createObjectURL).not.toHaveBeenCalled();
+        expect(mockSetBackgroundUrl).not.toHaveBeenCalled();
+    });
     it('revokes the blob URL on unmount when a blob was loaded', async () => {
         const blob = new Blob(['data'], { type: 'video/mp4' });
         const { open } = makeIdbMock({ blob });

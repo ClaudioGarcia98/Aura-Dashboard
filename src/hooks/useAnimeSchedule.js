@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
-import { fetchDaySchedule, fetchUserWatchingList, extractTrailerId } from '../services/animeService';
-import { WATCHING_CACHE_KEY } from '../services/api';
-import { safeJsonParse } from '../utils/storage';
+import { fetchDaySchedule, extractTrailerId } from '../services/animeService';
+import { useWatchingList } from './useWatchingList';
+import { safeStorage } from '../utils/storage';
 
 const DAY_FILTERS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 export const getPortugalDayFilter = () => {
@@ -15,8 +15,8 @@ export const getPortugalDayFilter = () => {
     }
 };
 
-export function useAnimeSchedule({ alwaysOpen = false } = {}) {
-    const { volume, malUsername, setMalError, setMalLoading, setMalSuccess } = useSettingsStore(useShallow(s => ({ volume: s.volume, malUsername: s.malUsername, setMalError: s.setMalError, setMalLoading: s.setMalLoading, setMalSuccess: s.setMalSuccess })));
+export function useAnimeSchedule({ alwaysOpen = false, enabled = true } = {}) {
+    const { volume, malUsername, setMalError, setMalLoading, setMalSuccess, setMalStatus } = useSettingsStore(useShallow(s => ({ volume: s.volume, malUsername: s.malUsername, setMalError: s.setMalError, setMalLoading: s.setMalLoading, setMalSuccess: s.setMalSuccess, setMalStatus: s.setMalStatus })));
 
     const [todayDay, setTodayDay] = useState(getPortugalDayFilter);
     const [isSidebarOpen, setIsSidebarOpen] = useState(alwaysOpen);
@@ -31,12 +31,13 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
     const [sidebarLoading, setSidebarLoading] = useState(false);
     const [sidebarError, setSidebarError] = useState(false);
 
-    const [userWatching, setUserWatching] = useState([]);
+    const refreshKey = useSettingsStore(s => s.malRefreshKey);
+    const userWatching = useWatchingList(malUsername, enabled, { setMalLoading, setMalError, setMalSuccess, setMalStatus, refreshKey });
 
     const [previewTrailer, setPreviewTrailer] = useState(null);
     const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 });
     const [trailerMuted, setTrailerMuted] = useState(() => {
-        const saved = localStorage.getItem('dash_trailer_muted');
+        const saved = safeStorage.getItem('dash_trailer_muted');
         return saved === null ? true : saved === 'true';
     });
 
@@ -45,7 +46,7 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
     const hoverTimer = useRef(null);
     const hideTimer = useRef(null);
     const trailerIframeRef = useRef(null);
-    const prevMalUsername = useRef(malUsername);
+
 
     // Idle / Escape → close sidebar (disabled in always-open / embedded mode)
     useEffect(() => {
@@ -97,165 +98,41 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
         };
     }, []);
 
-    // Initial data load: today schedule + cached watching → then fresh watching in bg
+    // Schedule and watching are independent: a stalled provider cannot block both.
     useEffect(() => {
-        let isMounted = true;
+        if (!enabled) return;
+        const controller = new AbortController();
+        let active = true;
+        queueMicrotask(() => { if (active) { setTodayLoading(true); setTodayError(false); } });
+        fetchDaySchedule(todayDay, { signal: controller.signal }).then(data => {
+            if (active) setTodayData([...new Map(data.filter(Boolean).map(item => [item.mal_id, item])).values()]);
+        }).catch(() => { if (active) setTodayError(true); })
+            .finally(() => { if (active) setTodayLoading(false); });
+        return () => { active = false; controller.abort(); };
+    }, [todayDay, enabled]);
 
-        const loadInitialData = async () => {
-            let cachedWatching = [];
-            const cleanUser = (malUsername || '').trim().toLowerCase();
-            const cachedUser = (localStorage.getItem('dash_anime_watching_user') || '').trim().toLowerCase();
-            if (cleanUser && cachedUser === cleanUser) {
-                const cached = safeJsonParse(localStorage.getItem(WATCHING_CACHE_KEY), []);
-                if (Array.isArray(cached) && cached.length > 0 && typeof cached[0] === 'object') {
-                    cachedWatching = cached;
-                }
-            } else if (!cleanUser || cachedUser !== cleanUser) {
-                localStorage.removeItem(WATCHING_CACHE_KEY);
-                localStorage.removeItem('dash_anime_watching_user');
-            }
-            if (isMounted) setUserWatching(cachedWatching);
-
-            try {
-                const tData = await fetchDaySchedule(todayDay);
-                const uniqueToday = Array.from(new Map(tData.map(item => [item.mal_id, item])).values());
-                if (isMounted) { setTodayData(uniqueToday); setTodayError(false); }
-            } catch {
-                if (isMounted) setTodayError(true);
-            } finally {
-                if (isMounted) setTodayLoading(false);
-            }
-
-            if (!cleanUser) {
-                if (isMounted) {
-                    setMalSuccess(false);
-                    setMalError(false);
-                }
-                return;
-            }
-
-            try {
-                const freshWatching = await fetchUserWatchingList(malUsername);
-                if (freshWatching && freshWatching.length > 0) {
-                    localStorage.setItem(WATCHING_CACHE_KEY, JSON.stringify(freshWatching));
-                    localStorage.setItem('dash_anime_watching_user', cleanUser);
-                    if (isMounted) {
-                        setUserWatching(freshWatching);
-                        setMalSuccess(true);
-                        setMalError(false);
-                    }
-                } else {
-                    localStorage.removeItem(WATCHING_CACHE_KEY);
-                    localStorage.removeItem('dash_anime_watching_user');
-                    if (isMounted) {
-                        setUserWatching([]);
-                        setMalSuccess(false);
-                        setMalError(true);
-                    }
-                }
-            } catch {
-                if (isMounted && malUsername && malUsername.trim()) {
-                    if (cachedWatching && cachedWatching.length > 0 && cleanUser === cachedUser) {
-                        setMalSuccess(true);
-                        setMalError(false);
-                    } else {
-                        setMalError(true);
-                        setMalSuccess(false);
-                    }
-                }
-            }
-        };
-
-        const timerId = setTimeout(loadInitialData, 1000);
-
-        const handleClickOutside = (e) => {
-            if (!document.contains(e.target)) return;
-            if (
-                sidebarRef.current && !sidebarRef.current.contains(e.target) &&
-                toggleRef.current && !toggleRef.current.contains(e.target) &&
-                !e.target.closest('.trailer-portal-container')
-            ) {
-                setIsSidebarOpen(false);
-            }
+    useEffect(() => {
+        const handleClickOutside = e => {
+            if (!alwaysOpen && document.contains(e.target) && sidebarRef.current && !sidebarRef.current.contains(e.target)
+                && toggleRef.current && !toggleRef.current.contains(e.target) && !e.target.closest('.trailer-portal-container')) setIsSidebarOpen(false);
         };
         document.addEventListener('click', handleClickOutside);
-
-        return () => {
-            isMounted = false;
-            clearTimeout(timerId);
-            document.removeEventListener('click', handleClickOutside);
-        };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [todayDay]);
-
-    // MAL username change → debounced refresh
-    useEffect(() => {
-        if (malUsername === prevMalUsername.current) return;
-        prevMalUsername.current = malUsername;
-
-        let isMounted = true;
-        setMalError(false);
-        const refreshWatching = async () => {
-            if (!malUsername || malUsername.trim() === '') {
-                if (isMounted) setUserWatching([]);
-                localStorage.removeItem(WATCHING_CACHE_KEY);
-                localStorage.removeItem('dash_anime_watching_user');
-                return;
-            }
-
-            if (isMounted) setMalLoading(true);
-            const cleanUser = malUsername.trim().toLowerCase();
-            try {
-                const freshWatching = await fetchUserWatchingList(malUsername);
-                if (freshWatching && freshWatching.length > 0) {
-                    localStorage.setItem(WATCHING_CACHE_KEY, JSON.stringify(freshWatching));
-                    localStorage.setItem('dash_anime_watching_user', cleanUser);
-                    if (isMounted) {
-                        setUserWatching(freshWatching);
-                        setMalError(false);
-                        setMalSuccess(true);
-                    }
-                } else {
-                    localStorage.removeItem(WATCHING_CACHE_KEY);
-                    localStorage.removeItem('dash_anime_watching_user');
-                    if (isMounted) {
-                        setUserWatching([]);
-                        setMalError(true);
-                        setMalSuccess(false);
-                    }
-                }
-            } catch {
-                if (isMounted) {
-                    setUserWatching([]);
-                    localStorage.removeItem(WATCHING_CACHE_KEY);
-                    localStorage.removeItem('dash_anime_watching_user');
-                    setMalError(true);
-                    setMalSuccess(false);
-                }
-            } finally {
-                if (isMounted) setMalLoading(false);
-            }
-        };
-
-        const timeoutId = setTimeout(refreshWatching, 500);
-        return () => {
-            isMounted = false;
-            clearTimeout(timeoutId);
-        };
-    }, [malUsername, setMalError, setMalLoading, setMalSuccess]);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [alwaysOpen]);
 
     // Sidebar day change → fetch that day's schedule
     useEffect(() => {
-        if (!isSidebarOpen && !alwaysOpen) return;
+        if (!enabled || (!isSidebarOpen && !alwaysOpen)) return;
+        const controller = new AbortController();
         let isMounted = true;
         const loadSidebarData = async () => {
             setSidebarLoading(true);
             setSidebarError(false);
             try {
-                const data = await fetchDaySchedule(activeDay);
+                const data = await fetchDaySchedule(activeDay, { signal: controller.signal });
                 const uniqueSorted = Array.from(new Map(data.map(item => [item.mal_id, item])).values())
                     .filter(a => a.broadcast && a.broadcast.time)
-                    .sort((a, b) => a.broadcast.time.localeCompare(b.broadcast.time));
+                    .sort((a, b) => (a.airingAt || 0) - (b.airingAt || 0));
                 if (isMounted) setSidebarData(uniqueSorted);
             } catch {
                 if (isMounted) setSidebarError(true);
@@ -264,8 +141,8 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
             }
         };
         loadSidebarData();
-        return () => { isMounted = false; };
-    }, [activeDay, isSidebarOpen, alwaysOpen]);
+        return () => { isMounted = false; controller.abort(); };
+    }, [activeDay, isSidebarOpen, alwaysOpen, enabled]);
 
     // Trailer: auto-unmute when a new trailer opens (if user preference is unmuted)
     useEffect(() => {
@@ -273,8 +150,8 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
         const timer = setTimeout(() => {
             const iframe = trailerIframeRef.current;
             if (iframe && iframe.contentWindow) {
-                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*');
-                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(volume * 100)] }), '*');
+                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), 'https://www.youtube.com');
+                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(volume * 100)] }), 'https://www.youtube.com');
             }
         }, 1500);
         return () => clearTimeout(timer);
@@ -286,10 +163,10 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
         const iframe = trailerIframeRef.current;
         if (iframe && iframe.contentWindow) {
             if (volume === 0) {
-                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*');
+                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), 'https://www.youtube.com');
             } else {
-                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*');
-                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(volume * 100)] }), '*');
+                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), 'https://www.youtube.com');
+                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(volume * 100)] }), 'https://www.youtube.com');
             }
         }
     }, [volume, previewTrailer, trailerMuted]);
@@ -297,19 +174,6 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
     // Derived: today display list (watching-prioritized top-5)
     const userWatchingIds = (() => {
         const ids = new Set(userWatching.map(u => Number(u.mal_id)).filter(id => !isNaN(id) && id > 0));
-        const normalize = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-        const watchingTitles = userWatching.map(u => normalize(u.title)).filter(Boolean);
-
-        if (watchingTitles.length > 0) {
-            const allCandidates = [...todayData, ...sidebarData];
-            for (const anime of allCandidates) {
-                if (!anime || !anime.mal_id) continue;
-                const aTitle = normalize(anime.title);
-                if (aTitle && watchingTitles.some(wt => wt.includes(aTitle) || aTitle.includes(wt))) {
-                    ids.add(Number(anime.mal_id));
-                }
-            }
-        }
         return Array.from(ids);
     })();
     const displayList = (() => {
@@ -317,12 +181,16 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
         const watchedToday = todayData
             .filter(a => userWatchingIds.includes(Number(a.mal_id)))
             .sort((a, b) => (b.score || 0) - (a.score || 0));
-        if (watchedToday.length >= 5) return watchedToday;
+        if (watchedToday.length >= 5) return watchedToday.slice(0, 5);
         const othersToday = todayData
             .filter(a => !userWatchingIds.includes(Number(a.mal_id)))
             .sort((a, b) => (b.score || 0) - (a.score || 0));
         return [...watchedToday, ...othersToday.slice(0, 5 - watchedToday.length)];
     })();
+
+    useEffect(() => () => {
+        clearTimeout(hoverTimer.current); clearTimeout(hideTimer.current);
+    }, []);
 
     // Trailer hover handlers
     const handleMouseEnter = useCallback((e, anime) => {
@@ -371,20 +239,20 @@ export function useAnimeSchedule({ alwaysOpen = false } = {}) {
     const handleUnmute = useCallback(() => {
         const iframe = trailerIframeRef.current;
         if (iframe && iframe.contentWindow) {
-            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*');
-            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(volume * 100)] }), '*');
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), 'https://www.youtube.com');
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(volume * 100)] }), 'https://www.youtube.com');
         }
         setTrailerMuted(false);
-        localStorage.setItem('dash_trailer_muted', 'false');
+        safeStorage.setItem('dash_trailer_muted', 'false');
     }, [volume]);
 
     const handleMute = useCallback(() => {
         const iframe = trailerIframeRef.current;
         if (iframe && iframe.contentWindow) {
-            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*');
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), 'https://www.youtube.com');
         }
         setTrailerMuted(true);
-        localStorage.setItem('dash_trailer_muted', 'true');
+        safeStorage.setItem('dash_trailer_muted', 'true');
     }, []);
 
     return {

@@ -1,0 +1,278 @@
+/* Main Container Box */
+.today-anime-box {
+    margin-top: var(--space-3);
+    background: rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-lg);
+    padding: 14px 12px 14px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    animation: fadeSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
+    display: flex; flex-direction: column;
+    position: relative;
+}
+.tab-header {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.2px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 10px;
+    padding: 0 4px;
+}
+.tab-title {
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    color: var(--accent-color);
+    letter-spacing: 1px;
+}
+.info-badge-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
+    cursor: help;
+    outline: none;
+}
+.prefix-item span {
+    opacity: 0.6;
+}
+
+/* ── Info Tooltips ─────────────────────────────────── */
+.info-icon {
+    opacity: 0.5;
+    transition: var(--transition-standard);
+}
+.info-badge-container:hover .info-icon,
+.info-badge-container:focus-within .info-icon,
+.info-badge-container:focus-visible .info-icon {
+    opacity: 1;
+    color: var(--accent-color);
+}
+.info-tooltip {
+    position: absolute;
+    bottom: 130%;
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    background: rgba(15, 15, 15, 0.95);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    line-height: 1.4;
+    white-space: nowrap;
+    text-transform: none;
+    letter-spacing: normal;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 100;
+}
+.info-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(15, 15, 15, 0.95) transparent transparent transparent;
+}
+.info-badge-container:hover .info-tooltip,
+.info-badge-container:focus-within .info-tooltip,
+.info-badge-container:focus-visible .info-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.sidebar-tooltip {
+    left: 0;
+    bottom: auto;
+    top: 130%;
+    transform: translateX(0) translateY(-5px);
+}
+.info-badge-container:hover .sidebar-tooltip,
+.info-badge-container:focus-within .sidebar-tooltip,
+.info-badge-container:focus-visible .sidebar-tooltip {
+    transform: translateX(0) translateY(0);
+}
+.sidebar-tooltip::after {
+    left: 15px;
+    top: auto;
+    bottom: 100%;
+    transform: none;
+    border-color: transparent transparent rgba(15, 15, 15, 0.95) transparent;
+}
+
+.custom-hint-card {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: -10px;
+    bottom: auto;
+    transform: translateY(-10px);
+    width: 280px;
+    background: rgba(15, 15, 15, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    gap: 12px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    z-index: 100;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--text-primary);
+}
+.custom-hint-card::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    top: auto;
+    left: 17px;
+    transform: none;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent rgba(15, 15, 15, 0.95) transparent;
+}
+.info-badge-container:hover .custom-hint-card,
+.info-badge-container:focus-within .custom-hint-card,
+.info-badge-container:focus-visible .custom-hint-card {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.hint-card-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.hint-card-text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.hint-card-text strong {
+    color: var(--accent-color);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+.hint-card-text p {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.tab-error { font-size: 0.7rem; color: #ff6b6b; opacity: 0; transition: opacity 0.5s; font-weight: 600; background: rgba(255, 107, 107, 0.1); padding: 2px 6px; border-radius: 4px; }
+
+.tab-list {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 0 2px;
+    overflow-y: auto;
+    max-height: 540px;
+    scrollbar-width: thin;
+}
+.tab-list::-webkit-scrollbar { width: 4px; }
+.tab-list::-webkit-scrollbar-track { background: transparent; }
+.tab-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+.tab-list::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.35); }
+.tab-item {
+    display: flex; flex-direction: column; gap: 0; padding: 0;
+    text-decoration: none; color: white; cursor: pointer;
+    border-radius: 10px;
+    transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+    animation: fadeSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; overflow: hidden;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    flex-shrink: 0;
+}
+.tab-item-main {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 12px;
+}
+.tab-item:nth-child(1) { animation-delay: 0.45s; }
+.tab-item:nth-child(2) { animation-delay: 0.50s; }
+.tab-item:nth-child(3) { animation-delay: 0.55s; }
+.tab-item:nth-child(4) { animation-delay: 0.60s; }
+.tab-item:nth-child(5) { animation-delay: 0.65s; }
+
+.tab-item:hover {
+    background: rgba(255, 255, 255, 0.075);
+    border-color: rgba(255, 210, 106, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 14px var(--accent-glow);
+}
+.tab-item.expanded {
+    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px var(--accent-glow), inset 0 0 20px rgba(255,255,255,0.02);
+}
+
+.tab-img-container {
+    width: 48px; height: 68px; border-radius: 6px;
+    overflow: hidden; flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.tab-item img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.tab-item:hover img {
+    transform: scale(1.06);
+}
+
+.tab-item-info {
+    flex: 1; overflow: hidden; min-width: 0;
+    display: flex; flex-direction: column; justify-content: center;
+}
+.tab-item-title {
+    font-size: 0.92rem; font-weight: 600; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;
+    color: #ffffff;
+    transition: text-shadow 0.2s ease;
+}
+.tab-item:hover .tab-item-title {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
+}
+.tab-item-meta {
+    font-size: 0.8rem; color: var(--text-secondary);
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    display: flex; align-items: center;
+}
+.tab-item-meta span {
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tab-item-timer {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    margin-left: 10px;
+}
+.tab-item-timer .anime-countdown {
+    margin-top: 0;
+    white-space: nowrap;
+}

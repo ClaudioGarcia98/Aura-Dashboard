@@ -108,8 +108,10 @@ export default memo(function AnimeCard({
 
     const sharedInteraction = {
         onClick: handleToggle,
-        onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleToggle(); } },
+        onKeyDown: (e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleToggle(); } },
         role: 'button',
+        'aria-label': anime.title,
+        'aria-expanded': !!isExpanded,
         tabIndex: 0,
         onMouseEnter: (e) => {
             if (!isTouchOrMobile && !isExpanded && onMouseEnter) {
@@ -147,7 +149,7 @@ export default memo(function AnimeCard({
                         <CountdownBadge broadcast={anime.broadcast} airingAt={anime.airingAt} />
                     </div>
                 </div>
-                <div className="synopsis-wrapper">
+                <div className="synopsis-wrapper" aria-hidden={!isExpanded} inert={!isExpanded}>
                     <div className="anime-synopsis-panel">
                         <div className="synopsis-inner">
                             <div className="anime-genres">
@@ -198,7 +200,7 @@ export default memo(function AnimeCard({
                     <CountdownBadge broadcast={anime.broadcast} airingAt={anime.airingAt} />
                 </div>
             </div>
-            <div className="tab-synopsis-wrapper">
+            <div className="tab-synopsis-wrapper" aria-hidden={!isExpanded} inert={!isExpanded}>
                 <div className="tab-synopsis-panel">
                     <div className="tab-synopsis-inner">
                         {isTouchOrMobile && trailerId && isExpanded && (

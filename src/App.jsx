@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Greeting from './components/Greeting';
 import Clock from './components/Clock';
 import SearchBox from './components/SearchBox';
@@ -50,6 +50,17 @@ export default function App() {
         lofiStations: s.lofiStations,
     })));
     const [booting, setBooting] = useState(true);
+    const [compactTab, setCompactTab] = useState('home');
+    const [lofiPlaying, setLofiPlaying] = useState(false);
+    const pauseBackground = useSettingsStore(s => s.pauseBackground);
+    const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+    const videoRef = useRef(null);
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+        if (pauseBackground || reducedMotion) video.pause();
+        else video.play()?.catch(() => {});
+    }, [pauseBackground, reducedMotion, backgroundUrl]);
     const isCompact = useMediaQuery('(max-width: 1024px)');
 
     const hasBottomContent = showSearchBox || showSpeedDial || showTop5Anime;
@@ -108,8 +119,9 @@ export default function App() {
         <>
             {backgroundIsVideo && backgroundUrl && (
                 <video
+                    ref={videoRef}
                     src={backgroundUrl}
-                    autoPlay
+                    autoPlay={!pauseBackground && !reducedMotion}
                     loop
                     muted
                     playsInline
@@ -131,7 +143,7 @@ export default function App() {
             )}
             
             {isCompact ? (
-                <CompactLayout />
+                <CompactLayout tab={compactTab} onTabChange={setCompactTab} lofiPlaying={lofiPlaying} externalPlayer />
             ) : (
             <main className={`interactive-ui ${booting ? 'boot-hidden' : ''}`} id="mainUi">
                 <section style={{ opacity: 'var(--ui-opacity)', transition: 'opacity 0.8s ease-in-out' }}>
@@ -182,13 +194,12 @@ export default function App() {
                 </div>
                 <aside style={{ opacity: 'var(--ui-opacity)', transition: 'opacity 0.8s ease-in-out' }}>
                     <SettingsPanel />
-                    {showLofiPlayer && lofiStations.length > 0 && (
-                        <ErrorBoundary>
-                            <LofiPlayer />
-                        </ErrorBoundary>
-                    )}
+
                 </aside>
             </main>
+            )}
+            {showLofiPlayer && lofiStations.length > 0 && (
+                <ErrorBoundary><LofiPlayer compact={isCompact} expanded={isCompact && compactTab === 'lofi'} onPlayingChange={setLofiPlaying} /></ErrorBoundary>
             )}
         </>
     );

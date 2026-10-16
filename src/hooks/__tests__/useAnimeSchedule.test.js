@@ -7,18 +7,10 @@ vi.mock('zustand/react/shallow', () => ({
     useShallow: (f) => f,
 }));
 
-vi.mock('../../stores/useSettingsStore', () => ({
-    useSettingsStore: vi.fn((selector) => {
-        const mockSettings = {
-            malUsername: 'test',
-            setMalError: vi.fn(),
-            setMalLoading: vi.fn(),
-            setMalSuccess: vi.fn(),
-            volume: 0.5,
-        };
-        return typeof selector === 'function' ? selector(mockSettings) : mockSettings;
-    }),
+const mockSettings = vi.hoisted(() => ({
+    malUsername: 'test', volume: 0.5, setMalError: vi.fn(), setMalLoading: vi.fn(), setMalSuccess: vi.fn(), setMalStatus: vi.fn(),
 }));
+vi.mock('../../stores/useSettingsStore', () => ({ useSettingsStore: selector => selector(mockSettings) }));
 
 vi.mock('../../services/animeService', () => ({
     fetchDaySchedule: vi.fn(),
@@ -129,10 +121,10 @@ describe('useAnimeSchedule hook', () => {
         });
 
         // malUsername was 'test', but returned 0 items
-        expect(fetchUserWatchingList).toHaveBeenCalledWith('test');
+        expect(fetchUserWatchingList).toHaveBeenCalledWith('test', expect.objectContaining({ signal: expect.any(AbortSignal) }));
     });
 
-    it('includes title-matched anime in userWatchingIds even if mal_id differs', async () => {
+    it('does not confuse unrelated provider IDs through title matching', async () => {
         const mockSchedule = [
             { mal_id: 99999, title: 'Hyouken no Majutsushi ga Sekai wo Suberu II', score: 8.0 }
         ];
@@ -150,7 +142,7 @@ describe('useAnimeSchedule hook', () => {
         // 64254 is the MAL ID from watching list
         expect(result.current.userWatchingIds).toContain(64254);
         // 99999 is the AniList mal_id matched by normalized title
-        expect(result.current.userWatchingIds).toContain(99999);
+        expect(result.current.userWatchingIds).not.toContain(99999);
     });
 });
 

@@ -1,12 +1,17 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { viteSingleFile } from 'vite-plugin-singlefile'
+import { singleFile } from './scripts/single-file.js'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), viteSingleFile()],
+  plugins: [react(), singleFile()],
+  base: './',
+  build: {
+    assetsInlineLimit: () => true,
+    cssCodeSplit: false,
+    rolldownOptions: { output: { codeSplitting: false } },
+  },
   server: {
-    host: true,
     proxy: {
       '/api/mal': {
         target: 'https://myanimelist.net',

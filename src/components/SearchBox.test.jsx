@@ -23,6 +23,8 @@ describe('SearchBox', () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+        vi.useRealTimers();
     });
 
     it('updates query on input', () => {
@@ -64,7 +66,7 @@ describe('SearchBox', () => {
 
         expect(window.open).toHaveBeenCalledWith(
             expect.stringContaining('google.com/search?q=react%20testing'),
-            '_blank'
+            '_blank', 'noopener,noreferrer'
         );
 
         // Check recent searches in localStorage
@@ -84,22 +86,16 @@ describe('SearchBox', () => {
         expect(suggestionsList.style.display).toBe('none');
     });
 
-    it('calls setSpeedDials with an array (not a function) when adding a suggestion', async () => {
+    it('adds a data-only remote suggestion to speed dials when suggestions are enabled', async () => {
         const existingDials = [{ id: 1, name: 'Google', url: 'https://google.com' }];
         const setSpeedDials = vi.fn();
 
-        mockSettings = { customEngines: [], speedDials: existingDials, setSpeedDials };
+        mockSettings = { customEngines: [], speedDials: existingDials, setSpeedDials, remoteSuggestions: true };
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ['git', ['github.com', 'gitlab.com']] }));
 
         render(<SearchBox />);
         const input = screen.getByPlaceholderText(/Let's search something/i);
         fireEvent.change(input, { target: { value: 'git' } });
-
-        // fetchSuggestions registers a JSONP callback in window — invoke it manually
-        const cbKey = Object.keys(window).find(
-            k => k.startsWith('gsCb_') && typeof window[k] === 'function'
-        );
-        expect(cbKey).toBeDefined();
-        act(() => window[cbKey]([null, ['github.com', 'gitlab.com']]));
 
         const addBtns = await screen.findAllByTitle('Add to Speed Dial');
         fireEvent.click(addBtns[0]);
@@ -109,5 +105,39 @@ describe('SearchBox', () => {
         expect(Array.isArray(arg)).toBe(true);
         expect(arg).toHaveLength(existingDials.length + 1);
         expect(typeof arg[arg.length - 1].url).toBe('string');
+    });
+
+    it('navigates multiple recent items by keyboard and replays the saved URL', () => {
+        localStorage.setItem('dash_recent', JSON.stringify([
+            { query: 'github.com', url: 'https://github.com/', engineName: 'Google' },
+            { query: 'docs', url: 'https://react.dev/', engineName: 'Google' },
+        ]));
+        const { container } = render(<SearchBox />);
+        const input = screen.getByRole('combobox');
+        fireEvent.focus(input);
+        fireEvent.keyDown(input, { key: 'ArrowDown' });
+        fireEvent.keyDown(input, { key: 'ArrowDown' });
+        expect(input.value).toBe('');
+        expect(container.querySelectorAll('[aria-selected="true"]')[0].textContent).toContain('docs');
+        fireEvent.submit(container.querySelector('form'));
+        expect(window.open).toHaveBeenCalledWith('https://react.dev/', '_blank', 'noopener,noreferrer');
+    });
+
+    it('replays direct-address history clicks without converting them to searches', () => {
+        localStorage.setItem('dash_recent', JSON.stringify([{ query: 'github.com', url: 'https://github.com/', engineName: 'Google' }]));
+        render(<SearchBox />);
+        fireEvent.focus(screen.getByRole('combobox'));
+        fireEvent.click(screen.getByText('Google: github.com'));
+        expect(window.open).toHaveBeenCalledWith('https://github.com/', '_blank', 'noopener,noreferrer');
+    });
+
+    it('keeps typed text local by default and never injects executable suggestion scripts', async () => {
+        vi.useFakeTimers();
+        vi.stubGlobal('fetch', vi.fn());
+        render(<SearchBox />);
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: 'private draft' } });
+        await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+        expect(fetch).not.toHaveBeenCalled();
+        expect(document.querySelector('#gss')).toBeNull();
     });
 });

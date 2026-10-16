@@ -159,11 +159,11 @@ describe('db service', () => {
             expect(mockIdb.objectStore.delete).toHaveBeenCalledWith('bg');
         });
 
-        it('handles database error gracefully without throwing', async () => {
+        it('reports deletion failure so reset cannot claim success', async () => {
             const mockIdb = createMockIndexedDB({ deleteError: true });
             globalThis.indexedDB = { open: mockIdb.open };
 
-            await expect(deleteBackgroundBlob()).resolves.toBeUndefined();
+            await expect(deleteBackgroundBlob()).rejects.toThrow('Tx failed');
         });
 
         it('handles undefined indexedDB gracefully without throwing', async () => {

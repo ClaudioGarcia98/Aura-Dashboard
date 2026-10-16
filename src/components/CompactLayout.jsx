@@ -1,4 +1,5 @@
 import './CompactLayout.css';
+import ErrorBoundary from './ErrorBoundary';
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useSettingsStore } from '../stores/useSettingsStore';
@@ -23,7 +24,7 @@ import TrailerPreview from './AnimeSchedule/TrailerPreview';
  * desktop floating-overlay layout. The page never scrolls — each tab is exactly
  * one screen with its own internal scroll, over a fixed background.
  */
-export default function CompactLayout() {
+export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPlaying: externalPlaying = false, externalPlayer = false } = {}) {
     const {
         showWeatherWidget, showQuote, showSearchBox, showSpeedDial,
         showTop5Anime, showAnimeSidebar, showLofiPlayer, lofiStations,
@@ -38,8 +39,11 @@ export default function CompactLayout() {
         lofiStations: s.lofiStations,
     })));
 
-    const [tab, setTab] = useState('home');
-    const [lofiPlaying, setLofiPlaying] = useState(false);
+    const [localTab, setLocalTab] = useState('home');
+    const tab = controlledTab ?? localTab;
+    const setTab = onTabChange || setLocalTab;
+    const [localPlaying, setLofiPlaying] = useState(false);
+    const lofiPlaying = externalPlayer ? externalPlaying : localPlaying;
 
     const lofiAvailable = showLofiPlayer && lofiStations.length > 0;
 
@@ -59,27 +63,27 @@ export default function CompactLayout() {
         const goSettings = () => setTab('settings');
         window.addEventListener('open-settings-dials', goSettings);
         return () => window.removeEventListener('open-settings-dials', goSettings);
-    }, []);
+    }, [setTab]);
 
     // One anime data instance shared by the Home top-5 and the Anime tab.
     // Only force the full day-schedule load when the Anime tab actually exists.
-    const anime = useAnimeSchedule({ alwaysOpen: showAnimeSidebar });
+    const anime = useAnimeSchedule({ alwaysOpen: showAnimeSidebar && activeTab === 'anime', enabled: showTop5Anime || showAnimeSidebar });
 
     return (
         <div className="compact-root" id="mainUi">
             <TopNav tabs={tabs} activeTab={activeTab} onTabChange={setTab} lofiPlaying={lofiPlaying} />
 
             {/* HOME */}
-            <div className={`tab-panel ${activeTab === 'home' ? 'active' : ''}`} role="tabpanel" aria-label="Home">
+            <div className={`tab-panel ${activeTab === 'home' ? 'active' : ''}`} role="tabpanel" id="panel-home" aria-labelledby="tab-home" aria-label="Home">
                 <div className="compact-home">
                     <Greeting />
                     <Clock />
-                    {showQuote && <Quote />}
-                    {showSearchBox && <SearchBox />}
-                    {showWeatherWidget && <WeatherWidget inline />}
-                    {showSpeedDial && <SpeedDial />}
+                    {showQuote && <ErrorBoundary><Quote /></ErrorBoundary>}
+                    {showSearchBox && <ErrorBoundary><SearchBox /></ErrorBoundary>}
+                    {showWeatherWidget && <ErrorBoundary><WeatherWidget inline /></ErrorBoundary>}
+                    {showSpeedDial && <ErrorBoundary><SpeedDial /></ErrorBoundary>}
                     {showTop5Anime && (
-                        <TodayLaunch
+                        <ErrorBoundary><TodayLaunch
                             displayList={anime.displayList}
                             todayLoading={anime.todayLoading}
                             todayError={anime.todayError}
@@ -88,15 +92,15 @@ export default function CompactLayout() {
                             userWatchingIds={anime.userWatchingIds}
                             onMouseEnter={anime.handleMouseEnter}
                             onMouseLeave={anime.handleMouseLeave}
-                        />
+                        /></ErrorBoundary>
                     )}
                 </div>
             </div>
 
             {/* ANIME */}
             {showAnimeSidebar && (
-                <div className={`tab-panel tab-panel--fill ${activeTab === 'anime' ? 'active' : ''}`} role="tabpanel" aria-label="Anime">
-                    <EmbeddedAnimeList
+                <div className={`tab-panel tab-panel--fill ${activeTab === 'anime' ? 'active' : ''}`} role="tabpanel" id="panel-anime" aria-labelledby="tab-anime" aria-label="Anime">
+                    <ErrorBoundary><EmbeddedAnimeList
                         activeDay={anime.activeDay}
                         setActiveDay={anime.setActiveDay}
                         sidebarData={anime.sidebarData}
@@ -107,20 +111,20 @@ export default function CompactLayout() {
                         userWatchingIds={anime.userWatchingIds}
                         onMouseEnter={anime.handleMouseEnter}
                         onMouseLeave={anime.handleMouseLeave}
-                    />
+                    /></ErrorBoundary>
                 </div>
             )}
 
             {/* SETTINGS */}
-            <div className={`tab-panel ${activeTab === 'settings' ? 'active' : ''}`} role="tabpanel" aria-label="Settings">
+            <div className={`tab-panel ${activeTab === 'settings' ? 'active' : ''}`} role="tabpanel" id="panel-settings" aria-labelledby="tab-settings" aria-label="Settings">
                 <div className="compact-settings">
-                    <SettingsPanel embedded />
+                    <ErrorBoundary><SettingsPanel embedded /></ErrorBoundary>
                 </div>
             </div>
 
             {/* LOFI — mounted at root so audio never stops when switching tabs.
                 Renders only the hidden iframe unless the Lofi tab is active. */}
-            {lofiAvailable && (
+            {lofiAvailable && !externalPlayer && (
                 <LofiPlayer compact expanded={activeTab === 'lofi'} onPlayingChange={setLofiPlaying} />
             )}
 

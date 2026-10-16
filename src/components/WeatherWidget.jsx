@@ -1,96 +1,8 @@
 import './WeatherWidget.css';
 import { memo, useState, useEffect, useRef } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
-import { safeJsonParse } from '../utils/storage';
-
-const SunIcon = () => (
-    <svg className="weather-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="4" fill="var(--accent-color)" opacity="0.3" />
-        <circle cx="12" cy="12" r="4" />
-        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-    </svg>
-);
-
-const PartlyCloudyIcon = () => (
-    <svg className="weather-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2v2M4.93 4.93l1.41 1.41M2 12h2" />
-        <circle cx="12" cy="12" r="4" />
-        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" fill="rgba(255,255,255,0.1)" />
-        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
-    </svg>
-);
-
-const CloudIcon = () => (
-    <svg className="weather-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" fill="rgba(255,255,255,0.05)" />
-        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
-    </svg>
-);
-
-const RainIcon = () => (
-    <svg className="weather-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" fill="rgba(255,255,255,0.05)" />
-        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
-        <path d="M8 22l-1 2M12 22l-1 2M16 22l-1 2" />
-    </svg>
-);
-
-const SnowIcon = () => (
-    <svg className="weather-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" fill="rgba(255,255,255,0.05)" />
-        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
-        <path d="M8 22h.01M12 22h.01M16 22h.01" strokeWidth="3" />
-    </svg>
-);
-
-const StormIcon = () => (
-    <svg className="weather-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" fill="rgba(255,255,255,0.05)" />
-        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
-        <path d="M13 22l-2 3h3l-2 3" />
-    </svg>
-);
-
-const FeelsLikeIcon = () => (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" />
-    </svg>
-);
-
-const HumidityIcon = () => (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22a7 7 0 0 0 5-11.97L12 4.1 7 10.03A7 7 0 0 0 12 22z" />
-    </svg>
-);
-
-const WindIcon = () => (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2" />
-    </svg>
-);
-
-const SunriseIcon = () => (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 22H6M12 18V2M12 2l-4 4M12 2l4 4M12 10a4 4 0 0 1 4 4H8a4 4 0 0 1 4-4z" />
-    </svg>
-);
-
-const SunsetIcon = () => (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 22H6M12 2v16M12 18l-4-4M12 18l4-4M12 10a4 4 0 0 1 4 4H8a4 4 0 0 1 4-4z" />
-    </svg>
-);
-
-const getIconType = (code) => {
-    if (code === 0) return 'sun';
-    if (code >= 1 && code <= 3) return 'partly-cloudy';
-    if (code >= 45 && code <= 48) return 'cloud';
-    if (code >= 51 && code <= 67) return 'rain';
-    if (code >= 71 && code <= 77) return 'snow';
-    if (code >= 80 && code <= 82) return 'rain';
-    if (code >= 95) return 'storm';
-    return 'sun';
-};
+import { useWeather } from '../hooks/useWeather';
+import { WeatherIcon, FeelsLikeIcon, HumidityIcon, WindIcon, SunriseIcon, SunsetIcon } from './WeatherIcons';
 
 const getIconClassName = (type) => {
     if (type === 'sun') return 'weather-icon-sun';
@@ -110,236 +22,13 @@ const getConditionLabel = (type) => {
     }
 };
 
-const WeatherIcon = ({ type }) => {
-    switch (type) {
-        case 'sun': return <SunIcon />;
-        case 'partly-cloudy': return <PartlyCloudyIcon />;
-        case 'cloud': return <CloudIcon />;
-        case 'rain': return <RainIcon />;
-        case 'snow': return <SnowIcon />;
-        case 'storm': return <StormIcon />;
-        default: return <SunIcon />;
-    }
-};
-
 export default memo(function WeatherWidget({ inline = false }) {
     const useCelsius = useSettingsStore(s => s.useCelsius);
     const fallbackCity = useSettingsStore(s => s.fallbackCity);
     const [expanded, setExpanded] = useState(false);
-    const [weather, setWeather] = useState(() => {
-        return safeJsonParse(localStorage.getItem('dash_weather_cache'), null);
-    });
-    const [error, setError] = useState(false);
-    const [isOffline, setIsOffline] = useState(false);
-    const [isFallback, setIsFallback] = useState(false);
+    const { weather, error, isOffline, isFallback, fetchWeatherRef } = useWeather(useCelsius, fallbackCity);
     const widgetRef = useRef(null);
     const panelRef = useRef(null);
-    const prevCelsiusRef = useRef(useCelsius);
-    const prevFallbackCityRef = useRef(fallbackCity);
-    const retryTimeoutRef = useRef(null);
-    const retryDelayRef = useRef(60000); // Start at 60s
-    const fetchWeatherRef = useRef(null);
-
-    useEffect(() => {
-        const cityChanged = prevFallbackCityRef.current !== fallbackCity;
-        const celsiusChanged = prevCelsiusRef.current !== useCelsius;
-
-        if (cityChanged) {
-            localStorage.removeItem('dash_geo');
-            localStorage.removeItem('dash_geo_ts');
-            prevFallbackCityRef.current = fallbackCity;
-        }
-
-        if (cityChanged || celsiusChanged) {
-            setWeather(null);
-            prevCelsiusRef.current = useCelsius;
-            retryDelayRef.current = 60000; // Reset retry backoff on settings change
-        }
-
-        const fetchWeather = async () => {
-            if (retryTimeoutRef.current) {
-                clearTimeout(retryTimeoutRef.current);
-                retryTimeoutRef.current = null;
-            }
-            setError(false);
-            try {
-                let lat, lon;
-                const cached = localStorage.getItem('dash_geo');
-                const cachedTs = parseInt(localStorage.getItem('dash_geo_ts') || '0', 10);
-                const geoData = safeJsonParse(cached, null);
-                if (geoData && geoData.lat !== undefined && geoData.lon !== undefined && Date.now() - cachedTs < 3600000) {
-                    lat = geoData.lat;
-                    lon = geoData.lon;
-                } else {
-                    // 1. Try GPS with strict timeout
-                    let resolved = false;
-                    let gpsResolved = false;
-                    if (navigator.geolocation) {
-                        try {
-                            const pos = await new Promise((res, rej) => {
-                                const timeoutId = setTimeout(() => {
-                                    rej(new Error('Geolocation promise timed out'));
-                                }, 5000); // 5s absolute timeout
-                                
-                                navigator.geolocation.getCurrentPosition(
-                                    (position) => {
-                                        clearTimeout(timeoutId);
-                                        res(position);
-                                    },
-                                    (error) => {
-                                        clearTimeout(timeoutId);
-                                        rej(error);
-                                    },
-                                    { timeout: 5000, enableHighAccuracy: false }
-                                );
-                            });
-                            lat = pos.coords.latitude;
-                            lon = pos.coords.longitude;
-                            resolved = true;
-                            gpsResolved = true;
-                        } catch (geoErr) {
-                            console.warn('GPS denied or failed:', geoErr);
-                        }
-                    }
-
-                    // 2. Try IP geolocation (HTTPS-compatible) with timeout
-                    if (!resolved) {
-                        try {
-                            const ipRes = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(4000) });
-                            const ipData = await ipRes.json();
-                            if (ipData.latitude && ipData.longitude) {
-                                lat = ipData.latitude;
-                                lon = ipData.longitude;
-                                resolved = true;
-                                console.info(`IP geolocation resolved to ${ipData.city}`);
-                            }
-                        } catch (ipErr) {
-                            console.warn('IP geolocation failed:', ipErr);
-                        }
-                    }
-
-                    // 3. Try manual fallback city from settings (or default to London)
-                    if (!resolved) {
-                        const fbCity = fallbackCity || 'London';
-                        if (fbCity) {
-                            console.info(`Trying manual fallback city: ${fbCity}`);
-                            try {
-                                const geoRes = await fetch(
-                                    `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(fbCity)}&count=1`,
-                                    { signal: AbortSignal.timeout(5000) }
-                                );
-                                const geoData = await geoRes.json();
-                                if (geoData.results && geoData.results.length > 0) {
-                                    lat = geoData.results[0].latitude;
-                                    lon = geoData.results[0].longitude;
-                                    resolved = true;
-                                }
-                            } catch (fbErr) {
-                                console.warn('Fallback city geocoding failed:', fbErr);
-                            }
-                        }
-                    }
-
-                    if (!resolved) {
-                        console.error('All location methods failed');
-                        setIsOffline(true);
-                        if (!weather) {
-                            setError(true);
-                        }
-                        return;
-                    }
-
-                    if (!gpsResolved) setIsFallback(true);
-                    localStorage.setItem('dash_geo', JSON.stringify({ lat, lon }));
-                    localStorage.setItem('dash_geo_ts', String(Date.now()));
-                }
-
-                const unitParam = useCelsius ? '' : '&temperature_unit=fahrenheit';
-                const res = await fetch(
-                    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-                    `&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code` +
-                    `&daily=sunrise,sunset,weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=4` +
-                    unitParam,
-                    { signal: AbortSignal.timeout(5000) }
-                );
-                const d = await res.json();
-                const c = d.current;
-                if (!c) return;
-
-                const iconType = getIconType(c.weather_code);
-                const fmt = iso => {
-                    if (!iso) return '--:--';
-                    const dObj = new Date(iso);
-                    if (isNaN(dObj.getTime())) return '--:--';
-                    return dObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-                };
-
-                const forecast = [];
-                if (d.daily && d.daily.time) {
-                    // Skip today (index 0), get next 3 days
-                    for (let i = 1; i <= 3; i++) {
-                        if (!d.daily.time[i]) break;
-                        const dateObj = new Date(d.daily.time[i]);
-                        const dayName = dateObj.toLocaleDateString('en-GB', { weekday: 'short' });
-                        const maxTemp = Math.round(d.daily.temperature_2m_max[i]);
-                        const minTemp = Math.round(d.daily.temperature_2m_min[i]);
-                        forecast.push({
-                            day: dayName,
-                            iconType: getIconType(d.daily.weather_code[i]),
-                            max: maxTemp,
-                            min: minTemp
-                        });
-                    }
-                }
-
-                const unitStr = useCelsius ? '°C' : '°F';
-                const weatherData = {
-                    iconType,
-                    weatherCode: c.weather_code,
-                    temp: Math.round(c.temperature_2m) + unitStr,
-                    feelsLike: Math.round(c.apparent_temperature) + unitStr,
-                    humidity: c.relative_humidity_2m + '%',
-                    wind: Math.round(c.wind_speed_10m) + ' km/h',
-                    sunrise: d.daily && d.daily.sunrise && d.daily.sunrise[0] ? fmt(d.daily.sunrise[0]) : '--:--',
-                    sunset: d.daily && d.daily.sunset && d.daily.sunset[0] ? fmt(d.daily.sunset[0]) : '--:--',
-                    forecast,
-                    timestamp: Date.now()
-                };
-
-                setWeather(weatherData);
-                localStorage.setItem('dash_weather_cache', JSON.stringify(weatherData));
-                setIsOffline(false);
-                setError(false);
-                retryDelayRef.current = 60000; // Reset backoff delay on successful fetch
-
-                window.dispatchEvent(new CustomEvent('weather-update', { detail: c.weather_code }));
-            } catch (err) {
-                console.error("Weather fetch failed:", err);
-                setIsOffline(true);
-                if (!weather) {
-                    setError(true);
-                }
-                // Retry weather fetch with exponential backoff (double delay up to max 10 minutes)
-                retryTimeoutRef.current = setTimeout(fetchWeather, retryDelayRef.current);
-                retryDelayRef.current = Math.min(retryDelayRef.current * 2, 600000);
-            }
-        };
-
-        fetchWeatherRef.current = fetchWeather;
-        fetchWeather();
-        
-        const interval = setInterval(fetchWeather, 600000);
-        window.addEventListener('online', fetchWeather);
-
-        return () => {
-            clearInterval(interval);
-            window.removeEventListener('online', fetchWeather);
-            if (retryTimeoutRef.current) {
-                clearTimeout(retryTimeoutRef.current);
-            }
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [useCelsius, fallbackCity]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -421,7 +110,7 @@ export default memo(function WeatherWidget({ inline = false }) {
                     </span>
                 </button>
 
-                <div className={`weather-inline-details ${expanded ? 'open' : ''}`} ref={panelRef} role="region" aria-label="Weather Details">
+                <div className={`weather-inline-details ${expanded ? 'open' : ''}`} aria-hidden={!expanded} ref={panelRef} role="region" aria-label="Weather Details">
                     <div className="wd-row">
                         <span className="wd-label"><FeelsLikeIcon /> Feels like</span>
                         <span>{weather ? weather.feelsLike : '--°'}</span>
@@ -483,7 +172,7 @@ export default memo(function WeatherWidget({ inline = false }) {
                 <span id="weatherTemp" style={{ color: 'var(--text-primary)' }}>{weather ? weather.temp : '--°C'}</span>
                 <span className="weather-chevron" aria-hidden="true" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {isFallback && <span title="Location access denied. Showing fallback." style={{ fontSize: '0.8rem', marginRight: '4px' }}>📍</span>}
-                    {import.meta.env.DEV && isOffline && <span title="Offline. Displaying cached weather." style={{ fontSize: '0.8rem', marginRight: '4px', opacity: 0.8 }}>📡</span>}
+                    {isOffline && <span title="Showing saved weather; refresh unavailable." style={{ fontSize: '0.8rem', marginRight: '4px', opacity: 0.8 }}>📡</span>}
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
@@ -494,6 +183,7 @@ export default memo(function WeatherWidget({ inline = false }) {
                 id="weatherPanel"
                 ref={panelRef}
                 role="region"
+                aria-hidden={!expanded}
                 aria-label="Weather Details"
             >
                 <div className="wd-row">
@@ -537,7 +227,7 @@ export default memo(function WeatherWidget({ inline = false }) {
                     </div>
                 )}
 
-                {import.meta.env.DEV && isOffline && weather?.timestamp && (
+                {isOffline && weather?.timestamp && (
                     <div style={{ fontSize: '0.68rem', opacity: 0.5, textAlign: 'center', marginTop: '12px', paddingTop: '8px', borderTop: '1px dashed rgba(255,255,255,0.06)' }}>
                         Offline. Updated {new Date(weather.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                     </div>

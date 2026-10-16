@@ -114,7 +114,7 @@ describe('SettingsPanel', () => {
 
         expect(spState.setSpeedDials).toHaveBeenCalled();
         const arg = spState.setSpeedDials.mock.calls[0][0];
-        expect(arg.some(d => d.url === 'https://reddit.com')).toBe(true);
+        expect(arg.some(d => d.url === 'https://reddit.com/')).toBe(true);
     });
 
     it('removes a speed dial', () => {
@@ -136,6 +136,16 @@ describe('SettingsPanel', () => {
         fireEvent.click(cancelBtn);
 
         expect(screen.queryByText('Are you sure you want to reset all settings?')).toBeNull();
+    });
+
+    it('closes settings with Escape and returns focus to the toggle', () => {
+        render(<SettingsPanel />);
+        const toggle = screen.getByRole('button', { name: 'Toggle Settings Panel' });
+        toggle.focus(); fireEvent.click(toggle);
+        expect(screen.getByRole('dialog', { name: 'Aura Settings' }).contains(document.activeElement)).toBe(true);
+        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(toggle.getAttribute('aria-expanded')).toBe('false');
+        expect(document.activeElement).toBe(toggle);
     });
 
     it('renders keyboard shortcuts section on desktop', () => {

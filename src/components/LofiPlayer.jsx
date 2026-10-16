@@ -2,10 +2,12 @@ import './LofiPlayer.css';
 import { memo, useState, useEffect, useRef, useMemo } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
+import { fetchJson } from '../services/http';
 
 export default memo(function LofiPlayer({ compact = false, expanded = false, onPlayingChange } = {}) {
     const { volume, lofiId, setLofiId, lofiStations } = useSettingsStore(useShallow(s => ({ volume: s.volume, lofiId: s.lofiId, setLofiId: s.setLofiId, lofiStations: s.lofiStations })));
     const [isPlaying, setIsPlaying] = useState(false);
+    const [playbackError, setPlaybackError] = useState('');
     const [showMenu, setShowMenu] = useState(false);
     const menuRef = useRef(null);
     const [title, setTitle] = useState('Loading...');
@@ -41,13 +43,20 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
     // Listen for YouTube IFrame state changes
     useEffect(() => {
         const handleMessage = (e) => {
-            if (e.origin !== "https://www.youtube.com") return;
+            if (e.origin !== "https://www.youtube.com" || e.source !== iframeRef.current?.contentWindow) return;
             try {
-                const data = JSON.parse(e.data);
-                if (data.event === 'onStateChange') {
+                const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+                if (!data || typeof data !== 'object') return;
+                if (data.event === 'onError') {
+                    setIsPlaying(false);
+                    setPlaybackError('This station is unavailable. Try another station.');
+                    clearTimeout(playTimeoutRef.current);
+                }
+                const playerState = data.event === 'onStateChange' ? data.info : data.info?.playerState;
+                if (typeof playerState === 'number') {
                     // YouTube states: 1 = Playing, 2 = Paused, 0 = Ended, 3 = Buffering
-                    if (data.info === 1) setIsPlaying(true);
-                    else if (data.info === 2 || data.info === 0) setIsPlaying(false);
+                    if (playerState === 1) { setIsPlaying(true); setPlaybackError(''); clearTimeout(playTimeoutRef.current); }
+                    else if (playerState === 2 || playerState === 0) setIsPlaying(false);
                 }
             } catch (err) {
                 console.error("YouTube message parse error:", err);
@@ -75,12 +84,12 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                 event: 'command',
                 func: volume === 0 ? 'mute' : 'unMute',
                 args: []
-            }), '*');
+            }), 'https://www.youtube.com');
             iframeRef.current.contentWindow.postMessage(JSON.stringify({
                 event: 'command',
                 func: 'setVolume',
                 args: [Math.round(volume * 100)]
-            }), '*');
+            }), 'https://www.youtube.com');
         }
     }, [volume]);
 
@@ -93,7 +102,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
             event: 'command',
             func: func,
             args: []
-        }), '*');
+        }), 'https://www.youtube.com');
 
         // Force volume sync when playing
         if (!isPlaying) {
@@ -101,15 +110,19 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                 event: 'command',
                 func: volume === 0 ? 'mute' : 'unMute',
                 args: []
-            }), '*');
+            }), 'https://www.youtube.com');
             iframeRef.current.contentWindow.postMessage(JSON.stringify({
                 event: 'command',
                 func: 'setVolume',
                 args: [Math.round(volume * 100)]
-            }), '*');
+            }), 'https://www.youtube.com');
         }
         
-        setIsPlaying(!isPlaying);
+        setPlaybackError('');
+        if (!isPlaying) {
+            clearTimeout(playTimeoutRef.current);
+            playTimeoutRef.current = setTimeout(() => setPlaybackError('Playback did not start. Try again or choose another station.'), 5000);
+        }
     };
 
     // Fetch custom title when lofiId changes (if unknown)
@@ -122,6 +135,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
         
         let isMounted = true;
         let isResolved = false;
+        const controller = new AbortController();
 
         // Fallback to "Lofi Music" after 15 seconds if still loading
         const timeoutId = setTimeout(() => {
@@ -132,8 +146,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
 
         // Fetch title via noembed (CORS supported natively, much more reliable)
         // Note: this will fail for live_stream?channel= URLs, but we catch those above now!
-        fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${lofiId}`)
-            .then(res => res.json())
+        fetchJson(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${lofiId}`, { signal: controller.signal })
             .then(data => {
                 if (!isMounted) return;
                 isResolved = true;
@@ -151,19 +164,20 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
 
         return () => {
             isMounted = false;
+            controller.abort();
             clearTimeout(timeoutId);
         };
     }, [lofiId, knownStation]);
 
     const handleIframeLoad = () => {
         if (iframeRef.current && iframeRef.current.contentWindow) {
-            iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
+            iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), 'https://www.youtube.com');
             iframeRef.current.contentWindow.postMessage(JSON.stringify({
                 event: 'command', func: volume === 0 ? 'mute' : 'unMute', args: []
-            }), '*');
+            }), 'https://www.youtube.com');
             iframeRef.current.contentWindow.postMessage(JSON.stringify({
                 event: 'command', func: 'setVolume', args: [Math.round(volume * 100)]
-            }), '*');
+            }), 'https://www.youtube.com');
             if (isPlaying || shouldAutoPlayRef.current) {
                 shouldAutoPlayRef.current = false;
                 if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
@@ -171,7 +185,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                     if (iframeRef.current && iframeRef.current.contentWindow) {
                         iframeRef.current.contentWindow.postMessage(JSON.stringify({
                             event: 'command', func: 'playVideo', args: []
-                        }), '*');
+                        }), 'https://www.youtube.com');
                     }
                 }, 500);
             }
@@ -203,10 +217,11 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
             <div className={`lofi-player lofi-compact ${expanded ? 'expanded' : 'collapsed'}`}>
                 {iframeEl}
                 {expanded && (
-                    <div className="lofi-expanded">
+                    <div className="lofi-expanded" role="tabpanel" id="panel-lofi" aria-labelledby="tab-lofi">
                         <div className="lofi-expanded-now">
                             <span className="lofi-expanded-eyebrow">Now Playing</span>
                             <span className="lofi-expanded-title" title={displayTitle}>{displayTitle}</span>
+                            {playbackError && <p role="status">{playbackError}</p>}
                         </div>
 
                         <div className="lofi-expanded-visual">
@@ -341,6 +356,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                         )}
                     </div>
                     <span className="lofi-status">
+                        {playbackError && <span role="status">{playbackError}</span>}
                         {isPlaying ? (
                             <div className="lofi-visualizer">
                                 <div className="bar"></div>

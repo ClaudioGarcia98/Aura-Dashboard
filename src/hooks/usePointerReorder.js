@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 /**
  * Pointer-based drag-to-reorder that works for mouse, touch and pen.
@@ -21,6 +21,8 @@ export function usePointerReorder({ onReorder, threshold = 6 }) {
     const [draggingId, setDraggingId] = useState(null);
     const [pointer, setPointer] = useState({ x: 0, y: 0 });
     const stateRef = useRef(null);
+    const cleanupRef = useRef(null);
+    useEffect(() => () => { cleanupRef.current?.(); stateRef.current = null; }, []);
 
     const idAtPoint = (x, y) => {
         const el = document.elementFromPoint(x, y);
@@ -33,6 +35,7 @@ export function usePointerReorder({ onReorder, threshold = 6 }) {
         if (e.isPrimary === false) return;
         if (e.pointerType === 'mouse' && e.button !== 0) return;
 
+        cleanupRef.current?.();
         const st = { id: String(id), startX: e.clientX, startY: e.clientY, started: false };
         stateRef.current = st;
         setPointer({ x: e.clientX, y: e.clientY });
@@ -60,6 +63,8 @@ export function usePointerReorder({ onReorder, threshold = 6 }) {
             window.removeEventListener('pointerup', handleUp);
             window.removeEventListener('pointercancel', handleUp);
         };
+
+        cleanupRef.current = cleanup;
 
         const handleUp = () => {
             const didDrag = stateRef.current?.started;

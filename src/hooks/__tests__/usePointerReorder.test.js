@@ -22,6 +22,17 @@ describe('usePointerReorder', () => {
         expect(result.current.pointer).toEqual({ x: 0, y: 0 });
     });
 
+    it('detaches an unfinished drag on unmount', () => {
+        const onReorder = vi.fn();
+        const target = document.createElement('div'); target.dataset.reorderId = 'other';
+        document.elementFromPoint = vi.fn(() => target);
+        const { result, unmount } = renderHook(() => usePointerReorder({ onReorder }));
+        act(() => result.current.startDrag({ clientX: 0, clientY: 0, isPrimary: true }, 'first'));
+        unmount();
+        window.dispatchEvent(new PointerEvent('pointermove', { clientX: 30, clientY: 30 }));
+        expect(onReorder).not.toHaveBeenCalled();
+    });
+
     it('ignores secondary pointers or non-primary mouse buttons', () => {
         const onReorder = vi.fn();
         const { result } = renderHook(() => usePointerReorder({ onReorder }));

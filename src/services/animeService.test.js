@@ -27,9 +27,9 @@ describe('animeService', () => {
     });
 
     it('sets and gets cache correctly', () => {
-      const mockData = { monday: { data: [1, 2], ts: Date.now() } };
+      const mockData = { monday: { data: [{ mal_id: 1, title: 'One' }], ts: Date.now() } };
       setScheduleCache(mockData);
-      expect(getScheduleCache()).toEqual(mockData);
+      expect(getScheduleCache()).toMatchObject(mockData);
     });
   });
 
@@ -215,10 +215,10 @@ describe('animeService', () => {
     it('fetches fresh data if cache is expired or missing', async () => {
       globalThis.fetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ data: [{ mal_id: 2, title: 'Fresh' }] })
+        json: async () => ({ data: { Page: { airingSchedules: [{ airingAt: 1729000800, media: { id: 2, idMal: 2, title: { english: 'Fresh' } } }] } } })
       });
       const data = await fetchDaySchedule('monday');
-      expect(data).toEqual([{ mal_id: 2, title: 'Fresh' }]);
+      expect(data).toMatchObject([{ mal_id: 2, title: 'Fresh' }]);
       expect(globalThis.fetch).toHaveBeenCalledTimes(1);
     });
 
@@ -256,11 +256,11 @@ describe('animeService', () => {
     it('falls back to Jikan API if AniList request fails', async () => {
       // First call (AniList) fails
       globalThis.fetch.mockRejectedValueOnce(new Error('AniList Network Down'));
-      // Second call (Jikan fallback) succeeds
-      globalThis.fetch.mockResolvedValueOnce({
+      // Jikan can span two Japanese weekdays.
+      globalThis.fetch.mockResolvedValue({
         ok: true,
         json: async () => ({
-          data: [{ mal_id: 77, title: 'Jikan Fallback Show' }]
+          data: [{ mal_id: 77, title: 'Jikan Fallback Show', broadcast: { time: '12:00' } }]
         })
       });
 
@@ -517,12 +517,9 @@ describe('animeService', () => {
       localStorage.removeItem('dash_mal_proxy');
     });
 
-    it('returns bundled defaultWatching data for claclo98 if network fails', async () => {
+    it('does not substitute a personal bundled list when the network fails', async () => {
       globalThis.fetch.mockRejectedValue(new Error('Network failure'));
-      const list = await fetchUserWatchingList('claclo98');
-      expect(Array.isArray(list)).toBe(true);
-      expect(list.length).toBeGreaterThan(0);
-      expect(list.some(a => a.mal_id === 64254)).toBe(true);
+      await expect(fetchUserWatchingList('claclo98')).rejects.toThrow();
     });
 
     it('returns empty list for a user who has no watching anime in RSS feed', async () => {

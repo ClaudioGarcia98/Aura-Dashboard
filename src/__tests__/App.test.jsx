@@ -41,6 +41,7 @@ vi.mock('../components/WeatherWidget', () => ({ default: () => <div data-testid=
 vi.mock('../components/SettingsPanel/index.jsx', () => ({ default: () => <div data-testid="settings-panel" /> }));
 vi.mock('../components/AnimeSchedule/index.jsx', () => ({ default: () => <div data-testid="anime-schedule" /> }));
 vi.mock('../components/LofiPlayer', () => ({ default: () => <div data-testid="lofi-player" /> }));
+vi.mock('../components/CompactLayout', () => ({ default: () => <div data-testid="compact-layout" /> }));
 
 describe('App Orchestrator Component', () => {
   beforeEach(() => {
@@ -101,6 +102,23 @@ describe('App Orchestrator Component', () => {
     render(<App />);
     act(() => { vi.advanceTimersByTime(2800); });
     expect(screen.queryByTestId('lofi-player')).toBeTruthy();
+  });
+
+  it('preserves the mounted player when switching between desktop and compact layouts', () => {
+    const original = window.matchMedia;
+    let compact = false;
+    window.matchMedia = query => ({ matches: compact && query.includes('max-width: 1024px'), addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    try {
+      const { rerender } = render(<App />);
+      const player = screen.getByTestId('lofi-player');
+      compact = true;
+      rerender(<App />);
+      expect(screen.getByTestId('compact-layout')).toBeTruthy();
+      expect(screen.getByTestId('lofi-player')).toBe(player);
+      compact = false;
+      rerender(<App />);
+      expect(screen.getByTestId('lofi-player')).toBe(player);
+    } finally { window.matchMedia = original; }
   });
 
   it('hides LofiPlayer when showLofiPlayer is false even with stations', () => {

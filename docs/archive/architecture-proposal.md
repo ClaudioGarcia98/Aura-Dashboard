@@ -1,3 +1,5 @@
+> Historical proposal, superseded by the current implementation. This is not a migration requirement.
+
 # Architectural Blueprint & Specifications
 
 ## Overview

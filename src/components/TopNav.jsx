@@ -49,10 +49,22 @@ export default memo(function TopNav({ tabs, activeTab, onTabChange, lofiPlaying 
                             key={tab.id}
                             className={`top-nav-tab ${active ? 'active' : ''}`}
                             role="tab"
+                            id={`tab-${tab.id}`}
+                            aria-controls={`panel-${tab.id}`}
+                            tabIndex={active ? 0 : -1}
                             aria-selected={active}
                             aria-label={tab.label}
                             title={tab.label}
                             onClick={() => onTabChange(tab.id)}
+                            onKeyDown={event => {
+                                const index = tabs.findIndex(item => item.id === tab.id);
+                                const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length
+                                    : event.key === 'ArrowLeft' ? (index - 1 + tabs.length) % tabs.length
+                                        : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
+                                if (next < 0) return;
+                                event.preventDefault(); onTabChange(tabs[next].id);
+                                document.getElementById(`tab-${tabs[next].id}`)?.focus();
+                            }}
                         >
                             <span className="top-nav-icon">
                                 <Icon />

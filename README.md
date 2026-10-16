@@ -1,93 +1,57 @@
-# Aura ✨
+# Aura
 
-> An aesthetic, customizable, all-in-one personal dashboard and browser new-tab startpage. Zero backend required.
+A customizable React dashboard and browser start page with a clock, weather, search, bookmarks, anime schedules, and background music.
 
----
+## Run locally
 
-## 🌟 Overview
+Use Node.js 22.12 or newer and npm. From this project directory:
 
-**Aura** transforms your browser's new tab into a functional dashboard. Built with React and Vite, Aura compiles into a **single, self-contained `index.html` file** with all scripts and styles inlined. It requires no backend, works offline for local assets, and stores your data securely inside your browser's `localStorage` and `IndexedDB`.
-
----
-
-## 🚀 Key Features
-
-* 🕒 **Contextual Clock & Greetings**:
-  * Choose between a sleek Digital clock or an animated Canvas-based Analog face (with 12h/24h support).
-  * Contextual greetings that adapt to your local time of day and live WMO weather condition codes (e.g. rain, fog, thunderstorms).
-* 🌦️ **Smart Weather Forecast**:
-  * Powered by Open-Meteo (free, no API key required).
-  * Cascading geolocation pipeline: GPS Geolocation $\rightarrow$ IP Geolocation fallback (`ipapi.co`) $\rightarrow$ manual fallback city.
-  * Interactive detail panel with hourly temperatures, humidity, wind speed, and precipitation forecasts.
-* 🎌 **Anime Tracker ("Today's Launch")**:
-  * Live daily airing schedule powered by the Jikan API (v4).
-  * Hover to preview official anime trailers in an embedded YouTube modal.
-  * Synchronize with your personal **MyAnimeList (MAL)** currently-watching list via proxy fallbacks.
-* 🎵 **Lofi Radio Player**:
-  * Continuous ambient music player powered by the YouTube IFrame API.
-  * Real-time audio visualizer bar with smooth volume and station controls.
-  * Preset stations (Lofi Girl, Synthwave, Chillhop, Jazzhop, Rain, Anime) and custom station management.
-* 🔍 **Multi-Engine Search & Speed Dials**:
-  * Instant search engine switcher (Google, DuckDuckGo, Bing, YouTube, GitHub, Reddit) with custom engine support.
-  * Live search suggestions dropdown powered by Google JSONP.
-  * Customizable Speed Dial bookmarks with automatic favicon detection and pointer drag-and-drop reordering.
-* 🎨 **Theming & Ambient Media**:
-  * Dynamic **Aurora** circadian theme that shifts accent colors and glow throughout the day.
-  * Presets including Nord, Tokyo Night, Cyberpunk, Forest, and custom Google Web Fonts.
-  * Upload custom video (MP4), animated GIF, or image backgrounds stored locally in **IndexedDB** (`dashDB`).
-* 🌙 **Idle Dimming Mode**:
-  * Dims dashboard opacity to 20% after 2 minutes of inactivity for a minimalist screensaver aesthetic.
-
----
-
-## 🛠️ Tech Stack
-
-* **Frontend**: [React 19](https://react.dev/), [Vite 8](https://vitejs.dev/)
-* **State Management**: [Zustand 5](https://zustand-demo.pmnd.rs/) with `persist` middleware
-* **Packaging**: [`vite-plugin-singlefile`](https://github.com/richardtallent/vite-plugin-singlefile) (inlines all assets into one HTML file)
-* **Testing**: [Vitest 4](https://vitest.dev/), React Testing Library
-* **Linting & Code Quality**: ESLint 10
-
----
-
-## 📦 Getting Started
-
-### Prerequisites
-
-* [Node.js](https://nodejs.org/) (version 20 or higher recommended)
-* `npm`
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/your-username/aura.git
-cd aura
-
-# Install dependencies
-npm install
+```sh
+npm ci
+npm run dev
 ```
 
-### Development & Build Commands
+The development server is local-only by default. `npm run preview` serves the production output after a build.
 
-| Command | Action |
-| :--- | :--- |
-| `npm run dev` | Launch local development server with HMR at `http://localhost:5173` |
-| `npm run build` | Compile the self-contained production bundle into `dist/index.html` |
-| `npm run preview` | Preview the production build locally at `http://localhost:4173` |
-| `npm test` | Run the full Vitest unit test suite (300+ tests) |
-| `npm run lint` | Run ESLint across `src/` |
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Development server with live updates |
+| `npm run lint` | Check JavaScript and React code |
+| `npm test` | Run unit and integration tests |
+| `npm run build` | Create and verify `dist/index.html` |
+| `npm run preview` | Preview the production build |
+| `npm audit` | Check current dependency advisories |
 
----
+## Features
 
-## 🚢 Deployment
+- Digital and analog clocks, 12/24-hour time, time-aware greetings and themes.
+- Current weather and a three-day forecast, Celsius/Fahrenheit, GPS with IP and city fallbacks.
+- Portugal-local anime schedules from AniList with a Jikan fallback, including daylight-saving changes.
+- MyAnimeList watching-list synchronization. Complete JSON lists take priority; RSS fallback is visibly marked as partial activity. A matching complete saved list remains available during outages. Settings offers a cache-bypassing retry; partial results expire after 30 seconds. Local/custom proxy requests allow 25 seconds for slow MAL connections, and public full-list proxies allow 15 seconds per page.
+- Search prefixes, recent-search keyboard navigation, custom engine support through settings backups, and editable/reorderable bookmarks.
+- YouTube background radio and trailers, shared volume, station controls, and playback-failure feedback. The radio iframe stays mounted while switching between desktop and compact layouts.
+- Local image/video backgrounds, themes, optional Google Fonts, motion controls, and versioned settings backups.
 
-Aura includes a pre-configured [GitHub Actions workflow](.github/workflows/deploy.yml) that automatically runs ESLint, executes the full Vitest test suite, compiles the single-file distribution, and publishes it directly to **GitHub Pages** on every push to `main`.
+## Storage, privacy, and offline behavior
 
-Because the build produces a single self-contained HTML file, you can also open `dist/index.html` directly from your local filesystem as your browser's home page!
+Settings, bookmarks, and caches use browser storage; background files use IndexedDB. Storage is local to the browser and is not encrypted by this application. No account or backend is required. If storage is denied or full, ordinary dashboard settings can continue in memory; backup import reports persistence failures.
 
----
+Online search suggestions are **off by default**. Enabling them sends typed text to Google through data-only requests. Browsers may block those requests, in which case local search and history still work. Bookmark favicons, fonts, weather, geolocation fallback, anime providers/proxies, and YouTube use external services. MAL proxies receive the requested public username. Do not use a private proxy you do not trust.
 
-## 📄 License
+Backups include validated settings and bookmarks, not background files, recent searches, or transient API caches. Old Aura `dash_*` backup files remain supported for known settings. Reset removes Aura-owned `dash_*` storage and its saved background; it does not clear other applications' caches or unregister their service workers.
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+The production distribution is one self-contained HTML file with local scripts, styles, logo, favicon, and default video embedded. It builds without network requests or source changes. Dynamic services still need internet access. Serving the file over HTTP/HTTPS provides more consistent browser storage and media support than opening a `file:` URL; YouTube playback also depends on browser and provider restrictions.
+
+The default video and original high-resolution logo account for most of the bundle. The build enforces a 5 MB maximum and checks for leftover runtime asset references and matching script security hashes.
+
+## Architecture and verification
+
+`src/components` contains views and focused settings sections; `src/hooks` owns React lifecycles; `src/services` contains network, backup, and database operations; `src/stores` contains the settings schema and persistence. Anime services are split into schedule, watching, parser, and time modules.
+
+The production packager is a small local Vite plugin in `scripts/single-file.js`. GitHub Actions runs lint, tests, and the artifact checks, then deploys that exact validated artifact on pushes to `main`. Deployment permissions are scoped to the deploy job.
+
+See [the original audit](docs/PROJECT_AUDIT.md) and [the remediation and verification record](docs/REMEDIATION.md). The historical architecture proposal in `docs/archive` is not a current requirement.
+
+## License
+
+The project is proprietary. See [LICENSE](LICENSE) for the owner's terms. Earlier README references to an MIT license were incorrect.

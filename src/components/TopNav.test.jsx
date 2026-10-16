@@ -41,6 +41,16 @@ describe('TopNav', () => {
         expect(handleTabChange).toHaveBeenCalledWith('settings');
     });
 
+    it('moves selection and focus with the arrow keys and links tabs to panels', () => {
+        const change = vi.fn();
+        render(<TopNav tabs={tabs} activeTab="home" onTabChange={change} />);
+        const home = screen.getByRole('tab', { name: 'Home' });
+        fireEvent.keyDown(home, { key: 'ArrowRight' });
+        expect(change).toHaveBeenCalledWith('anime');
+        expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Anime' }));
+        expect(home.getAttribute('aria-controls')).toBe('panel-home');
+    });
+
     it('renders the lofi pulse indicator when lofiPlaying is true', () => {
         const { rerender } = render(
             <TopNav tabs={tabs} activeTab="home" onTabChange={vi.fn()} lofiPlaying={false} />

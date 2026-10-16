@@ -29,6 +29,7 @@ beforeEach(() => {
     useSettingsStore.getState = vi.fn(() => mockState);
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+        ok: true,
         json: () => Promise.resolve({ title: 'Fetched Title' }),
     }));
 });
@@ -134,14 +135,14 @@ describe('MediaSettings — delete station', () => {
 describe('MediaSettings — add station', () => {
     it('adds station with provided name without fetching', async () => {
         const { container, getByPlaceholderText } = render(<MediaSettings />);
-        fireEvent.change(getByPlaceholderText('YouTube ID or URL'), { target: { value: 'newVideoId' } });
+        fireEvent.change(getByPlaceholderText('YouTube ID or URL'), { target: { value: 'newVideoId1' } });
         fireEvent.change(getByPlaceholderText('Name (optional)'), { target: { value: 'My Station' } });
         fireEvent.click([...container.querySelectorAll('button')].find(b => b.textContent === 'Add'));
 
         await waitFor(() => {
             expect(mockState.setLofiStations).toHaveBeenCalledWith(
                 expect.arrayContaining([
-                    expect.objectContaining({ videoId: 'newVideoId', name: 'My Station' }),
+                    expect.objectContaining({ videoId: 'newVideoId1', name: 'My Station' }),
                 ])
             );
         });
@@ -150,18 +151,18 @@ describe('MediaSettings — add station', () => {
 
     it('fetches title from noembed when no name is provided', async () => {
         const { container, getByPlaceholderText } = render(<MediaSettings />);
-        fireEvent.change(getByPlaceholderText('YouTube ID or URL'), { target: { value: 'newVideoId' } });
+        fireEvent.change(getByPlaceholderText('YouTube ID or URL'), { target: { value: 'newVideoId1' } });
         fireEvent.click([...container.querySelectorAll('button')].find(b => b.textContent === 'Add'));
 
         await waitFor(() => {
             expect(fetch).toHaveBeenCalledWith(
-                expect.stringContaining('noembed.com')
+                expect.stringContaining('noembed.com'), expect.objectContaining({ signal: expect.any(AbortSignal) })
             );
         });
         await waitFor(() => {
             expect(mockState.setLofiStations).toHaveBeenCalledWith(
                 expect.arrayContaining([
-                    expect.objectContaining({ videoId: 'newVideoId', name: 'Fetched Title' }),
+                    expect.objectContaining({ videoId: 'newVideoId1', name: 'Fetched Title' }),
                 ])
             );
         });
@@ -170,7 +171,7 @@ describe('MediaSettings — add station', () => {
     it('extracts video ID from a full YouTube URL', async () => {
         const { container, getByPlaceholderText } = render(<MediaSettings />);
         fireEvent.change(getByPlaceholderText('YouTube ID or URL'), {
-            target: { value: 'https://www.youtube.com/watch?v=newVideoId' },
+            target: { value: 'https://www.youtube.com/watch?v=newVideoId1' },
         });
         fireEvent.change(getByPlaceholderText('Name (optional)'), { target: { value: 'URL Test' } });
         fireEvent.click([...container.querySelectorAll('button')].find(b => b.textContent === 'Add'));
@@ -178,7 +179,7 @@ describe('MediaSettings — add station', () => {
         await waitFor(() => {
             expect(mockState.setLofiStations).toHaveBeenCalledWith(
                 expect.arrayContaining([
-                    expect.objectContaining({ videoId: 'newVideoId' }),
+                    expect.objectContaining({ videoId: 'newVideoId1' }),
                 ])
             );
         });
@@ -196,7 +197,7 @@ describe('MediaSettings — add station', () => {
         const { container, getByPlaceholderText } = render(<MediaSettings />);
         const urlInput = getByPlaceholderText('YouTube ID or URL');
         const nameInput = getByPlaceholderText('Name (optional)');
-        fireEvent.change(urlInput, { target: { value: 'someId' } });
+        fireEvent.change(urlInput, { target: { value: 'someVideoId' } });
         fireEvent.change(nameInput, { target: { value: 'Some Name' } });
         fireEvent.click([...container.querySelectorAll('button')].find(b => b.textContent === 'Add'));
 

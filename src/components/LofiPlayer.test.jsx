@@ -12,6 +12,7 @@ vi.mock('../stores/useSettingsStore', () => ({
 
 // Prevent noembed fetch in tests where title is not known
 vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    ok: true,
     json: () => Promise.resolve({ title: 'Fetched Title' }),
 }));
 
@@ -106,5 +107,26 @@ describe('LofiPlayer', () => {
     it('renders a play button', () => {
         const { container } = render(<LofiPlayer />);
         expect(container.querySelector('.lofi-play-btn')).toBeTruthy();
+    });
+
+    it('ignores another YouTube iframe and accepts only its own player state', () => {
+        const { container, getByLabelText } = render(<LofiPlayer />);
+        const iframe = container.querySelector('iframe');
+        const data = JSON.stringify({ event: 'onStateChange', info: 1 });
+        act(() => window.dispatchEvent(new MessageEvent('message', { origin: 'https://www.youtube.com', source: window, data })));
+        expect(getByLabelText('Play')).toBeTruthy();
+        act(() => window.dispatchEvent(new MessageEvent('message', { origin: 'https://www.youtube.com', source: iframe.contentWindow, data })));
+        expect(getByLabelText('Pause')).toBeTruthy();
+    });
+
+    it('does not claim to be playing until the iframe confirms playback', async () => {
+        vi.useFakeTimers();
+        try {
+            const { getByLabelText, getByRole } = render(<LofiPlayer />);
+            fireEvent.click(getByLabelText('Play'));
+            expect(getByLabelText('Play')).toBeTruthy();
+            await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+            expect(getByRole('status').textContent).toContain('Playback did not start');
+        } finally { vi.useRealTimers(); }
     });
 });

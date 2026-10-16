@@ -43,6 +43,9 @@ export default memo(function Sidebar({
                     className={`anime-toggle ${isSidebarOpen ? 'open' : ''}`}
                     id="animeToggle"
                     title="Anime Schedule"
+                    aria-label="Anime Schedule"
+                    aria-expanded={isSidebarOpen}
+                    aria-controls="animeSidebar"
                     ref={toggleRef}
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                 >
@@ -54,7 +57,7 @@ export default memo(function Sidebar({
 
             {isSidebarOpen && <div className="drawer-scrim show drawer-scrim--tablet" onClick={() => setIsSidebarOpen(false)} aria-hidden="true" />}
 
-            <aside className={`anime-sidebar ${isSidebarOpen ? 'open' : ''}`} id="animeSidebar" ref={sidebarRef}>
+            <aside inert={!isSidebarOpen} className={`anime-sidebar ${isSidebarOpen ? 'open' : ''}`} id="animeSidebar" ref={sidebarRef}>
                 <header className="as-header">
                     <div className="as-header-titles">
                         <h2>Anime Schedule</h2>

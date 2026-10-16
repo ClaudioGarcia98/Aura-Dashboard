@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/sync-mal-default.js && vite build",
+    "build": "vite build && node scripts/check-build.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   },
   "dependencies": {
     "react": "^19.3.1",
@@ -28,7 +31,6 @@
     "globals": "^17.13.0",
     "jsdom": "^29.1.1",
     "vite": "^8.3.4",
-    "vite-plugin-singlefile": "^2.3.3",
     "vitest": "^4.1.8"
   }
 }

@@ -1,27 +1,17 @@
+import { ENGINES } from '../constants/searchEngines';
+import { useSearchSuggestions } from '../hooks/useSearchSuggestions';
+import { openUrl, httpUrl, normalizeUrl, faviconUrl } from '../utils/urls';
 import './SearchBox.css';
 import { memo, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
-import { safeJsonParse, safeJsonStringify } from '../utils/storage';
-
-const ENGINES = {
-    'yt ':    { name:'YouTube',    bg:'#FF0000', fg:'#fff', url: q=>`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}` },
-    'r ':     { name:'Reddit',     bg:'#FF4500', fg:'#fff', url: q=>`https://www.reddit.com/search/?q=${encodeURIComponent(q)}` },
-    'g ':     { name:'Google',     bg:'#4285F4', fg:'#fff', url: q=>`https://www.google.com/search?q=${encodeURIComponent(q)}` },
-    'gh ':    { name:'GitHub',     bg:'#b0b0b0', fg:'#000', url: q=>`https://github.com/search?q=${encodeURIComponent(q)}` },
-    'ddg ':   { name:'DuckDuckGo', bg:'#DE5833', fg:'#fff', url: q=>`https://duckduckgo.com/?q=${encodeURIComponent(q)}` },
-    'wiki ':  { name:'Wikipedia',  bg:'#a0b0bb', fg:'#000', url: q=>`https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(q)}` },
-    'mdn ':   { name:'MDN',        bg:'#83d0f2', fg:'#000', url: q=>`https://developer.mozilla.org/en-US/search?q=${encodeURIComponent(q)}` },
-    'tw ':    { name:'Twitter/X',  bg:'#1DA1F2', fg:'#fff', url: q=>`https://twitter.com/search?q=${encodeURIComponent(q)}` },
-    'a ':     { name:'Amazon',     bg:'#FF9900', fg:'#000', url: q=>`https://www.amazon.com/s?k=${encodeURIComponent(q)}` },
-    'mal ':   { name:'MyAnimeList',bg:'#2E51A2', fg:'#fff', url: q=>`https://myanimelist.net/search/all?q=${encodeURIComponent(q)}` },
-};
+import { safeStorage, safeJsonParse, safeJsonStringify } from '../utils/storage';
 
 export default memo(function SearchBox() {
-    const { customEngines, speedDials, setSpeedDials } = useSettingsStore(useShallow(s => ({ customEngines: s.customEngines, speedDials: s.speedDials, setSpeedDials: s.setSpeedDials })));
+    const { customEngines, speedDials, setSpeedDials, remoteSuggestions } = useSettingsStore(useShallow(s => ({ customEngines: s.customEngines, speedDials: s.speedDials, setSpeedDials: s.setSpeedDials, remoteSuggestions: s.remoteSuggestions })));
     const [query, setQuery] = useState('');
     const [activeEngine, setActiveEngine] = useState(null);
-    const [suggestions, setSuggestions] = useState([]);
+    const suggestions = useSearchSuggestions(query, activeEngine, remoteSuggestions);
     const [recent, setRecent] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [focusIdx, setFocusIdx] = useState(-1);
@@ -29,8 +19,8 @@ export default memo(function SearchBox() {
 
     // Combine default engines with custom engines
     const combinedEngines = { ...ENGINES };
-    if (customEngines) {
-        customEngines.forEach(e => {
+    if (Array.isArray(customEngines)) {
+        customEngines.filter(e => e && typeof e.prefix === 'string' && typeof e.name === 'string' && typeof e.url === 'string' && httpUrl(e.url.replace('%s', 'query'))).forEach(e => {
             combinedEngines[e.prefix] = {
                 name: e.name,
                 bg: '#333',
@@ -39,7 +29,7 @@ export default memo(function SearchBox() {
             };
         });
     }
-    
+
     const inputRef = useRef(null);
     const formRef = useRef(null);
     const badgeRef = useRef(null);
@@ -51,10 +41,10 @@ export default memo(function SearchBox() {
             setBadgeWidth(0);
         }
     }, [activeEngine, query]);
-    const origQueryRef = useRef('');
+
 
     const loadRecent = () => {
-        let rawH = safeJsonParse(localStorage.getItem('dash_recent'), []);
+        let rawH = safeJsonParse(safeStorage.getItem('dash_recent'), []);
         if (!Array.isArray(rawH)) rawH = [];
         let needsSave = false;
         const h = rawH.map(item => {
@@ -71,7 +61,7 @@ export default memo(function SearchBox() {
             }
             return item;
         }).filter(item => item && item.query);
-        if (needsSave) localStorage.setItem('dash_recent', safeJsonStringify(h));
+        if (needsSave) safeStorage.setItem('dash_recent', safeJsonStringify(h));
         setRecent(h);
     };
 
@@ -109,104 +99,42 @@ export default memo(function SearchBox() {
     }, []);
 
     const saveHistory = (q, url, engineName = 'Google') => {
-        let rawH = safeJsonParse(localStorage.getItem('dash_recent'), []);
+        let rawH = safeJsonParse(safeStorage.getItem('dash_recent'), []);
         let h = Array.isArray(rawH) ? rawH : [];
         h = h.filter(x => x && x.query !== q);
         h.unshift({ query: q, url, engineName });
         const newH = h.slice(0, 8);
-        localStorage.setItem('dash_recent', safeJsonStringify(newH));
+        safeStorage.setItem('dash_recent', safeJsonStringify(newH));
         setRecent(newH);
     };
 
     const removeHistory = (e, q) => {
         e.stopPropagation();
-        let rawH = safeJsonParse(localStorage.getItem('dash_recent'), []);
+        let rawH = safeJsonParse(safeStorage.getItem('dash_recent'), []);
         let h = Array.isArray(rawH) ? rawH : [];
         h = h.filter(x => x && x.query !== q);
-        localStorage.setItem('dash_recent', safeJsonStringify(h));
+        safeStorage.setItem('dash_recent', safeJsonStringify(h));
         setRecent(h);
         if (h.length === 0) setShowSuggestions(false);
-    };
-
-    const latestRequestId = useRef(Date.now());
-    const pendingCbName = useRef(null);
-
-    // Clean up any pending JSONP callback and script on unmount
-    useEffect(() => {
-        return () => {
-            const old = document.getElementById('gss');
-            if (old) old.remove();
-            if (pendingCbName.current) delete window[pendingCbName.current];
-        };
-    }, []);
-
-    const fetchSuggestions = (q, engine = activeEngine) => {
-        const old = document.getElementById('gss');
-        if (old) old.remove();
-        if (pendingCbName.current) {
-            delete window[pendingCbName.current];
-            pendingCbName.current = null;
-        }
-
-        const reqId = Date.now();
-        latestRequestId.current = reqId;
-        const cbName = `gsCb_${reqId}`;
-        pendingCbName.current = cbName;
-
-        window[cbName] = (data) => {
-            delete window[cbName];
-            pendingCbName.current = null;
-            if (latestRequestId.current !== reqId) return;
-            const sugs = data[1] || [];
-            setSuggestions(sugs.slice(0, 5));
-        };
-
-        let src;
-        if (!engine || engine.name === 'Google') {
-            src = `https://suggestqueries.google.com/complete/search?client=chrome&q=${encodeURIComponent(q)}&callback=${cbName}`;
-        } else if (engine.name === 'YouTube') {
-            src = `https://suggestqueries.google.com/complete/search?client=chrome&ds=yt&q=${encodeURIComponent(q)}&callback=${cbName}`;
-        } else {
-            delete window[cbName];
-            pendingCbName.current = null;
-            setSuggestions([]);
-            return;
-        }
-
-        const s = document.createElement('script');
-        s.id = 'gss';
-        s.src = src;
-        s.onerror = () => {
-            s.remove();
-            if (pendingCbName.current === cbName) {
-                delete window[cbName];
-                pendingCbName.current = null;
-            }
-        };
-        document.body.appendChild(s);
     };
 
     const processQuery = (q) => {
         const trimmed = q.trim();
         if (!trimmed) return;
-        
+
         if (activeEngine) {
             const url = activeEngine.url(trimmed);
+            if (!httpUrl(url)) return;
             saveHistory(trimmed, url, activeEngine.name);
-            window.open(url, '_blank');
+            openUrl(url);
         } else {
-            const urlPat = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)(\?.*)?$/i;
-            const ipPat  = /^https?:\/\/|^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?/;
-            let url;
-            if (urlPat.test(trimmed) || ipPat.test(trimmed)) {
-                url = /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed;
-            } else {
-                url = `https://www.google.com/search?q=${encodeURIComponent(trimmed)}`;
-            }
+            const looksLikeUrl = /^https?:\/\//i.test(trimmed) || (!/\s/.test(trimmed) && /^(?:localhost|[\w-]+(?:\.[\w-]+)+)(?::\d+)?(?:[/?#]|$)/i.test(trimmed));
+            const url = looksLikeUrl ? normalizeUrl(trimmed) : `https://www.google.com/search?q=${encodeURIComponent(trimmed)}`;
+            if (!url) return;
             saveHistory(trimmed, url, 'Google');
-            window.open(url, '_blank');
+            openUrl(url);
         }
-        
+
         setActiveEngine(null);
         setQuery('');
         setShowSuggestions(false);
@@ -215,31 +143,23 @@ export default memo(function SearchBox() {
     const addToSpeedDial = (e, item) => {
         e.stopPropagation();
         e.preventDefault();
-        
+
         const trimmed = item.trim();
         let url;
         let finalName = trimmed;
-        
+
         if (activeEngine) {
             url = activeEngine.url(trimmed);
         } else {
-            const urlPat = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?($|\?)/i;
-            const ipPat  = /^https?:\/\/|^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?/;
-            if (urlPat.test(trimmed) || ipPat.test(trimmed)) {
-                url = /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed;
-                try {
-                    const host = new URL(url).hostname.replace('www.', '').split('.')[0];
-                    finalName = host.charAt(0).toUpperCase() + host.slice(1);
-                } catch {
-                    // ignore parse error
-                }
-            } else {
-                url = `https://www.google.com/search?q=${encodeURIComponent(trimmed)}`;
-            }
+            const looksLikeUrl = !/\s/.test(trimmed) && /^(?:https?:\/\/|localhost|[\w-]+(?:\.[\w-]+)+)/i.test(trimmed);
+            url = looksLikeUrl ? normalizeUrl(trimmed) : `https://www.google.com/search?q=${encodeURIComponent(trimmed)}`;
+            if (!url) return;
+            finalName = looksLikeUrl ? new URL(url).hostname.replace(/^www\./, '').split('.')[0] : trimmed;
         }
 
+        if (!httpUrl(url)) return;
         const newDial = {
-            id: Date.now(),
+            id: crypto.randomUUID(),
             name: finalName,
             url: url
         };
@@ -257,13 +177,13 @@ export default memo(function SearchBox() {
         setFocusIdx(-1);
 
         if (activeEngine) {
-            origQueryRef.current = val;
+
             if (val === '') {
                 setActiveEngine(null);
-                setSuggestions([]);
+
                 if (recent.length > 0) setShowSuggestions(true);
             } else {
-                fetchSuggestions(val, activeEngine);
+
                 setShowSuggestions(true);
             }
             return;
@@ -275,49 +195,50 @@ export default memo(function SearchBox() {
                 setActiveEngine({ ...eng, pfx });
                 const rest = val.slice(pfx.length);
                 setQuery(rest);
-                origQueryRef.current = rest;
-                if (rest) fetchSuggestions(rest, eng);
-                else setSuggestions([]);
+
+
                 setShowSuggestions(true);
                 return;
             }
         }
 
-        origQueryRef.current = val;
+
         if (!val.trim()) {
-            setSuggestions([]);
+
             if (recent.length > 0) setShowSuggestions(true);
             else setShowSuggestions(false);
             return;
         }
-        
-        fetchSuggestions(val, null);
+
+
         setShowSuggestions(true);
     };
 
-    const handleKeyDown = (e) => {
-        if (e.key === 'Backspace' && activeEngine && query === '') {
-            setActiveEngine(null);
-            if (recent.length > 0) setShowSuggestions(true);
-            return;
+    const selectHistory = item => {
+        if (httpUrl(item.url)) openUrl(item.url);
+        else {
+            const engine = Object.values(combinedEngines).find(e => e.name === item.engineName);
+            openUrl(engine ? engine.url(item.query) : `https://www.google.com/search?q=${encodeURIComponent(item.query)}`);
         }
+        setQuery(''); setActiveEngine(null); setShowSuggestions(false); setFocusIdx(-1);
+    };
 
-        const itemsCount = query.trim() ? suggestions.length : recent.length;
-        if (itemsCount === 0 || !showSuggestions) return;
+    const submitSelection = () => {
+        if (showSuggestions && focusIdx >= 0) {
+            if (!query.trim() && recent[focusIdx]) { selectHistory(recent[focusIdx]); return; }
+            if (query.trim() && suggestions[focusIdx]) { processQuery(suggestions[focusIdx]); return; }
+        }
+        processQuery(query);
+    };
 
-        if (e.key === 'ArrowDown') {
+    const handleKeyDown = e => {
+        if (e.key === 'Escape') { setShowSuggestions(false); setFocusIdx(-1); return; }
+        if (e.key === 'Backspace' && activeEngine && query === '') { setActiveEngine(null); return; }
+        const count = query.trim() ? suggestions.length : recent.length;
+        if (!count || !showSuggestions) return;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault();
-            const nextIdx = (focusIdx + 1) % itemsCount;
-            setFocusIdx(nextIdx);
-            setQuery(query.trim() ? suggestions[nextIdx] : recent[nextIdx].query);
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            const nextIdx = focusIdx <= -1 ? itemsCount - 1 : focusIdx - 1;
-            setFocusIdx(nextIdx);
-            setQuery(nextIdx === -1 ? origQueryRef.current : (query.trim() ? suggestions[nextIdx] : recent[nextIdx].query));
-        } else if (e.key === 'Escape') {
-            setShowSuggestions(false);
-            setFocusIdx(-1);
+            setFocusIdx(index => e.key === 'ArrowDown' ? (index + 1) % count : index <= 0 ? count - 1 : index - 1);
         }
     };
 
@@ -329,64 +250,63 @@ export default memo(function SearchBox() {
         }
     };
 
-    const getFavicon = (url) => {
-        try {
-            const dom = new URL(url).hostname;
-            return `https://www.google.com/s2/favicons?domain=${dom}&sz=16`;
-        } catch {
-            return '';
-        }
-    };
+    const getFavicon = value => faviconUrl(value, 16);
 
     const isTyping = query.length > 0;
 
     return (
-        <form 
-            id="searchForm" 
-            className={`search-container ${isTyping ? 'typing' : ''}`} 
-            onSubmit={(e) => { e.preventDefault(); processQuery(query); }}
+        <form
+            id="searchForm"
+            className={`search-container ${isTyping ? 'typing' : ''}`}
+            onSubmit={(e) => { e.preventDefault(); submitSelection(); }}
             ref={formRef}
         >
             <div className="search-icon"></div>
-            
-            <div 
+
+            <div
                 ref={badgeRef}
-                className={`engine-badge ${activeEngine ? 'show' : ''}`} 
+                className={`engine-badge ${activeEngine ? 'show' : ''}`}
                 style={activeEngine ? { background: activeEngine.bg, color: activeEngine.fg } : {}}
             >
                 {activeEngine?.name}
             </div>
-            
-            <input 
-                type="text" 
+
+            <input
+                type="text"
                 id="searchInput"
                 ref={inputRef}
                 placeholder="Let's search something"
                 autoComplete="off"
+                role="combobox"
+                aria-label="Search"
+                aria-autocomplete="list"
+                aria-expanded={showSuggestions && (query.trim() ? suggestions.length > 0 : recent.length > 0)}
+                aria-controls="searchOptions"
+                aria-activedescendant={showSuggestions && focusIdx >= 0 ? `search-option-${focusIdx}` : undefined}
                 value={query}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 onFocus={handleFocus}
                 style={{ paddingLeft: activeEngine ? `${badgeWidth + 60}px` : '52px' }}
             />
-            
-            <ul 
-                className="suggestions-list" 
+
+            <ul
+                className="suggestions-list" id="searchOptions" role="listbox"
                 style={{ display: showSuggestions && (suggestions.length > 0 || (!query.trim() && recent.length > 0)) ? 'block' : 'none' }}
             >
                 {query.trim() ? (
                     suggestions.map((item, idx) => (
-                        <li 
-                            key={item} 
+                        <li
+                            key={item} id={`search-option-${idx}`} role="option" aria-selected={focusIdx === idx}
                             className={idx === focusIdx ? 'selected' : ''}
                             onClick={() => processQuery(item)}
                         >
                             <span className="sug-icon">🔍</span>
                             <span className="sug-text" style={{ flex: 1 }}>{item}</span>
-                            <button 
+                            <button
                                 type="button"
-                                className="sug-add" 
-                                title="Add to Speed Dial" 
+                                className="sug-add"
+                                title="Add to Speed Dial"
                                 aria-label="Add to Speed Dial"
                                 onClick={(e) => addToSpeedDial(e, item)}
                             >
@@ -401,19 +321,10 @@ export default memo(function SearchBox() {
                     <>
                         {recent.length > 0 && <li className="sug-group">Recent</li>}
                         {recent.map((item, idx) => (
-                            <li 
-                                key={item.query} 
+                            <li
+                                key={item.query} id={`search-option-${idx}`} role="option" aria-selected={focusIdx === idx}
                                 className={idx === focusIdx ? 'selected' : ''}
-                                onClick={() => {
-                                    const engKey = Object.keys(combinedEngines).find(k => combinedEngines[k].name === item.engineName);
-                                    if (engKey) {
-                                        window.open(combinedEngines[engKey].url(item.query), '_blank');
-                                    } else {
-                                        processQuery(item.query);
-                                    }
-                                    setShowSuggestions(false);
-                                    setQuery('');
-                                }}
+                                onClick={() => selectHistory(item)}
                             >
                                 {item.url ? (
                                     <img src={getFavicon(item.url)} className="sug-favicon" onError={(e) => e.target.style.display='none'} alt=""/>
@@ -421,10 +332,10 @@ export default memo(function SearchBox() {
                                     <span className="sug-icon">🕒</span>
                                 )}
                                 <span className="sug-text">{item.engineName}: {item.query}</span>
-                                <button 
-                                    type="button" 
-                                    className="sug-remove" 
-                                    title="Remove" 
+                                <button
+                                    type="button"
+                                    className="sug-remove"
+                                    title="Remove"
                                     aria-label={`Remove ${item.query} from history`}
                                     onClick={(e) => removeHistory(e, item.query)}
                                 >

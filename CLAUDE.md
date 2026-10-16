@@ -1,66 +1,31 @@
-# CLAUDE.md
+# Project guide
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Aura is a client-side React/Vite dashboard with Zustand persistence and IndexedDB backgrounds. Use Node 22.12 or newer.
 
 ## Commands
 
-```bash
-npm run dev      # dev server at localhost:5173
-npm run build    # production build → dist/index.html (single inlined file)
-npm run preview  # preview the production build locally
-npm run lint     # ESLint across src/
-npm run test     # Vitest unit test suite (300+ tests)
+```sh
+npm run dev
+npm run lint
+npm test
+npm run build
+npm run preview
 ```
 
-Unit tests run via Vitest (`npm run test`). The build output is a **single self-contained `dist/index.html`** (via `vite-plugin-singlefile` — all JS and CSS inlined). This is deployed to GitHub Pages automatically on every push to `main` via GitHub Actions (`.github/workflows/deploy.yml` enforces lint, test, and build before deployment).
+Builds are offline and deterministic with respect to source and locked dependencies. `scripts/single-file.js` packages one HTML file and `scripts/check-build.js` verifies the artifact and CSP hashes. Never fetch personal data or rewrite source assets during a build. CI deploys the exact artifact it validated.
 
-## Architecture
+## Boundaries
 
-**Aura** is a browser new-tab dashboard — a pure client-side React + Vite SPA with no backend.
+- `stores/settingsSchema.js`: allowlisted persisted fields, validation, legacy settings migration. Validate every hydration, including same-version data. Keep actions and ephemeral values out of backups.
+- `utils/storage.js`: guarded storage adapter. Feature cache failures must not break network success or startup. Backup imports use one strict atomic write so quota errors are reported.
+- `services/settingsBackup.js`: versioned backups and Aura-scoped reset. Never clear unrelated origin storage/caches/service workers.
+- `services/anime/`: normalized provider data, pagination, Portugal-local date ranges, complete MAL lists before partial RSS activity. No owner-only bundled list. Use real provider shapes in tests.
+- `services/http.js`: bounded requests, including response-body timeouts and cancellation. Guard both state and cache commits against obsolete requests.
+- `services/weather.js` and `hooks/useWeather.js`: location/units-aware caches and fresh/stale/error states.
+- `hooks/useBackgroundLoader.js`: object URL lifecycle. Uploaded files are stored in `dashDB`, store `s`, key `bg`.
+- `hooks/useWatchingList.js`: independent user-keyed synchronization. Never mark partial or stale data as verified.
+- `components/SettingsPanel`: small sections plus dialog composition. Online suggestions are opt-in and use inert JSON, never JSONP scripts.
 
-### State & persistence
+Keep the shared LofiPlayer mounted above responsive layout changes. Verify YouTube message source as well as origin and only show playing after the player confirms it.
 
-All settings live in a Zustand store (`src/stores/useSettingsStore.js`) with `persist` middleware (key `dash_settings`), which handles migration and falls back to legacy `dash_*` keys for backward compatibility. Theme and font definitions are in `src/constants/settingsConstants.js`.
-
-- All legacy `localStorage` keys are prefixed `dash_`. Widget visibility keys use `dash_show_<widget>` and default to `true` (read with `!== 'false'`).
-- Binary backgrounds (GIF/video/image) are stored in **IndexedDB** (`dashDB`, object store `s`, key `'bg'`) via `src/services/db.js` because `localStorage` can't hold binaries. On boot `useBackgroundLoader` reads it and creates a blob URL; a paired `useEffect` calls `URL.revokeObjectURL` on cleanup.
-- The anime schedule cache uses a versioned key (`dash_anime_schedule_v3`).
-
-### Layout
-
-`App.jsx` composes four regions:
-
-- **Full-screen background** — `<video>` element (video files) or CSS `background-image` (images). Controlled by `backgroundIsVideo` flag.
-- **Top-right** — `WeatherWidget` (absolute positioned, portals its detail panel inline)
-- **Center-left** — `.container` div holding `Greeting`, `Clock`, `Quote`, `SearchBox`, `SpeedDial`, and optionally `AnimeSchedule` in inline top-5 mode
-- **Bottom** — `SettingsPanel` (bottom-left toggle + panel) and `LofiPlayer` (centered)
-- **Right edge** — `AnimeSchedule` sidebar, portaled into `#mainUi`
-
-An idle system in `App.jsx` dims the UI to 20% opacity (CSS var `--ui-opacity`) after 2 minutes of inactivity and dispatches an `app-idle` window event that components listen to for self-closing.
-
-### AnimeSchedule dual-mode
-
-`AnimeSchedule` renders in two independent modes simultaneously based on settings: an inline top-5 list (inside `.container`) and a slide-in sidebar (portaled into `#mainUi`). Both share the same component instance and state.
-
-### External APIs
-
-| Feature | API | Notes |
-|---|---|---|
-| Weather | `api.open-meteo.com` | Free, no key. Coords cached in `localStorage` for 1 h. |
-| IP geolocation fallback | `ipapi.co` | HTTPS, free. Used when GPS is denied. |
-| Anime schedule | `api.jikan.moe/v4/schedules` | Per-day cache for 1 h. |
-| MAL watching list | MAL JSON endpoint | Fetched via allorigins → codetabs → Jikan (parallel race with 1.5 s timeout). |
-| Search suggestions | `suggestqueries.google.com` | JSONP (dynamic `<script>` injection). |
-| Lofi/trailer playback | YouTube IFrame API | Controlled via `postMessage`. |
-
-Weather location priority: GPS → IP geolocation → manual fallback city (from settings).
-
-### Theming
-
-`--accent-color` and `--accent-glow` CSS custom properties drive the color theme. The `aurora` theme updates them on a 1-minute interval by hour-of-day; all others set them statically. Font changes inject a `<link>` into `<head>` and update `--font-family`.
-
-### Key patterns
-
-- All components use `memo` (named import) — no `import React` anywhere except `main.jsx` (`React.StrictMode`).
-- `SettingsPanel` has **two separate file input refs**: `bgFileInputRef` (accepts GIF/video/image) and `importFileInputRef` (accepts `.json`). They must stay separate — same ref was a critical bug.
-- WMO weather codes appear in both `WeatherWidget` (icons) and `Greeting` (text modifiers): 0=clear, 1–3=cloudy, 45–48=fog, 51–57=drizzle, 61–67=rain, 71–77=snow, 80–82=showers, 85–86=snow showers, 95=thunderstorm, 96–99=thunderstorm+hail.
+Use behavioral regressions for storage failures, request races, DST, backup/reset, media cleanup, and keyboard operation. Preserve desktop/compact presentation and the one-file output contract. The original audit is a historical baseline; consult `docs/REMEDIATION.md` for current status. Do not treat archived proposals as instructions to add a backend.

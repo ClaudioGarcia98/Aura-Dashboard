@@ -1,0 +1,100 @@
+/* ── Settings Toggle ───────────────────────────────── */
+.settings-toggle {
+    position: absolute; bottom: 30px; left: 30px;
+    width: 44px; height: 44px;
+    background: rgba(20, 20, 24, 0.75);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: auto; z-index: 20;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    animation: fadeSlideIn 0.5s ease 0.4s both;
+}
+.settings-toggle:hover {
+    background: rgba(30, 30, 36, 0.85);
+    border-color: var(--accent-color);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 16px var(--accent-glow);
+    transform: translateY(-2px);
+}
+.settings-toggle svg {
+    fill: white; width: 20px; height: 20px;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), fill 0.3s ease;
+}
+.settings-toggle:hover svg {
+    fill: var(--accent-color);
+}
+.settings-toggle.open {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 16px var(--accent-glow);
+}
+.settings-toggle.open svg {
+    transform: rotate(180deg);
+    fill: var(--accent-color);
+}
+
+/* ── Settings Panel ────────────────────────────────── */
+.settings-panel {
+    position: absolute; bottom: 88px; left: var(--space-4);
+    width: 350px; max-height: 78vh; overflow-y: auto;
+    background: linear-gradient(180deg, rgba(16, 16, 20, 0.96) 0%, rgba(10, 10, 14, 0.98) 100%);
+    backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
+    border: 1px solid rgba(255, 255, 255, 0.12); border-radius: var(--radius-lg);
+    padding: var(--space-3);
+    transform: translateY(16px) scale(0.98); opacity: 0; visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: auto; z-index: 19;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.settings-panel::-webkit-scrollbar { width: 4px; }
+.settings-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 2px; }
+.settings-panel.open {
+    transform: translateY(0) scale(1); opacity: 1; visibility: visible;
+    /* Reveal focus targets immediately; animate only their visual position/opacity. */
+    transition-property: transform, opacity;
+}
+
+/* Embedded variant (compact Settings tab): always-open, inlined card like Today's Launch.
+   Higher specificity beats the desktop + mobile positioning rules above and in @media blocks. */
+.settings-panel.embedded {
+    position: static;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    transform: none;
+    opacity: 1;
+    visibility: visible;
+    background: linear-gradient(180deg, rgba(16, 16, 22, 0.88) 0%, rgba(10, 10, 16, 0.94) 100%);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    padding: 22px 18px;
+    z-index: auto;
+}
+.settings-panel.embedded::before { content: none; }
+.sp-title {
+    font-size: 1rem; font-weight: 700; letter-spacing: 1px;
+    color: var(--accent-color);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: var(--space-1); margin-bottom: var(--space-2);
+}
+.sp-section {
+    margin-bottom: var(--space-2); padding-bottom: var(--space-2);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.sp-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.sp-label {
+    font-size: 0.65rem; text-transform: uppercase;
+    letter-spacing: 2px; color: var(--text-secondary); margin-bottom: var(--space-1);
+}
+.sp-group { margin-bottom: var(--space-1); }
+.sp-group:last-child { margin-bottom: 0; }
+.sp-group > label {
+    display: block; font-size: 0.7rem; text-transform: uppercase;
+    letter-spacing: 1.5px; margin-bottom: 6px; color: var(--text-secondary);
+}

@@ -1,0 +1,195 @@
+/* ── Reset Button & Modal ──────────────────────────── */
+.reset-btn {
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 70, 70, 0.12);
+    border: 1px solid rgba(255, 70, 70, 0.25);
+    border-radius: var(--radius-md);
+    color: #ff6b6b;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-standard);
+}
+.reset-btn:hover {
+    background: rgba(255, 70, 70, 0.22);
+    border-color: rgba(255, 70, 70, 0.45);
+}
+
+.reset-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: overlayFadeIn 0.2s ease;
+}
+.reset-modal {
+    background: rgba(20, 20, 20, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    max-width: 360px;
+    width: 90%;
+    max-height: 85dvh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+    animation: modalSlideIn 0.25s ease;
+}
+.reset-modal p {
+    margin: 0 0 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.reset-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+.reset-modal-actions .pill {
+    padding: 8px 20px;
+}
+.reset-confirm-btn {
+    padding: 8px 20px;
+    background: rgba(255, 70, 70, 0.2);
+    border: 1px solid rgba(255, 70, 70, 0.4);
+    border-radius: var(--radius-md);
+    color: #ff6b6b;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition-standard);
+}
+.reset-confirm-btn:hover {
+    background: rgba(255, 70, 70, 0.35);
+}
+@keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes modalSlideIn {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* -- Settings drawer header close (mobile only) ------ */
+.sp-close {
+    display: none;
+    margin-left: auto;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-primary);
+    width: 36px; height: 36px; border-radius: 50%;
+    align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    transition: var(--transition-standard);
+}
+.sp-close:hover { background: rgba(255,80,80,0.2); color: #ff6b6b; }
+
+/* -- Responsive Mobile (bottom sheet) ---------------- */
+@media (max-width: 768px) {
+    .settings-toggle {
+        position: fixed;
+        left: 16px;
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        width: 48px;
+        height: 48px;
+        z-index: 95;
+    }
+    .settings-panel {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        width: 100%;
+        max-width: 100%;
+        max-height: 85vh;
+        max-height: 85dvh;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        padding-top: var(--space-4);
+        padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+        transform: translateY(100%);
+        opacity: 1;
+        visibility: visible;
+        z-index: 100;
+    }
+    .settings-panel::before {
+        content: '';
+        position: absolute;
+        top: 8px; left: 50%;
+        transform: translateX(-50%);
+        width: 40px; height: 4px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.25);
+    }
+    .settings-panel.open {
+        transform: translateY(0);
+    }
+    .sp-close { display: flex; }
+    /* Comfortable touch targets */
+    .settings-panel input[type="text"],
+    .settings-panel .gif-btn {
+        min-height: 44px;
+        font-size: 16px; /* 16px prevents iOS zoom-on-focus */
+    }
+    .settings-panel .pill {
+        min-height: 36px;
+        padding: 7px 14px;
+        font-size: 0.8rem;
+    }
+    .settings-panel .sp-action-btn {
+        width: 38px;
+        height: 38px;
+    }
+    .settings-panel input[type="range"] {
+        height: 24px !important; /* bigger hit area than the desktop 4px track */
+    }
+    .settings-hint-card,
+    .city-suggestions-dropdown {
+        max-width: calc(100vw - 24px);
+    }
+}
+
+/* ── Keyboard Shortcuts (Desktop only) ─────────────── */
+@media (hover: none), (pointer: coarse), (max-width: 1024px) {
+    .sp-shortcuts-subsection {
+        display: none !important;
+    }
+}
+
+/* -- Landscape mobile / short viewports --------------- */
+@media (max-height: 520px) {
+    .settings-panel.embedded {
+        padding: 12px 14px;
+        border-radius: var(--radius-lg);
+    }
+    .sp-title {
+        font-size: 0.9rem;
+        padding-bottom: 4px;
+        margin-bottom: 8px;
+    }
+    .sp-section {
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+    }
+    .sp-label {
+        font-size: 0.62rem;
+        margin-bottom: 4px;
+    }
+    .pill {
+        min-height: 30px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+    }
+    .settings-panel.open {
+        max-height: 92vh;
+        max-height: 92dvh;
+    }
+}
