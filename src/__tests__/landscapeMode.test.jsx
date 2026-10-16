@@ -44,15 +44,15 @@ describe('Landscape Mode & Mobile Resolutions', () => {
     const originalInnerHeight = window.innerHeight;
     const originalMatchMedia = window.matchMedia;
 
-    const setViewport = (width, height) => {
+    const setViewport = (width, height, touch = true) => {
         window.innerWidth = width;
         window.innerHeight = height;
         window.matchMedia = vi.fn().mockImplementation((query) => {
-            const isWidthQuery = query.includes('max-width: 1024px');
+            const widthLimit = query.match(/max-width: (\d+)px/)?.[1];
             const isHeightQuery = query.includes('max-height: 520px');
             const isTouchQuery = query.includes('hover: none') || query.includes('pointer: coarse');
             return {
-                matches: (isWidthQuery && width <= 1024) || (isHeightQuery && height <= 520) || isTouchQuery,
+                matches: (widthLimit && width <= Number(widthLimit)) || (isHeightQuery && height <= 520) || (isTouchQuery && touch),
                 media: query,
                 addEventListener: vi.fn(),
                 removeEventListener: vi.fn(),
@@ -115,5 +115,29 @@ describe('Landscape Mode & Mobile Resolutions', () => {
         render(<App />);
 
         expect(document.body.classList.contains('compact-mode')).toBe(true);
+    });
+
+    it.each([[1180, 820], [1366, 1024], [1600, 1000]])(
+        'keeps touch tablets in the compact shell at %ix%i', (width, height) => {
+            setViewport(width, height);
+            const { container } = render(<App />);
+            expect(document.body.classList.contains('compact-mode')).toBe(true);
+            expect(screen.getByRole('tab', { name: 'Settings' })).toBeTruthy();
+            expect(container.querySelector('.interactive-ui')).toBeNull();
+        },
+    );
+
+    it.each([[820, 1180], [1180, 820], [1200, 800]])('keeps tablet-sized mouse previews compact at %ix%i', (width, height) => {
+        setViewport(width, height, false);
+        const { container } = render(<App />);
+        expect(container.querySelector('.compact-root')).toBeTruthy();
+        expect(screen.getByRole('tab', { name: 'Settings' })).toBeTruthy();
+    });
+
+    it('keeps the desktop shell for a laptop with a mouse', () => {
+        setViewport(1366, 820, false);
+        const { container } = render(<App />);
+        expect(container.querySelector('.interactive-ui')).toBeTruthy();
+        expect(container.querySelector('.compact-root')).toBeNull();
     });
 });

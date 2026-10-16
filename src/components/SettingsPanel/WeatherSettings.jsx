@@ -73,7 +73,16 @@ export default function WeatherSettings({ active }) {
                             id="fallbackCityInput"
                             placeholder="e.g. London"
                             value={citySearchText}
-                            onChange={(e) => { setCitySearchText(e.target.value); setShowCityDropdown(true); }}
+                            onChange={(e) => {
+                                const text = e.target.value;
+                                setCitySearchText(text);
+                                setCitySuggestions([]);
+                                setIsSearchingCity(false);
+                                setShowCityDropdown(text.trim().length > 2);
+                                // Clearing the field is a saved change, just like selecting a city.
+                                // Other edits remain a search draft until a suggestion is selected.
+                                if (!text.trim()) setFallbackCity('');
+                            }}
                             onFocus={() => { if (citySearchText) setShowCityDropdown(true); }}
                         />
                         {showCityDropdown && (citySuggestions.length > 0 || isSearchingCity) && (

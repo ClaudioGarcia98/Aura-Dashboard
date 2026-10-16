@@ -20,7 +20,7 @@ import EmbeddedAnimeList from './AnimeSchedule/EmbeddedAnimeList';
 import TrailerPreview from './AnimeSchedule/TrailerPreview';
 
 /**
- * Phones + tablets (<=1024px): a top-nav-driven, tabbed app shell. Replaces the
+ * Small screens + touch-first tablets: a top-nav-driven, tabbed app shell. Replaces the
  * desktop floating-overlay layout. The page never scrolls — each tab is exactly
  * one screen with its own internal scroll, over a fixed background.
  */

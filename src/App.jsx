@@ -61,7 +61,9 @@ export default function App() {
         if (pauseBackground || reducedMotion) video.pause();
         else video.play()?.catch(() => {});
     }, [pauseBackground, reducedMotion, backgroundUrl]);
-    const isCompact = useMediaQuery('(max-width: 1024px)');
+    // Include landscape tablet widths even in previews that report mouse input.
+    // Larger touch-first tablets keep the tabbed shell in either orientation.
+    const isCompact = useMediaQuery('(max-width: 1200px), (hover: none), (pointer: coarse)');
 
     const hasBottomContent = showSearchBox || showSpeedDial || showTop5Anime;
     const isTotallyEmptyBelowClock = !showQuote && !hasBottomContent;

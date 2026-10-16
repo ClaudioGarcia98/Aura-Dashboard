@@ -43,11 +43,12 @@
     border-left: 1px solid var(--glass-border);
     padding: 24px 20px 20px 24px;
     transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    pointer-events: auto; z-index: 100;
+    pointer-events: none; z-index: 100;
+    visibility: hidden;
     display: flex; flex-direction: column;
     box-shadow: -15px 0 50px rgba(0, 0, 0, 0.6);
 }
-.anime-sidebar.open { right: 0; }
+.anime-sidebar.open { right: 0; visibility: visible; pointer-events: auto; }
 
 .as-header {
     display: flex; justify-content: space-between; align-items: center;

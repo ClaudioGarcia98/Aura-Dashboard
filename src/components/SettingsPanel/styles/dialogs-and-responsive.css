@@ -162,6 +162,10 @@
 
 /* ── Keyboard Shortcuts (Desktop only) ─────────────── */
 @media (hover: none), (pointer: coarse), (max-width: 1024px) {
+    .settings-panel input[type="text"] {
+        min-height: 44px;
+        font-size: 16px;
+    }
     .sp-shortcuts-subsection {
         display: none !important;
     }

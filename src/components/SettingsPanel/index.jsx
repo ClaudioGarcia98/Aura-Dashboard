@@ -39,7 +39,7 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
     const modalRef = useRef(null);
     const closePanel = useCallback(() => setIsOpen(false), []);
     const closeModal = useCallback(() => { setConfirmReset(0); setPopupMessage(null); }, []);
-    useDialog(panelRef, !embedded && isOpen && !confirmReset && !popupMessage, closePanel);
+    useDialog(panelRef, !embedded && isOpen && !confirmReset && !popupMessage, closePanel, true);
     useDialog(modalRef, !!confirmReset || !!popupMessage, closeModal);
     const toggleRef = useRef(null);
     const importFileInputRef = useRef(null);

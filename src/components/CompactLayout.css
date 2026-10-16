@@ -1,4 +1,4 @@
-/* ── Compact shell (phones + tablets, <=1024px) ─────── */
+/* ── Compact shell (small screens + touch-first tablets) ─────── */
 .compact-root {
     position: relative;
     width: 100%;
@@ -44,6 +44,12 @@
 /* Neutralize component margins that assume the desktop .container flow */
 .compact-home .speed-dial { margin-bottom: 0; }
 .compact-home .search-container { width: 100%; max-width: 100%; }
+/* Let Home scroll the whole launch list, including on short landscape screens.
+   Desktop height caps otherwise leave only two cards in a nested scroll box. */
+.compact-home .tab-list {
+    max-height: none;
+    overflow: visible;
+}
 /* Keep the clock from overflowing the column on tablet widths */
 .compact-home .clock-row { flex-wrap: wrap; }
 

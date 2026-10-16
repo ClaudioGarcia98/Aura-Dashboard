@@ -97,6 +97,27 @@ describe('SettingsPanel', () => {
         expect(spState.setUsername).toHaveBeenCalledWith('New Name');
     });
 
+    it('keeps a cleared city empty after closing and reopening settings', () => {
+        spState.setFallbackCity.mockImplementation(city => { spState.fallbackCity = city; });
+        render(<SettingsPanel />);
+        const toggle = screen.getByRole('button', { name: 'Toggle Settings Panel' });
+        fireEvent.click(toggle);
+        expect(screen.getByLabelText(/your city/i).value).toBe('Lisbon');
+        fireEvent.change(screen.getByLabelText(/your city/i), { target: { value: '' } });
+        expect(spState.setFallbackCity).toHaveBeenCalledWith('');
+        fireEvent.click(toggle);
+        fireEvent.click(toggle);
+        expect(screen.getByLabelText(/your city/i).value).toBe('');
+    });
+
+    it('does not save an unfinished city search', () => {
+        render(<SettingsPanel />);
+        fireEvent.click(screen.getByRole('button', { name: 'Toggle Settings Panel' }));
+        fireEvent.change(screen.getByLabelText(/your city/i), { target: { value: 'Lo' } });
+        expect(screen.getByLabelText(/your city/i).value).toBe('Lo');
+        expect(spState.setFallbackCity).not.toHaveBeenCalled();
+    });
+
     it('updates malUsername on input', () => {
         render(<SettingsPanel />);
         const input = screen.getByLabelText(/myanimelist username/i);
@@ -146,6 +167,17 @@ describe('SettingsPanel', () => {
         fireEvent.keyDown(document, { key: 'Escape' });
         expect(toggle.getAttribute('aria-expanded')).toBe('false');
         expect(document.activeElement).toBe(toggle);
+    });
+
+    it('opens settings without focusing a text input or moving to the city field', () => {
+        render(<SettingsPanel />);
+        fireEvent.click(screen.getByRole('button', { name: 'Toggle Settings Panel' }));
+        expect(document.activeElement).toBe(screen.getByRole('dialog', { name: 'Aura Settings' }));
+        expect(document.activeElement).not.toBe(screen.getByLabelText(/your city/i));
+        fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+        const panel = screen.getByRole('dialog', { name: 'Aura Settings' });
+        expect(panel.contains(document.activeElement)).toBe(true);
+        expect(document.activeElement).not.toBe(panel);
     });
 
     it('renders keyboard shortcuts section on desktop', () => {

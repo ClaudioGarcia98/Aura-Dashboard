@@ -107,7 +107,7 @@ describe('App Orchestrator Component', () => {
   it('preserves the mounted player when switching between desktop and compact layouts', () => {
     const original = window.matchMedia;
     let compact = false;
-    window.matchMedia = query => ({ matches: compact && query.includes('max-width: 1024px'), addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    window.matchMedia = query => ({ matches: compact && query.includes('max-width: 1200px'), addEventListener: vi.fn(), removeEventListener: vi.fn() });
     try {
       const { rerender } = render(<App />);
       const player = screen.getByTestId('lofi-player');

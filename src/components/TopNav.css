@@ -103,10 +103,7 @@
     animation: pulseGlow 1.8s infinite;
 }
 
-/* Never show the compact nav on desktop */
-@media (min-width: 1025px) {
-    .top-nav { display: none; }
-}
+/* App mounts this navigation only when the compact shell is active. */
 
 /* ── Landscape mobile / short viewports ─────────────── */
 @media (max-height: 520px) {
