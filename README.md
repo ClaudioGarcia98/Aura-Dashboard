@@ -52,8 +52,6 @@ GitHub Pages uses the dedicated MAL Worker configured in `src/services/api.js`. 
 
 The production packager is a small local Vite plugin in `scripts/single-file.js`. GitHub Actions runs lint, tests, and the artifact checks, then deploys that exact validated artifact on pushes to `main`. Deployment permissions are scoped to the deploy job.
 
-See [the original audit](docs/PROJECT_AUDIT.md) and [the remediation and verification record](docs/REMEDIATION.md). The historical architecture proposal in `docs/archive` is not a current requirement.
-
 ## License
 
 The project is proprietary. See [LICENSE](LICENSE) for the owner's terms. Earlier README references to an MIT license were incorrect.
