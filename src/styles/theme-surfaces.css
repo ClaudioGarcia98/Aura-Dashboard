@@ -1,0 +1,13 @@
+/* Curated palettes tint the actual glass surfaces as well as the accent. */
+:root[data-curated-theme="true"] :is(.container, .compact-hero, .settings-panel, .settings-panel.embedded, .anime-sidebar, .today-anime-box, .lofi-expanded-now, .lofi-expanded-stations, .top-nav, .lofi-compact.expanded) {
+    background: var(--glass-panel);
+    border-color: var(--glass-border);
+}
+:root[data-curated-theme="true"] :is(.anime-card, .tab-item, #quote-container, .lofi-ui) {
+    background: var(--glass-card);
+    border-color: var(--glass-border);
+}
+:root[data-curated-theme="true"] :is(.anime-card, .tab-item, #quote-container):hover {
+    background: var(--glass-card-hover);
+    border-color: var(--accent-border);
+}

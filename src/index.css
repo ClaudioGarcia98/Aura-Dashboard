@@ -1,3 +1,5 @@
+@import './styles/theme-surfaces.css';
+
 /* ── Reset ─────────────────────────────────────────── */
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 /* Remove the 300ms tap delay / double-tap zoom on interactive elements */

@@ -8,6 +8,20 @@ export function useThemeEffect() {
     useEffect(() => {
         let intervalId;
         const t = THEMES[theme] || THEMES.aurora;
+        const root = document.documentElement;
+        root.dataset.theme = Object.hasOwn(THEMES, theme) ? theme : 'aurora';
+        root.dataset.curatedTheme = String(!!t.curated);
+        // Always reset the whole palette when switching back to a classic theme.
+        const tokens = {
+            '--bg-base': t.base || '#0b0c10',
+            '--text-primary': t.primary || '#F8FAFC',
+            '--text-secondary': t.secondary || '#94A3B8',
+            '--glass-panel': t.panel ? `linear-gradient(145deg, color-mix(in srgb, ${t.panel} 95%, transparent), color-mix(in srgb, ${t.base} 98%, transparent))` : 'linear-gradient(180deg, rgba(16,18,26,0.96), rgba(10,11,16,0.98))',
+            '--glass-card': t.panel ? `color-mix(in srgb, ${t.panel} 92%, transparent)` : 'rgba(16,18,26,0.76)',
+            '--glass-card-hover': t.panel ? `color-mix(in srgb, ${t.panel} 94%, ${t.accent})` : 'rgba(22,25,36,0.90)',
+            '--glass-border': t.accent ? `color-mix(in srgb, ${t.accent} ${t.curated ? 20 : 12}%, transparent)` : 'rgba(255,255,255,0.10)',
+        };
+        for (const [name, value] of Object.entries(tokens)) root.style.setProperty(name, value);
 
         const updateTimeAccent = () => {
             const hr = new Date().getHours();

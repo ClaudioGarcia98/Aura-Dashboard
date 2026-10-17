@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
 import { saveBackgroundBlob, deleteBackgroundBlob } from '../../services/db';
-import defaultVideo from '../../assets/animated_gif.mp4';
+import { DEFAULT_BACKGROUND } from '../../constants/background';
 
 export default function BackgroundSettings() {
     const { gifName, setGifName, setBackgroundUrl, setBackgroundIsVideo } = useSettingsStore(useShallow(s => ({
@@ -52,7 +52,7 @@ export default function BackgroundSettings() {
             return;
         }
         setGifName('');
-        setBackgroundUrl(defaultVideo);
+        setBackgroundUrl(DEFAULT_BACKGROUND.url);
         setBackgroundIsVideo(true);
         if (bgFileInputRef.current) bgFileInputRef.current.value = '';
     };

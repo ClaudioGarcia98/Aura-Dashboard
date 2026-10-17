@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getBackgroundBlob } from '../services/db';
-import defaultVideo from '../assets/animated_gif.mp4';
+import { DEFAULT_BACKGROUND } from '../constants/background';
 
 export function useBackgroundLoader() {
     const setBackgroundUrl = useSettingsStore(s => s.setBackgroundUrl);
@@ -23,12 +23,12 @@ export function useBackgroundLoader() {
                 setBackgroundUrl(blobUrl);
                 setBackgroundIsVideo(blob.type ? blob.type.startsWith('video/') : false);
             } else {
-                setBackgroundUrl(defaultVideo);
+                setBackgroundUrl(DEFAULT_BACKGROUND.url);
                 setBackgroundIsVideo(true);
             }
         }).catch(() => {
             if (!active) return;
-            setBackgroundUrl(defaultVideo);
+            setBackgroundUrl(DEFAULT_BACKGROUND.url);
             setBackgroundIsVideo(true);
         });
 

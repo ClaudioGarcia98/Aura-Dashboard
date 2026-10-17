@@ -8,7 +8,7 @@ describe('THEMES', () => {
     });
 
     it('contains the expected theme keys', () => {
-        expect(Object.keys(THEMES)).toEqual(['aurora', 'nord', 'tokyo', 'sunset', 'forest']);
+        expect(Object.keys(THEMES)).toEqual(['aurora', 'nord', 'tokyo', 'sunset', 'forest', 'mocha', 'tokyo-night', 'rose-pine', 'matcha']);
     });
 
     it('every non-aurora theme has accent, glow, overlayA, overlayB', () => {
@@ -47,6 +47,17 @@ describe('THEMES', () => {
         const staticThemes = Object.entries(THEMES).filter(([key]) => key !== 'aurora');
         for (const [name, theme] of staticThemes) {
             expect(theme.glow, `${name}.glow`).toMatch(/^rgba\(/);
+        }
+    });
+
+    it('keeps curated body text readable even with a white wallpaper behind the glass', () => {
+        const rgb = hex => hex.slice(1).match(/../g).map(value => parseInt(value, 16) / 255);
+        const luminance = color => color.map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
+        for (const theme of Object.values(THEMES).filter(value => value.curated)) {
+            const background = rgb(theme.panel).map(value => value * 0.95 + 0.05);
+            for (const text of [theme.primary, theme.secondary, theme.accent]) {
+                expect((luminance(rgb(text)) + 0.05) / (luminance(background) + 0.05)).toBeGreaterThanOrEqual(4.5);
+            }
         }
     });
 });

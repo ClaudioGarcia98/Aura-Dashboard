@@ -197,34 +197,15 @@
     font-feature-settings: "lnum" 1, "tnum" 1;
 }
 
-/* Highlight for Watched */
+/* Watching cards need an opaque surface: bright wallpapers must not lower
+   text contrast. Keep the highlight in the accent edge, not a light overlay. */
 .watched-highlight {
-    background: linear-gradient(135deg, rgba(255,255,255,0.14) 0%, var(--accent-glow) 100%) !important;
-    backdrop-filter: blur(25px) saturate(1.4) !important;
-    -webkit-backdrop-filter: blur(25px) saturate(1.4) !important;
-    border: 1px solid var(--accent-border) !important;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent-color) 10%, #161b25), #11151e) !important;
+    border: 1px solid var(--accent-border-strong) !important;
     box-shadow:
-        0 0 15px var(--accent-glow),
-        inset 0 1px 1px rgba(255, 255, 255, 0.28) !important;
+        inset 3px 0 0 var(--accent-color),
+        0 4px 16px rgba(0, 0, 0, 0.3) !important;
     z-index: 5;
     position: relative;
     overflow: hidden;
-}
-
-.watched-highlight::before {
-    content: '';
-    position: absolute;
-    top: 0; left: -100%;
-    width: 50%; height: 100%;
-    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%);
-    transform: skewX(-20deg);
-    animation: shineEffect 4s infinite;
-    z-index: 1;
-    pointer-events: none;
-}
-
-@keyframes shineEffect {
-    0% { left: -100%; }
-    20% { left: 200%; }
-    100% { left: 200%; }
 }

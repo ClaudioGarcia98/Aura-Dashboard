@@ -214,3 +214,22 @@
     background: var(--accent-glow);
     box-shadow: 0 0 14px var(--accent-shadow);
 }
+
+/* Shared by the weekly schedule and Today's Launch at every breakpoint. */
+.watched-highlight :is(.anime-time, .tab-item-meta, .anime-synopsis-text) {
+    color: #d3dce9;
+}
+.watched-highlight :is(.anime-time, .tab-item-meta) {
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+.watched-highlight:is(.anime-card, .tab-item) :is(.anime-title, .tab-item-title) {
+    color: #f8fafc;
+    text-shadow: none;
+}
+.watched-highlight .anime-countdown,
+.watched-highlight:hover .anime-countdown {
+    background: #10151f;
+    border-color: var(--accent-border-strong);
+    box-shadow: none;
+}

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ThemeSettings from './ThemeSettings';
-import { THEMES, FONTS } from '../../constants/settingsConstants';
+import { THEMES, FONTS, themeLabel } from '../../constants/settingsConstants';
 
 let mockState;
 
@@ -29,8 +29,7 @@ describe('ThemeSettings', () => {
         render(<ThemeSettings />);
 
         Object.keys(THEMES).forEach((t) => {
-            const label = t.charAt(0).toUpperCase() + t.slice(1);
-            const btn = screen.getByRole('button', { name: new RegExp(label, 'i') });
+            const btn = screen.getByRole('button', { name: themeLabel(t), exact: true });
             expect(btn).toBeTruthy();
             if (t === 'nord') {
                 expect(btn.classList.contains('active')).toBe(true);
@@ -41,7 +40,7 @@ describe('ThemeSettings', () => {
     it('calls setTheme when a theme button is clicked', () => {
         render(<ThemeSettings />);
 
-        const tokyoBtn = screen.getByRole('button', { name: /tokyo/i });
+        const tokyoBtn = screen.getByRole('button', { name: 'Tokyo', exact: true });
         fireEvent.click(tokyoBtn);
 
         expect(mockState.setTheme).toHaveBeenCalledWith('tokyo');

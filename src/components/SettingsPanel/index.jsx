@@ -226,7 +226,7 @@ export default memo(function SettingsPanel({ embedded = false } = {}) {
                 {/* Backup & Restore */}
                 <div className="sp-section">
                     <div className="sp-label">Backup & Restore</div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         <button type="button" className="pill" style={{ flex: 1, justifyContent: 'center' }} onClick={handleExportSettings}>⬇ Export Settings</button>
                         <button type="button" className="pill" style={{ flex: 1, justifyContent: 'center' }} onClick={() => importFileInputRef.current?.click()}>⬆ Import Settings</button>
                         <input type="file" accept=".json" ref={importFileInputRef} style={{ display: 'none' }} onChange={handleImportSettings} />

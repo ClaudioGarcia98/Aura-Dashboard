@@ -44,6 +44,18 @@ afterEach(() => {
 });
 
 describe('useThemeEffect — static themes', () => {
+    it('applies a curated surface palette and clears it when returning to a classic theme', () => {
+        mockTheme = 'mocha';
+        const { rerender } = renderHook(() => useThemeEffect());
+        expect(document.documentElement.dataset.curatedTheme).toBe('true');
+        expect(getVar('--bg-base')).toBe('#181825');
+        expect(getVar('--text-secondary')).toBe('#bac2de');
+        mockTheme = 'nord';
+        rerender();
+        expect(document.documentElement.dataset.curatedTheme).toBe('false');
+        expect(getVar('--bg-base')).toBe('#0b0c10');
+        expect(getVar('--text-secondary')).toBe('#94A3B8');
+    });
     it('sets --accent-color from nord theme', () => {
         mockTheme = 'nord';
         renderHook(() => useThemeEffect());

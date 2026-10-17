@@ -1,7 +1,9 @@
 import { memo } from 'react';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
-import { THEMES, FONTS } from '../../constants/settingsConstants';
+import { THEMES, FONTS, themeLabel } from '../../constants/settingsConstants';
+import PresetSettings from './PresetSettings';
+import './ThemeSettings.css';
 
 export default memo(function ThemeSettings() {
     const { theme, setTheme, font, setFont, clockMode, setClockMode, use24hClock, setUse24hClock } = useSettingsStore(
@@ -18,11 +20,12 @@ export default memo(function ThemeSettings() {
             <div className="sp-section">
                 <div className="sp-label">Theme</div>
                 <div className="pill-row">
-                    {Object.keys(THEMES).map(t => (
+                    {Object.keys(THEMES).filter(t => !THEMES[t].curated).map(t => (
                         <button
                             type="button"
                             key={t}
                             className={`pill ${theme === t ? 'active' : ''}`}
+                            aria-pressed={theme === t}
                             onClick={() => setTheme(t)}
                         >
                             <span
@@ -31,11 +34,20 @@ export default memo(function ThemeSettings() {
                                     background: THEMES[t].accent || 'linear-gradient(135deg, #FFD26A 0%, #FF9F43 35%, #54a0ff 70%, #c482fb 100%)',
                                 }}
                             ></span>
-                            {t.charAt(0).toUpperCase() + t.slice(1)}
+                            {themeLabel(t)}
                         </button>
                     ))}
                 </div>
+                <div className="curated-theme-label">Dark glass collection</div>
+                <div className="curated-theme-grid" role="group" aria-label="Dark glass themes">
+                    {Object.entries(THEMES).filter(([, value]) => value.curated).map(([key, value]) => <button key={key} type="button" className={`curated-theme${theme === key ? ' active' : ''}`} aria-label={themeLabel(key)} aria-pressed={theme === key} onClick={() => setTheme(key)}>
+                        <span className="curated-theme-preview" style={{ background: value.base, '--preview-panel': value.panel, '--preview-accent': value.accent }} aria-hidden="true"><span /><i /><i /></span>
+                        <span className="curated-theme-name">{themeLabel(key)}</span><span className="curated-theme-description">{value.description}</span>
+                    </button>)}
+                </div>
             </div>
+
+            <PresetSettings />
 
             <div className="sp-section">
                 <div className="sp-label">Font</div>
