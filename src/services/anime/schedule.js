@@ -3,19 +3,20 @@ import { fetchJson } from '../http';
 import { safeJsonParse, safeStorage } from '../../utils/storage';
 import { getLocalDayRange } from './time';
 import { parseAniListSchedule } from './parsers';
+import { deviceTimeZone } from '../../utils/timeZone';
 
-export function getScheduleCache() {
+export function getScheduleCache(timeZone = deviceTimeZone()) {
     const cache = safeJsonParse(safeStorage.getItem(SCHEDULE_CACHE_KEY), {});
     if (!cache || typeof cache !== 'object' || Array.isArray(cache)) return {};
-    return Object.fromEntries(Object.entries(cache).filter(([day, entry]) => getLocalDayRange(day) && entry
+    return Object.fromEntries(Object.entries(cache).filter(([day, entry]) => ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].includes(day) && entry && entry.timeZone === timeZone
         && Number.isFinite(entry.ts) && Array.isArray(entry.data)
         && entry.data.every(item => item && item.mal_id && typeof item.title === 'string')));
 }
 
-export function setScheduleCache(cache) {
+export function setScheduleCache(cache, timeZone = deviceTimeZone()) {
     const entries = {};
     for (const [day, entry] of Object.entries(cache || {})) {
-        if (entry && Array.isArray(entry.data)) entries[day] = { ...entry, start: entry.start ?? getLocalDayRange(day)?.startUtcSec };
+        if (entry && Array.isArray(entry.data)) entries[day] = { ...entry, timeZone, start: entry.start ?? getLocalDayRange(day, timeZone)?.startUtcSec };
     }
     safeStorage.setItem(SCHEDULE_CACHE_KEY, JSON.stringify(entries));
 }
@@ -46,10 +47,10 @@ async function aniListSchedule(day, range, signal) {
     throw new Error('Schedule pagination limit exceeded');
 }
 
-export async function fetchDaySchedule(day, { signal } = {}) {
-    const range = getLocalDayRange(day);
+export async function fetchDaySchedule(day, { signal, timeZone = deviceTimeZone() } = {}) {
+    const range = getLocalDayRange(day, timeZone);
     if (!range) throw new Error('Invalid schedule day');
-    const entry = getScheduleCache()[day];
+    const entry = getScheduleCache(timeZone)[day];
     const matching = entry?.start === range.startUtcSec && Array.isArray(entry.data);
     if (matching && Date.now() - entry.ts < 3600000) return entry.data;
     let data;
@@ -67,6 +68,6 @@ export async function fetchDaySchedule(day, { signal } = {}) {
     }
     if (signal?.aborted) throw signal.reason;
     const unique = [...new Map(data.map(item => [item.mal_id, item])).values()];
-    setScheduleCache({ ...getScheduleCache(), [day]: { data: unique, ts: Date.now(), start: range.startUtcSec } });
+    setScheduleCache({ ...getScheduleCache(timeZone), [day]: { data: unique, ts: Date.now(), start: range.startUtcSec } }, timeZone);
     return unique;
 }

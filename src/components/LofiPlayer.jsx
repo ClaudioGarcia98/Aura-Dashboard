@@ -1,3 +1,4 @@
+import { useTranslation } from '../i18n/useTranslation';
 import './LofiPlayer.css';
 import { memo, useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
@@ -5,6 +6,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { fetchJson } from '../services/http';
 
 export default memo(function LofiPlayer({ compact = false, expanded = false, onPlayingChange } = {}) {
+    const { t } = useTranslation();
     const { volume, lofiId, setLofiId, lofiStations } = useSettingsStore(useShallow(s => ({ volume: s.volume, lofiId: s.lofiId, setLofiId: s.setLofiId, lofiStations: s.lofiStations })));
     const [isPlaying, setIsPlaying] = useState(false);
     const [isStarting, setIsStarting] = useState(false);
@@ -70,7 +72,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
 
     const hasStations = stationsList.length > 0;
     const knownStation = stationsList.find(s => s.id === lofiId);
-    const displayTitle = knownStation?.name ? knownStation.name : title;
+    const displayTitle = knownStation?.name ? knownStation.name : title === 'Lofi Music' ? t('Lofi Music') : title;
 
     // Cleanup play timeout on unmount
     useEffect(() => {
@@ -273,7 +275,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
             src={`https://www.youtube.com/embed/${lofiId}?enablejsapi=1&autoplay=0&start=0&playsinline=1&controls=0&showinfo=0&rel=0${originParam}`}
             allow="autoplay; encrypted-media"
             style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', border: 'none' }}
-            title="Lofi Background Stream"
+            title={t("Lofi Background Stream")}
             onLoad={handleIframeLoad}
         />
     );
@@ -286,9 +288,9 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                 {expanded && (
                     <div className="lofi-expanded" role="tabpanel" id="panel-lofi" aria-labelledby="tab-lofi">
                         <div className="lofi-expanded-now">
-                            <span className="lofi-expanded-eyebrow">Now Playing</span>
+                            <span className="lofi-expanded-eyebrow">{t("Now Playing")}</span>
                             <span className="lofi-expanded-title" title={displayTitle}>{displayTitle}</span>
-                            {playbackError && <p role="status">{playbackError}</p>}
+                            {playbackError && <p role="status">{t(playbackError)}</p>}
                         </div>
 
                         <div className="lofi-expanded-visual">
@@ -297,11 +299,11 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                                     {Array.from({ length: 7 }).map((_, i) => <div key={i} className="bar" />)}
                                 </div>
                             ) : (
-                                <span className="lofi-expanded-paused">{isStarting ? 'Starting...' : 'Paused'}</span>
+                                <span className="lofi-expanded-paused">{isStarting ? t("Starting...") : t("Paused")}</span>
                             )}
                         </div>
 
-                        <button className="lofi-expanded-play" onClick={togglePlay} aria-label={isPlaying || isStarting ? 'Pause' : 'Play'}>
+                        <button className="lofi-expanded-play" onClick={togglePlay} aria-label={isPlaying || isStarting ? t("Pause") : t("Play")}>
                             {isPlaying || isStarting ? (
                                 <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
                             ) : (
@@ -311,7 +313,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
 
                         {hasStations && (
                             <div className="lofi-expanded-stations">
-                                <div className="lofi-station-header">Stations</div>
+                                <div className="lofi-station-header">{t('Stations')}</div>
                                 <div className="lofi-station-list">
                                     {stationsList.map(station => (
                                         <button
@@ -349,7 +351,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                 {/* Station Menu Popover */}
                 {showMenu && (
                     <div className="lofi-station-menu">
-                        <div className="lofi-station-header">Stations</div>
+                        <div className="lofi-station-header">{t('Stations')}</div>
                         <div className="lofi-station-list">
                             {stationsList.map(station => (
                                 <button 
@@ -379,7 +381,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                 )}
 
                 <div className="lofi-ui">
-                    <button type="button" className={`lofi-play-btn ${isPlaying ? 'playing' : ''}`} onClick={togglePlay} aria-label={isPlaying || isStarting ? 'Pause' : 'Play'}>
+                    <button type="button" className={`lofi-play-btn ${isPlaying ? 'playing' : ''}`} onClick={togglePlay} aria-label={isPlaying || isStarting ? t("Pause") : t("Play")}>
                         {isPlaying || isStarting ? (
                             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                                 <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
@@ -402,8 +404,8 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                         }}
                         role="button"
                         tabIndex={0}
-                        aria-label="Change station"
-                        title="Click to change station"
+                        aria-label={t("Change station")}
+                        title={t("Click to change station")}
                     >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span className="lofi-title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', maxWidth: '155px' }} title={displayTitle}>{displayTitle}</span>
@@ -414,7 +416,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                         )}
                     </div>
                     <span className="lofi-status">
-                        {playbackError && <span role="status">{playbackError}</span>}
+                        {playbackError && <span role="status">{t(playbackError)}</span>}
                         {isPlaying ? (
                             <div className="lofi-visualizer">
                                 <div className="bar"></div>
@@ -424,7 +426,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                                 <div className="bar"></div>
                             </div>
                         ) : (
-                            <span style={{ fontSize: '0.75rem', opacity: 0.8, display: 'inline-block', marginTop: '4px' }}>{isStarting ? 'Starting...' : 'Paused'}</span>
+                            <span style={{ fontSize: '0.75rem', opacity: 0.8, display: 'inline-block', marginTop: '4px' }}>{isStarting ? t("Starting...") : t("Paused")}</span>
                         )}
                     </span>
                 </div>

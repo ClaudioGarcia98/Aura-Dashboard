@@ -1,3 +1,4 @@
+import { useTranslation } from '../i18n/useTranslation';
 import { ENGINES } from '../constants/searchEngines';
 import { useSearchSuggestions } from '../hooks/useSearchSuggestions';
 import { openUrl, httpUrl, normalizeUrl, faviconUrl } from '../utils/urls';
@@ -8,6 +9,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { safeStorage, safeJsonParse, safeJsonStringify } from '../utils/storage';
 
 export default memo(function SearchBox() {
+    const { t } = useTranslation();
     const { customEngines, speedDials, setSpeedDials, remoteSuggestions } = useSettingsStore(useShallow(s => ({ customEngines: s.customEngines, speedDials: s.speedDials, setSpeedDials: s.setSpeedDials, remoteSuggestions: s.remoteSuggestions })));
     const [query, setQuery] = useState('');
     const [activeEngine, setActiveEngine] = useState(null);
@@ -275,10 +277,10 @@ export default memo(function SearchBox() {
                 type="text"
                 id="searchInput"
                 ref={inputRef}
-                placeholder="Let's search something"
+                placeholder={t("Let's search something")}
                 autoComplete="off"
                 role="combobox"
-                aria-label="Search"
+                aria-label={t("Search")}
                 aria-autocomplete="list"
                 aria-expanded={showSuggestions && (query.trim() ? suggestions.length > 0 : recent.length > 0)}
                 aria-controls="searchOptions"
@@ -306,8 +308,8 @@ export default memo(function SearchBox() {
                             <button
                                 type="button"
                                 className="sug-add"
-                                title="Add to Speed Dial"
-                                aria-label="Add to Speed Dial"
+                                title={t("Add to Speed Dial")}
+                                aria-label={t("Add to Speed Dial")}
                                 onClick={(e) => addToSpeedDial(e, item)}
                             >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -319,7 +321,7 @@ export default memo(function SearchBox() {
                     ))
                 ) : (
                     <>
-                        {recent.length > 0 && <li className="sug-group">Recent</li>}
+                        {recent.length > 0 && <li className="sug-group">{t("Recent")}</li>}
                         {recent.map((item, idx) => (
                             <li
                                 key={item.query} id={`search-option-${idx}`} role="option" aria-selected={focusIdx === idx}
@@ -335,8 +337,8 @@ export default memo(function SearchBox() {
                                 <button
                                     type="button"
                                     className="sug-remove"
-                                    title="Remove"
-                                    aria-label={`Remove ${item.query} from history`}
+                                    title={t("Remove")}
+                                    aria-label={t('Remove {query} from history', { query: item.query })}
                                     onClick={(e) => removeHistory(e, item.query)}
                                 >
                                     ×

@@ -1,4 +1,5 @@
 @import './styles/theme-surfaces.css';
+@import './i18n/i18n.css';
 
 /* ── Reset ─────────────────────────────────────────── */
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }

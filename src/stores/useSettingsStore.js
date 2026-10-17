@@ -25,6 +25,9 @@ export const useSettingsStore = create(
             setRemoteSuggestions: (remoteSuggestions) => set({ remoteSuggestions }),
             setPauseBackground: (pauseBackground) => set({ pauseBackground }),
             // Actions
+            setLanguage:          (language)        => set({ language }),
+            setTimeZone:          (timeZone)        => set({ timeZone }),
+            setShowJapanTime:     (showJapanTime)   => set({ showJapanTime }),
             setTheme:             (theme)           => set({ theme }),
             setFont:              (font)            => set({ font }),
             setClockMode:         (clockMode)       => set({ clockMode }),
@@ -64,6 +67,8 @@ export const useSettingsStore = create(
             migrate: (state) => ({ ...readLegacySettings(safeStorage), ...sanitizeSettings(state) }),
             merge: (persisted, current) => ({ ...current, ...sanitizeSettings(persisted) }),
             partialize: (s) => ({
+                language: s.language,
+                timeZone: s.timeZone, showJapanTime: s.showJapanTime,
                 remoteSuggestions: s.remoteSuggestions, pauseBackground: s.pauseBackground,
                 theme: s.theme, font: s.font, clockMode: s.clockMode,
                 username: s.username, malUsername: s.malUsername, fallbackCity: s.fallbackCity,

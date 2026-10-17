@@ -1,6 +1,7 @@
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import MediaSettings from './MediaSettings';
+import BackgroundSettings from './BackgroundSettings';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 
 vi.mock('../../stores/useSettingsStore');
@@ -242,16 +243,16 @@ describe('MediaSettings — volume slider', () => {
     });
 });
 
-describe('MediaSettings — background controls', () => {
+describe('BackgroundSettings', () => {
     it('displays default animation name when gifName is not set', () => {
         mockState.gifName = '';
-        const { getByText } = render(<MediaSettings />);
+        const { getByText } = render(<BackgroundSettings />);
         expect(getByText('Default (animated_gif.mp4)')).toBeTruthy();
     });
 
     it('shows custom gif name and restore button when custom background is active', async () => {
         mockState.gifName = 'my-custom-bg.gif';
-        const { getByText } = render(<MediaSettings />);
+        const { getByText } = render(<BackgroundSettings />);
         expect(getByText('my-custom-bg.gif')).toBeTruthy();
         const restoreBtn = getByText('↺ Restore');
         expect(restoreBtn).toBeTruthy();

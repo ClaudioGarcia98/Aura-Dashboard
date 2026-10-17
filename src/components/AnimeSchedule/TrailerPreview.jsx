@@ -1,6 +1,8 @@
+import { useTranslation } from '../../i18n/useTranslation';
 import { memo } from 'react';
 
 export default memo(function TrailerPreview({ youtubeId, pos, muted, onMute, onUnmute, onMouseEnter, onMouseLeave, iframeRef }) {
+    const { t } = useTranslation();
     const origin = (typeof window !== 'undefined' && window.location?.origin && window.location.origin !== 'null')
         ? window.location.origin
         : 'http://localhost';
@@ -29,7 +31,7 @@ export default memo(function TrailerPreview({ youtubeId, pos, muted, onMute, onU
             <div style={{ borderRadius: '12px', overflow: 'hidden', width: '300px', height: '169px', position: 'relative' }}>
                 <iframe
                     ref={iframeRef}
-                    title="Anime Trailer Preview"
+                    title={t('Anime Trailer Preview')}
                     src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&enablejsapi=1&modestbranding=1&showinfo=0&rel=0&controls=0&playsinline=1&origin=${origin}`}
                     width="300"
                     height="169"
@@ -40,7 +42,7 @@ export default memo(function TrailerPreview({ youtubeId, pos, muted, onMute, onU
                 <button
                     type="button"
                     onClick={muted ? onUnmute : onMute}
-                    aria-label={muted ? 'Unmute' : 'Mute'}
+                    aria-label={muted ? t("Unmute") : t("Mute")}
                     style={{
                         position: 'absolute',
                         bottom: '8px',
@@ -59,7 +61,7 @@ export default memo(function TrailerPreview({ youtubeId, pos, muted, onMute, onU
                         transition: 'all 0.2s ease',
                         zIndex: 2,
                     }}
-                    title={muted ? 'Unmute' : 'Mute'}
+                    title={muted ? t("Unmute") : t("Mute")}
                 >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" />

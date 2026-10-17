@@ -1,7 +1,12 @@
+import { useTranslation } from '../../i18n/useTranslation';
 import { memo, useState, useEffect } from 'react';
 import { formatBroadcastTime, extractTrailerId } from '../../services/animeService';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { COMPACT_MEDIA_QUERY } from '../../constants/responsive';
+import { formatDuration } from '../../i18n/core';
+import AnimeSynopsis from './AnimeSynopsis';
+import { useTimeZone } from '../../hooks/useTimeZone';
+import { useSettingsStore } from '../../stores/useSettingsStore';
 
 const calculateTimeLeft = (broadcast, airingAt) => {
     if (airingAt && typeof airingAt === 'number') {
@@ -59,6 +64,7 @@ const calculateTimeLeft = (broadcast, airingAt) => {
 };
 
 const CountdownBadge = memo(function CountdownBadge({ broadcast, airingAt }) {
+    const { t, locale } = useTranslation();
     const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(broadcast, airingAt));
     useEffect(() => {
         if (!broadcast && !airingAt) return;
@@ -71,7 +77,7 @@ const CountdownBadge = memo(function CountdownBadge({ broadcast, airingAt }) {
             <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
                 <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
             </svg>
-            <span>{timeLeft}</span>
+            <span>{timeLeft === 'Out Now!' ? t(timeLeft) : formatDuration(locale, timeLeft)}</span>
         </div>
     );
 });
@@ -102,6 +108,13 @@ export default memo(function AnimeCard({
     onMouseEnter,
     onMouseLeave,
 }) {
+    const { t, locale } = useTranslation();
+    const providerTitle = locale === 'ja' ? anime.titles?.native || anime.title : anime.title;
+    const timeZone = useTimeZone();
+    const showJapanTime = useSettingsStore(state => state.showJapanTime) ?? true;
+    const use24hClock = useSettingsStore(state => state.use24hClock) ?? true;
+    const title = !providerTitle || providerTitle === 'Unknown Title' ? t('Unknown Title') : providerTitle;
+    const score = anime.score && Number.isFinite(Number(anime.score)) ? new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(Number(anime.score)) : null;
     const isTouchOrMobileMedia = useMediaQuery(COMPACT_MEDIA_QUERY);
     const isTouchOrMobile = isMobileProp !== undefined ? isMobileProp : isTouchOrMobileMedia;
     const { idPrefix, handleToggle } = useExpandToggle(anime, variant, isExpanded, onToggleExpand);
@@ -111,7 +124,7 @@ export default memo(function AnimeCard({
         onClick: handleToggle,
         onKeyDown: (e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleToggle(); } },
         role: 'button',
-        'aria-label': anime.title,
+        'aria-label': title,
         'aria-expanded': !!isExpanded,
         tabIndex: 0,
         onMouseEnter: (e) => {
@@ -137,15 +150,15 @@ export default memo(function AnimeCard({
                     <div className="anime-img-container">
                         <img
                             src={anime.images?.jpg?.image_url || anime.images?.jpg?.large_image_url || anime.images?.jpg?.small_image_url}
-                            alt={anime.title}
+                            alt={title}
                             loading="lazy"
                             decoding="async"
                         />
                     </div>
                     <div className="anime-info">
-                        <div className="anime-title">{anime.title}</div>
+                        <div className="anime-title">{title}</div>
                         <div className="anime-time">
-                            <span>🕒 {formatBroadcastTime(anime.broadcast?.time, anime.airingAt)}{anime.score ? ` • ⭐ ${anime.score}` : ''}</span>
+                            <span>🕒 {formatBroadcastTime(anime.broadcast?.time, anime.airingAt, locale, timeZone, showJapanTime, use24hClock)}{score ? ` • ⭐ ${score}` : ''}</span>
                         </div>
                         <CountdownBadge broadcast={anime.broadcast} airingAt={anime.airingAt} />
                     </div>
@@ -155,13 +168,13 @@ export default memo(function AnimeCard({
                         <div className="synopsis-inner">
                             <div className="anime-genres">
                                 {(anime.genres || []).slice(0, 3).map(g => (
-                                    <span key={g.mal_id} className="anime-tag">{g.name}</span>
+                                    <span key={g.mal_id} className="anime-tag">{t(g.name)}</span>
                                 ))}
                             </div>
                             {isTouchOrMobile && trailerId && isExpanded && (
                                 <div className="anime-card-trailer" onClick={(e) => e.stopPropagation()}>
                                     <iframe
-                                        title={`${anime.title} Trailer`}
+                                        title={t('{title} Trailer', { title })}
                                         src={`https://www.youtube.com/embed/${trailerId}?enablejsapi=1&modestbranding=1&rel=0&playsinline=1`}
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowFullScreen
@@ -169,10 +182,8 @@ export default memo(function AnimeCard({
                                     />
                                 </div>
                             )}
-                            <p className="anime-synopsis-text">{anime.synopsis || 'No synopsis available.'}</p>
-                            <a href={anime.url} target="_blank" rel="noopener noreferrer" className="anime-mal-link" onClick={(e) => e.stopPropagation()}>
-                                View on MyAnimeList ↗
-                            </a>
+                            <AnimeSynopsis anime={anime} />
+                            <a href={anime.url} target="_blank" rel="noopener noreferrer" className="anime-mal-link" onClick={(e) => e.stopPropagation()}> {t("View on MyAnimeList ↗")} </a>
                         </div>
                     </div>
                 </div>
@@ -189,12 +200,12 @@ export default memo(function AnimeCard({
         >
             <div className="tab-item-main">
                 <div className="tab-img-container">
-                    <img src={anime.images?.jpg?.small_image_url} alt={anime.title} loading="lazy" decoding="async" />
+                    <img src={anime.images?.jpg?.small_image_url} alt={title} loading="lazy" decoding="async" />
                 </div>
                 <div className="tab-item-info">
-                    <div className="tab-item-title">{anime.title}</div>
+                    <div className="tab-item-title">{title}</div>
                     <div className="tab-item-meta">
-                        <span>⭐ {anime.score || 'N/A'} • 🕒 {formatBroadcastTime(anime.broadcast?.time, anime.airingAt)}</span>
+                        <span>⭐ {score || t("N/A")} • 🕒 {formatBroadcastTime(anime.broadcast?.time, anime.airingAt, locale, timeZone, showJapanTime, use24hClock)}</span>
                     </div>
                 </div>
                 <div className="tab-item-timer">
@@ -207,7 +218,7 @@ export default memo(function AnimeCard({
                         {isTouchOrMobile && trailerId && isExpanded && (
                             <div className="anime-card-trailer" onClick={(e) => e.stopPropagation()}>
                                 <iframe
-                                    title={`${anime.title} Trailer`}
+                                    title={t('{title} Trailer', { title })}
                                     src={`https://www.youtube.com/embed/${trailerId}?enablejsapi=1&modestbranding=1&rel=0&playsinline=1`}
                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
@@ -215,10 +226,8 @@ export default memo(function AnimeCard({
                                 />
                             </div>
                         )}
-                        <p className="anime-synopsis-text">{anime.synopsis || 'No synopsis available.'}</p>
-                        <a href={anime.url} target="_blank" rel="noopener noreferrer" className="anime-mal-link" onClick={(e) => e.stopPropagation()}>
-                            View on MyAnimeList ↗
-                        </a>
+                        <AnimeSynopsis anime={anime} />
+                        <a href={anime.url} target="_blank" rel="noopener noreferrer" className="anime-mal-link" onClick={(e) => e.stopPropagation()}> {t("View on MyAnimeList ↗")} </a>
                     </div>
                 </div>
             </div>

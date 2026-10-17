@@ -1,6 +1,7 @@
+import { getScheduleDayFilter } from '../../services/anime/time';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useAnimeSchedule, getPortugalDayFilter } from '../useAnimeSchedule';
+import { useAnimeSchedule } from '../useAnimeSchedule';
 import { fetchDaySchedule, fetchUserWatchingList } from '../../services/animeService';
 
 vi.mock('zustand/react/shallow', () => ({
@@ -24,6 +25,7 @@ describe('useAnimeSchedule hook', () => {
         vi.useFakeTimers();
         vi.clearAllMocks();
         mockSettings.malRefreshKey = 0;
+        mockSettings.timeZone = 'UTC';
     });
 
     afterEach(() => {
@@ -31,10 +33,24 @@ describe('useAnimeSchedule hook', () => {
         vi.unstubAllGlobals();
     });
 
-    it('getPortugalDayFilter returns a valid weekday', () => {
-        const day = getPortugalDayFilter();
+    it('getScheduleDayFilter returns a valid weekday', () => {
+        const day = getScheduleDayFilter();
         const validDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
         expect(validDays).toContain(day);
+    });
+
+    it('refetches for the selected zone and rolls over at its midnight', async () => {
+        vi.setSystemTime(new Date('2026-10-17T14:59:00Z'));
+        fetchDaySchedule.mockResolvedValue([]);
+        const { result, rerender } = renderHook(() => useAnimeSchedule({ alwaysOpen: true }));
+        await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+        expect(result.current.activeDay).toBe('saturday');
+        act(() => { mockSettings.timeZone = 'Asia/Tokyo'; rerender(); });
+        await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+        expect(fetchDaySchedule).toHaveBeenLastCalledWith('saturday', expect.objectContaining({ timeZone: 'Asia/Tokyo' }));
+        await act(async () => { await vi.advanceTimersByTimeAsync(60000); });
+        expect(result.current.activeDay).toBe('sunday');
+        expect(fetchDaySchedule).toHaveBeenLastCalledWith('sunday', expect.objectContaining({ timeZone: 'Asia/Tokyo' }));
     });
 
     it.each([820, 1180, 1200, 1201, 1366])('only opens floating previews on desktop at %ipx with a mouse', async width => {

@@ -351,26 +351,23 @@ describe('formatBroadcastTime helper', () => {
         expect(formatBroadcastTime('abc:def')).toBe('abc:def');
     });
 
-    it('formats valid JST time with PT and JST labels', () => {
-        const result = formatBroadcastTime('23:30');
+    it('formats valid JST time with the selected zone offset and JST reference', () => {
+        const result = formatBroadcastTime('23:30', undefined, 'en-GB', 'Europe/Lisbon');
         expect(result).toContain('23:30 JST');
-        expect(result).toContain('PT');
-        expect(result).toMatch(/\d{2}:\d{2} PT \/ 23:30 JST/);
+        expect(result).toMatch(/\d{2}:\d{2} GMT(?:\+1)? \/ 23:30 JST/);
     });
 
-    it('formats single-line PT and JST format without day wrap', () => {
-        const result = formatBroadcastTime('00:45');
-        expect(result).not.toContain('Wed');
-        expect(result).not.toContain('Thu');
+    it('identifies the Japan weekday when the local day differs', () => {
+        const result = formatBroadcastTime(null, Date.UTC(2026, 9, 15, 15, 45) / 1000, 'en-GB', 'Europe/Lisbon');
         expect(result).toContain('00:45 JST');
-        expect(result).toContain('16:45 PT');
+        expect(result).toContain('16:45 GMT+1');
+        expect(result).toContain('(Fri)');
     });
 
-    it('formats exact PT and JST from airingAt epoch timestamp when provided', () => {
-        // 2026-10-15 14:30:00 UTC -> 15:30 PT / 23:30 JST
+    it('formats exact local and JST times from airingAt epoch timestamp when provided', () => {
         const airEpoch = Math.floor(Date.UTC(2026, 9, 15, 14, 30) / 1000);
-        const result = formatBroadcastTime(null, airEpoch);
-        expect(result).toBe('15:30 PT / 23:30 JST');
+        const result = formatBroadcastTime(null, airEpoch, 'en-GB', 'Europe/Lisbon');
+        expect(result).toBe('15:30 GMT+1 / 23:30 JST');
     });
 });
 

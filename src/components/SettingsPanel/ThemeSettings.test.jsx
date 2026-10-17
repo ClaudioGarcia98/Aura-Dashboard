@@ -1,6 +1,7 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ThemeSettings from './ThemeSettings';
+import ClockSettings from './ClockSettings';
 import { THEMES, FONTS, themeLabel } from '../../constants/settingsConstants';
 
 let mockState;
@@ -28,9 +29,14 @@ describe('ThemeSettings', () => {
     it('renders all theme buttons with active class on selected theme', () => {
         render(<ThemeSettings />);
 
+        const picker = screen.getByRole('group', { name: 'Themes' });
+        expect(within(picker).getAllByRole('button')).toHaveLength(Object.keys(THEMES).length);
+        expect(screen.queryByText('Dark glass collection')).toBeNull();
         Object.keys(THEMES).forEach((t) => {
-            const btn = screen.getByRole('button', { name: themeLabel(t), exact: true });
+            const btn = within(picker).getByRole('button', { name: themeLabel(t), exact: true });
             expect(btn).toBeTruthy();
+            expect(btn.getAttribute('aria-pressed')).toBe(String(t === 'nord'));
+            expect(within(btn).getByText(THEMES[t].description)).toBeTruthy();
             if (t === 'nord') {
                 expect(btn.classList.contains('active')).toBe(true);
             }
@@ -69,7 +75,7 @@ describe('ThemeSettings', () => {
     });
 
     it('renders clock styles and calls setClockMode on click', () => {
-        render(<ThemeSettings />);
+        render(<ClockSettings />);
 
         const analogBtn = screen.getByRole('button', { name: 'Analog' });
         expect(analogBtn).toBeTruthy();
@@ -79,7 +85,7 @@ describe('ThemeSettings', () => {
     });
 
     it('renders clock format options and calls setUse24hClock', () => {
-        render(<ThemeSettings />);
+        render(<ClockSettings />);
 
         const btn12 = screen.getByRole('button', { name: '12-Hour' });
         const btn24 = screen.getByRole('button', { name: '24-Hour' });

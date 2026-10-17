@@ -28,7 +28,7 @@ describe('fetchWithRetry', () => {
   it('exports correct constants and cache keys', async () => {
     const { WATCHING_CACHE_KEY, SCHEDULE_CACHE_KEY, ANILIST_GRAPHQL_ENDPOINT, MAL_RELAY_BASE } = await import('./api');
     expect(WATCHING_CACHE_KEY).toBe('dash_anime_watching_v2');
-    expect(SCHEDULE_CACHE_KEY).toBe('dash_anime_schedule_v3');
+    expect(SCHEDULE_CACHE_KEY).toBe('dash_anime_schedule_v4');
     expect(ANILIST_GRAPHQL_ENDPOINT).toBe('https://graphql.anilist.co');
     expect(MAL_RELAY_BASE).toBe('https://aura-mal-api.claudio091998.workers.dev');
   });

@@ -50,6 +50,7 @@ export function parseAniListSchedule(airingSchedules, dayFilter) {
             mal_id: malId,
             anilist_id: m.id,
             title: m.title?.english || m.title?.romaji || m.title?.native || 'Unknown Title',
+            titles: m.title || {},
             url: malUrl,
             images: {
                 jpg: {

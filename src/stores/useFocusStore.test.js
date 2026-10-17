@@ -9,6 +9,23 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 
+it('preserves priorities and timer when switching zones, then resets tasks at selected midnight', async () => {
+    vi.setSystemTime(new Date('2026-10-17T23:30:00Z'));
+    useFocusStore.setState(initialFocusState('UTC'));
+    useFocusStore.getState().addTask('Keep this priority');
+    useFocusStore.getState().start();
+    const deadline = useFocusStore.getState().endsAt;
+    useFocusStore.getState().refreshDay('Asia/Tokyo');
+    expect(useFocusStore.getState()).toMatchObject({ day: '2026-10-18', dayTimeZone: 'Asia/Tokyo', endsAt: deadline });
+    expect(useFocusStore.getState().tasks).toHaveLength(1);
+    await useFocusStore.persist.rehydrate();
+    expect(useFocusStore.getState().tasks).toHaveLength(1);
+    vi.setSystemTime(new Date('2026-10-18T15:00:00Z'));
+    useFocusStore.getState().refreshDay();
+    expect(useFocusStore.getState().tasks).toEqual([]);
+    expect(useFocusStore.getState().day).toBe('2026-10-19');
+});
+
 it('saves a maximum of three daily priorities and persists completion and deletion', async () => {
     const state = useFocusStore.getState();
     expect(state.addTask('  Finish the chapter  ')).toBe(true);

@@ -3,6 +3,8 @@ import { renderHook, act } from '@testing-library/react';
 
 let mockTheme = 'nord';
 
+vi.mock('../useTimeZone', () => ({ useTimeZone: () => 'Europe/London' }));
+
 vi.mock('../../stores/useSettingsStore', () => ({
     useSettingsStore: vi.fn((selector) => selector({ theme: mockTheme })),
 }));

@@ -61,7 +61,7 @@ export async function fetchWeatherData(useCelsius, city, signal) {
         const i = offset + 1;
         const max = d.daily.temperature_2m_max?.[i], min = d.daily.temperature_2m_min?.[i];
         if (!Number.isFinite(max) || !Number.isFinite(min)) return [];
-        return [{ day: new Date(`${date}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }),
+        return [{ date, day: new Date(`${date}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }),
             iconType: weatherIconType(d.daily.weather_code?.[i]), max: Math.round(max), min: Math.round(min) }];
     });
     const unit = useCelsius ? '°C' : '°F';

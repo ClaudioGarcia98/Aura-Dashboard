@@ -12,6 +12,12 @@ const preset = () => ({
     music: { selectedVideoId: 'Gu-g8FRG4Zs', stations: [{ name: 'Anime Lofi', videoId: 'Gu-g8FRG4Zs' }] },
 });
 const wallpaper = () => ({ kind: 'embedded', name: 'cozy.png', dataUrl: 'data:image/png;base64,aGVsbG8=' });
+
+it('preserves the recipient time zone and Japan reference when applying a shared preset', async () => {
+    useSettingsStore.setState({ timeZone: 'Asia/Tokyo', showJapanTime: false });
+    await applyAppearancePreset(JSON.stringify(preset()));
+    expect(useSettingsStore.getState()).toMatchObject({ timeZone: 'Asia/Tokyo', showJapanTime: false });
+});
 beforeEach(() => {
     localStorage.clear(); vi.clearAllMocks();
     useSettingsStore.setState({ ...structuredClone(DEFAULT_SETTINGS), backgroundUrl: 'blob:current', backgroundIsVideo: true });
@@ -49,15 +55,16 @@ it('exports without a wallpaper when the user opts out and never reads their upl
 });
 
 it('applies appearance and stations while preserving profiles, tasks, layout, volume and current wallpaper', async () => {
-    useSettingsStore.setState({ username: 'Alice', malUsername: 'alice-mal', volume: 0, showWeatherWidget: false, gifName: 'my-wallpaper.mp4' });
+    useSettingsStore.setState({ language: 'pt-BR', username: 'Alice', malUsername: 'alice-mal', volume: 0, showWeatherWidget: false, gifName: 'my-wallpaper.mp4' });
     useFocusStore.getState().addTask('Study');
     await applyAppearancePreset(JSON.stringify(preset()));
-    expect(useSettingsStore.getState()).toMatchObject({ theme: 'mocha', font: 'outfit', username: 'Alice', malUsername: 'alice-mal', volume: 0, showWeatherWidget: false, backgroundUrl: 'blob:current', gifName: 'my-wallpaper.mp4' });
+    expect(useSettingsStore.getState()).toMatchObject({ language: 'pt-BR', theme: 'mocha', font: 'outfit', username: 'Alice', malUsername: 'alice-mal', volume: 0, showWeatherWidget: false, backgroundUrl: 'blob:current', gifName: 'my-wallpaper.mp4' });
     expect(useFocusStore.getState().tasks[0].text).toBe('Study');
     expect(saveBackgroundBlob).not.toHaveBeenCalled();
     expect(deleteBackgroundBlob).not.toHaveBeenCalled();
     await useSettingsStore.persist.rehydrate();
     expect(useSettingsStore.getState().theme).toBe('mocha');
+    expect(useSettingsStore.getState().language).toBe('pt-BR');
 });
 
 it('restores the default wallpaper only when the preset asks for it', async () => {

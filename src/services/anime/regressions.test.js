@@ -11,12 +11,23 @@ afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 const response = json => ({ ok: true, json: async () => json });
 const media = id => ({ airingAt: 1792159200, media: { id, idMal: id, title: { english: `Show ${id}` } } });
 
+it('isolates cached schedules by time zone and never falls back to another zone on failure', async () => {
+    fetch.mockResolvedValue(response({ data: { Page: { airingSchedules: [] } } }));
+    await fetchDaySchedule('friday', { timeZone: 'Asia/Tokyo' });
+    await fetchDaySchedule('friday', { timeZone: 'Asia/Tokyo' });
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(getScheduleCache('UTC')).toEqual({});
+    fetch.mockRejectedValue(new Error('Offline'));
+    await expect(fetchDaySchedule('friday', { timeZone: 'UTC' })).rejects.toThrow('Offline');
+    expect(getScheduleCache('Asia/Tokyo').friday.timeZone).toBe('Asia/Tokyo');
+});
+
 it.each([
     ['2026-03-29T12:00:00Z', '2026-03-29T00:00:00.000Z', '2026-03-29T23:00:00.000Z', 23],
     ['2026-10-25T12:00:00Z', '2026-10-24T23:00:00.000Z', '2026-10-26T00:00:00.000Z', 25],
 ])('uses actual local midnight boundaries across DST: %s', (now, start, end, hours) => {
     vi.useFakeTimers(); vi.setSystemTime(new Date(now));
-    const range = getLocalDayRange('sunday');
+    const range = getLocalDayRange('sunday', 'Europe/Lisbon');
     expect(new Date(range.startUtcSec * 1000).toISOString()).toBe(start);
     expect(new Date(range.endUtcSec * 1000).toISOString()).toBe(end);
     expect(range.endUtcSec - range.startUtcSec).toBe(hours * 3600);

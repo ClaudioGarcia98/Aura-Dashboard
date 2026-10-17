@@ -2,9 +2,11 @@ import { useEffect } from 'react';
 import { useFocusStore } from '../stores/useFocusStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { playFocusChime } from '../services/focusChime';
+import { useTimeZone } from './useTimeZone';
 
 // Mounted once by App, independent of the current layout or mobile tab.
 export function useFocusSession(enabled = true) {
+    const timeZone = useTimeZone();
     const volume = useSettingsStore(state => state.volume);
     const active = useFocusStore(state => !!state.endsAt && state.mode === 'focus');
     useEffect(() => {
@@ -20,7 +22,7 @@ export function useFocusSession(enabled = true) {
         const update = () => {
             if (!mounted) return;
             const state = useFocusStore.getState();
-            state.refreshDay();
+            state.refreshDay(timeZone);
             const expired = state.endsAt && state.endsAt <= Date.now();
             if (expired) state.completeSession();
             if (!enabled) useFocusStore.getState().pause();
@@ -42,5 +44,5 @@ export function useFocusSession(enabled = true) {
             document.removeEventListener('visibilitychange', update);
             window.removeEventListener('storage', syncSaved);
         };
-    }, [enabled, volume]);
+    }, [enabled, volume, timeZone]);
 }

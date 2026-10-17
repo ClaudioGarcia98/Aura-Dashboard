@@ -3,8 +3,13 @@ import { memo, useState, useEffect, useRef } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useTranslation } from '../i18n/useTranslation';
+import { useTimeZone } from '../hooks/useTimeZone';
+import { zonedParts } from '../utils/timeZone';
 
 export default memo(function Clock() {
+    const { locale } = useTranslation();
+    const timeZone = useTimeZone();
     const { clockMode, use24hClock } = useSettingsStore(useShallow(s => ({ clockMode: s.clockMode, use24hClock: s.use24hClock })));
     const [timeStr, setTimeStr] = useState('00:00');
     const [ampmStr, setAmpmStr] = useState('');
@@ -14,18 +19,19 @@ export default memo(function Clock() {
     useEffect(() => {
         const updateDigital = () => {
             const now = new Date();
-            let hours = now.getHours();
+            const parts = zonedParts(now, timeZone);
+            let hours = parts.hour;
             if (!use24hClock) {
-                setAmpmStr(hours >= 12 ? 'PM' : 'AM');
+                setAmpmStr(new Intl.DateTimeFormat(locale, { timeZone, hour: 'numeric', hour12: true }).formatToParts(now).find(part => part.type === 'dayPeriod')?.value || '');
                 hours = hours % 12 || 12;
             } else {
                 setAmpmStr('');
             }
             setTimeStr(
-                String(hours).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
+                String(hours).padStart(2, '0') + ':' + String(parts.minute).padStart(2, '0')
             );
             setDateStr(
-                now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+                now.toLocaleDateString(locale, { timeZone, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
             );
         };
         
@@ -39,7 +45,7 @@ export default memo(function Clock() {
         
         startTimer();
         return () => clearTimeout(timeout);
-    }, [use24hClock]);
+    }, [use24hClock, locale, timeZone]);
 
     useEffect(() => {
         if (clockMode === 'digital') return;
@@ -98,7 +104,8 @@ export default memo(function Clock() {
                 ctx.stroke();
             };
 
-            const h = now.getHours() % 12, m = now.getMinutes(), s = now.getSeconds();
+            const parts = zonedParts(now, timeZone);
+            const h = parts.hour % 12, m = parts.minute, s = parts.second;
             const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#FFD26A';
             
             hand(((h + m / 60) / 12) * Math.PI * 2 - Math.PI / 2, r * 0.50, sz < 100 ? 2 : 3, 'rgba(255,255,255,0.92)');
@@ -121,7 +128,7 @@ export default memo(function Clock() {
             cancelAnimationFrame(reqId);
             clearTimeout(timeoutId);
         };
-    }, [clockMode]);
+    }, [clockMode, timeZone]);
 
     const isPhone = useMediaQuery('(max-width: 768px)');
 

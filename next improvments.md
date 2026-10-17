@@ -13,18 +13,9 @@ Remaining work for the **Good Morning (Aura)** personal start-page dashboard, or
 
 ---
 
-### 2. Multi-Language Support (i18n)
-
-* **What it is**: A lightweight dictionary-based localization system (`en`, `pt`, `es`, `ja`) with a language selector pill in **Settings → Appearance**.
-* **What it does**:
-  * Translates time-of-day greetings (*Good Morning / Bom Dia / Ohayou*), clock date strings, weather condition descriptions, anime airing day labels, and all Settings panel tabs and tooltips.
-  * Expands accessibility for international anime and productivity communities with near-zero bundle overhead.
-
----
-
 ## Priority 2 — Cozy Experience Polish (Optional Widgets)
 
-### 3. Ambient Sound Mixer
+### 2. Ambient Sound Mixer
 
 * **What it is**: A multi-track ambient audio layer (Rain, Thunder, Fireplace, Keyboard Typing, Coffee Shop, Night Crickets) with independent volume sliders.
 * **What it does**:
@@ -33,7 +24,7 @@ Remaining work for the **Good Morning (Aura)** personal start-page dashboard, or
 
 ---
 
-### 4. Interactive Desktop Companion / Mascot (Optional Widget)
+### 3. Interactive Desktop Companion / Mascot (Optional Widget)
 
 * **What it is**: An optional, toggleable pixel-art companion living in the corner of the dashboard (disabled by default for minimalists).
 * **What it does**:
@@ -44,7 +35,7 @@ Remaining work for the **Good Morning (Aura)** personal start-page dashboard, or
 
 ## Priority 3 — Future Monetization / "Aura Supporter" Tier
 
-### 5. Offline-First Cross-Device Cloud Sync
+### 4. Offline-First Cross-Device Cloud Sync
 
 * **What it is**: An opt-in background cloud synchronization service (via Supabase or Firebase) built on top of the local-first Zustand + IndexedDB storage engine.
 * **What it does**:

@@ -213,6 +213,6 @@ describe('Sidebar — static content', () => {
 
     it('renders JST tooltip text', () => {
         render(<Sidebar {...defaultProps} />);
-        expect(screen.getByText(/Japan Standard Time/)).toBeTruthy();
+        expect(screen.getByText(/Japan time \(JST\) is an optional reference/)).toBeTruthy();
     });
 });

@@ -1,16 +1,17 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { safeStorage } from '../utils/storage';
+import { deviceTimeZone, isTimeZone, zonedDateKey } from '../utils/timeZone';
 
 export const FOCUS_DURATIONS = { focus: 25 * 60 * 1000, break: 5 * 60 * 1000 };
-export const getFocusDay = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-export const initialFocusState = () => ({
-    day: getFocusDay(), tasks: [], mode: 'focus', remainingMs: FOCUS_DURATIONS.focus,
+export const getFocusDay = (date = new Date(), timeZone = deviceTimeZone()) => zonedDateKey(date, timeZone);
+export const initialFocusState = (timeZone = deviceTimeZone()) => ({
+    day: getFocusDay(new Date(), timeZone), dayTimeZone: timeZone, tasks: [], mode: 'focus', remainingMs: FOCUS_DURATIONS.focus,
     endsAt: null, chimeEnabled: true, notice: '',
 });
 
 export function sanitizeFocusState(raw) {
-    const defaults = initialFocusState();
+    const defaults = initialFocusState(isTimeZone(raw?.dayTimeZone) ? raw.dayTimeZone : deviceTimeZone());
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return defaults;
     const mode = raw.mode === 'break' ? 'break' : 'focus';
     const remainingMs = Number.isFinite(raw.remainingMs) && raw.remainingMs > 0
@@ -31,8 +32,11 @@ export function sanitizeFocusState(raw) {
 
 export const useFocusStore = create(persist((set, get) => ({
     ...initialFocusState(),
-    refreshDay: () => {
-        if (get().day !== getFocusDay()) set({ day: getFocusDay(), tasks: [] });
+    refreshDay: (timeZone = get().dayTimeZone) => {
+        const zone = isTimeZone(timeZone) ? timeZone : deviceTimeZone();
+        const day = getFocusDay(new Date(), zone);
+        if (get().dayTimeZone !== zone) set({ day, dayTimeZone: zone });
+        else if (get().day !== day) set({ day, tasks: [] });
     },
     addTask: text => {
         get().refreshDay();
@@ -79,6 +83,6 @@ export const useFocusStore = create(persist((set, get) => ({
 }), {
     name: 'dash_focus_v1', version: 1,
     storage: createJSONStorage(() => safeStorage),
-    partialize: ({ day, tasks, mode, remainingMs, endsAt, chimeEnabled }) => ({ day, tasks, mode, remainingMs, endsAt, chimeEnabled }),
+    partialize: ({ day, dayTimeZone, tasks, mode, remainingMs, endsAt, chimeEnabled }) => ({ day, dayTimeZone, tasks, mode, remainingMs, endsAt, chimeEnabled }),
     merge: (saved, current) => ({ ...current, ...sanitizeFocusState(saved) }),
 }));

@@ -19,10 +19,13 @@ import { useMediaQuery } from './hooks/useMediaQuery';
 import { COMPACT_MEDIA_QUERY } from './constants/responsive';
 import { useShallow } from 'zustand/react/shallow';
 import logoUrl from './assets/logo.png';
+import { useTranslation, useDocumentLanguage } from './i18n/useTranslation';
 
 import ErrorBoundary from './components/ErrorBoundary';
 
 export default function App() {
+    const { t } = useTranslation();
+    useDocumentLanguage();
     useBackgroundLoader();
     useThemeEffect();
     useFontEffect();
@@ -145,7 +148,7 @@ export default function App() {
             {booting && (
                 <div id="bootScreen" className="boot-screen" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                     <img src={logoUrl} alt="Aura" style={{ width: '80px', height: '80px', marginBottom: '24px', animation: 'pulseGlow 2s infinite', filter: 'drop-shadow(0 0 20px var(--accent-color))' }} />
-                    <div className="boot-logo">Hello, {username || 'Guest'}</div>
+                    <div className="boot-logo">{username ? t('Hello, {name}', { name: username }) : t('Hello')}</div>
                 </div>
             )}
             

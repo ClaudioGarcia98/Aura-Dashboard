@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
 import { THEMES } from '../constants/settingsConstants';
 import { useSettingsStore } from '../stores/useSettingsStore';
+import { useTimeZone } from './useTimeZone';
+import { zonedParts } from '../utils/timeZone';
 
 export function useThemeEffect() {
     const theme = useSettingsStore(s => s.theme);
+    const timeZone = useTimeZone();
 
     useEffect(() => {
         let intervalId;
@@ -24,7 +27,7 @@ export function useThemeEffect() {
         for (const [name, value] of Object.entries(tokens)) root.style.setProperty(name, value);
 
         const updateTimeAccent = () => {
-            const hr = new Date().getHours();
+            const hr = zonedParts(new Date(), timeZone).hour;
             let a = '#FFD26A', g = 'rgba(255,210,106,0.2)';
             if (hr >= 12 && hr < 18) { a = '#FF9F43'; g = 'rgba(255,159,67,0.2)'; }
             else if (hr >= 18 && hr < 22) { a = '#54a0ff'; g = 'rgba(84,160,255,0.2)'; }
@@ -47,5 +50,5 @@ export function useThemeEffect() {
         }
 
         return () => { if (intervalId) clearInterval(intervalId); };
-    }, [theme]);
+    }, [theme, timeZone]);
 }

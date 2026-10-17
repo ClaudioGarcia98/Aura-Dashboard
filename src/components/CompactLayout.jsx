@@ -1,3 +1,4 @@
+import { useTranslation } from '../i18n/useTranslation';
 import './CompactLayout.css';
 import ErrorBoundary from './ErrorBoundary';
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -24,6 +25,7 @@ import FocusWidget from './FocusWidget';
  * one screen with its own internal scroll, over a fixed background.
  */
 export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPlaying: externalPlaying = false, externalPlayer = false } = {}) {
+    const { t } = useTranslation();
     const {
         showWeatherWidget, showQuote, showSearchBox, showSpeedDial,
         showTop5Anime, showAnimeSidebar, showLofiPlayer, lofiStations,
@@ -48,12 +50,12 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
     const showFocusWidget = useSettingsStore(s => s.showFocusWidget ?? true);
 
     const tabs = useMemo(() => {
-        const t = [{ id: 'home', label: 'Home' }];
-        if (showAnimeSidebar) t.push({ id: 'anime', label: 'Anime' });
-        if (lofiAvailable) t.push({ id: 'lofi', label: 'Lofi' });
-        t.push({ id: 'settings', label: 'Settings' });
-        return t;
-    }, [showAnimeSidebar, lofiAvailable]);
+        const items = [{ id: 'home', label: t("Home") }];
+        if (showAnimeSidebar) items.push({ id: 'anime', label: t("Anime") });
+        if (lofiAvailable) items.push({ id: 'lofi', label: t("Lofi") });
+        items.push({ id: 'settings', label: t("Settings") });
+        return items;
+    }, [showAnimeSidebar, lofiAvailable, t]);
 
     // If the active tab's widget was just disabled, fall back to Home.
     const activeTab = tabs.some(t => t.id === tab) ? tab : 'home';
@@ -94,7 +96,7 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
             <TopNav tabs={tabs} activeTab={activeTab} onTabChange={selectTab} lofiPlaying={lofiPlaying} onFocus={() => setHiddenNavTab(null)} />
 
             {/* HOME */}
-            <div className={`tab-panel ${activeTab === 'home' ? 'active' : ''}`} role="tabpanel" id="panel-home" aria-labelledby="tab-home" aria-label="Home">
+            <div className={`tab-panel ${activeTab === 'home' ? 'active' : ''}`} role="tabpanel" id="panel-home" aria-labelledby="tab-home" aria-label={t("Home")}>
                 <div className="compact-home">
                     <div className="compact-hero">
                         <Greeting />
@@ -123,7 +125,7 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
 
             {/* ANIME */}
             {showAnimeSidebar && (
-                <div className={`tab-panel ${activeTab === 'anime' ? 'active' : ''}`} role="tabpanel" id="panel-anime" aria-labelledby="tab-anime" aria-label="Anime">
+                <div className={`tab-panel ${activeTab === 'anime' ? 'active' : ''}`} role="tabpanel" id="panel-anime" aria-labelledby="tab-anime" aria-label={t("Anime")}>
                     <ErrorBoundary><EmbeddedAnimeList
                         activeDay={anime.activeDay}
                         setActiveDay={anime.setActiveDay}
@@ -141,7 +143,7 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
             )}
 
             {/* SETTINGS */}
-            <div className={`tab-panel ${activeTab === 'settings' ? 'active' : ''}`} role="tabpanel" id="panel-settings" aria-labelledby="tab-settings" aria-label="Settings">
+            <div className={`tab-panel ${activeTab === 'settings' ? 'active' : ''}`} role="tabpanel" id="panel-settings" aria-labelledby="tab-settings" aria-label={t("Settings")}>
                 <div className="compact-settings">
                     <ErrorBoundary><SettingsPanel embedded /></ErrorBoundary>
                 </div>

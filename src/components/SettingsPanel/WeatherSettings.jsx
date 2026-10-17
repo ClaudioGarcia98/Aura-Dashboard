@@ -1,3 +1,4 @@
+import { useTranslation } from '../../i18n/useTranslation';
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSettingsStore } from '../../stores/useSettingsStore';
@@ -5,6 +6,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { fetchJson } from '../../services/http';
 
 export default function WeatherSettings({ active }) {
+    const { t } = useTranslation();
     const { fallbackCity, setFallbackCity, useCelsius, setUseCelsius } = useSettingsStore(useShallow(s => ({
         fallbackCity: s.fallbackCity, setFallbackCity: s.setFallbackCity, useCelsius: s.useCelsius, setUseCelsius: s.setUseCelsius,
     })));
@@ -40,11 +42,9 @@ export default function WeatherSettings({ active }) {
     return (<>
                 {/* Weather */}
                 <div className="sp-section">
-                    <div className="sp-label">Weather</div>
+                    <div className="sp-label">{t("Weather")}</div>
                     <div className="sp-group" style={{ position: 'relative' }}>
-                        <label htmlFor="fallbackCityInput" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            Your City
-                            <span
+                        <label htmlFor="fallbackCityInput" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}> {t("Your City")} <span
                                 ref={cityHintRef}
                                 style={{ display: 'inline-flex', alignItems: 'center', cursor: 'help', lineHeight: 1 }}
                                 onMouseEnter={() => {
@@ -63,7 +63,7 @@ export default function WeatherSettings({ active }) {
                             </span>
                             {cityHintPos && createPortal(
                                 <div className="settings-hint-card" style={{ top: cityHintPos.top, left: cityHintPos.left }}>
-                                    <p>This is only used when your browser's GPS location is unavailable or denied.</p>
+                                    <p>{t("This is only used when your browser's GPS location is unavailable or denied.")}</p>
                                 </div>,
                                 document.body
                             )}
@@ -71,7 +71,7 @@ export default function WeatherSettings({ active }) {
                         <input
                             type="text"
                             id="fallbackCityInput"
-                            placeholder="e.g. London"
+                            placeholder={t("e.g. London")}
                             value={citySearchText}
                             onChange={(e) => {
                                 const text = e.target.value;
@@ -88,7 +88,7 @@ export default function WeatherSettings({ active }) {
                         {showCityDropdown && (citySuggestions.length > 0 || isSearchingCity) && (
                             <ul className="city-suggestions-dropdown">
                                 {isSearchingCity ? (
-                                    <li className="city-suggestion-item">Searching...</li>
+                                    <li className="city-suggestion-item">{t("Searching...")}</li>
                                 ) : (
                                     citySuggestions.map((s, i) => (
                                         <li key={i} className="city-suggestion-item" role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => {
@@ -107,10 +107,10 @@ export default function WeatherSettings({ active }) {
                         )}
                     </div>
                                     <div className="sp-section" style={{ marginTop: '15px' }}>
-                        <div className="sp-label">Temperature Unit</div>
+                        <div className="sp-label">{t("Temperature Unit")}</div>
                         <div className="pill-row">
-                            <button type="button" className={`pill ${useCelsius ? 'active' : ''}`} onClick={() => setUseCelsius(true)}>Celsius (°C)</button>
-                            <button type="button" className={`pill ${!useCelsius ? 'active' : ''}`} onClick={() => setUseCelsius(false)}>Fahrenheit (°F)</button>
+                            <button type="button" className={`pill ${useCelsius ? 'active' : ''}`} onClick={() => setUseCelsius(true)}>{t("Celsius (°C)")}</button>
+                            <button type="button" className={`pill ${!useCelsius ? 'active' : ''}`} onClick={() => setUseCelsius(false)}>{t("Fahrenheit (°F)")}</button>
                         </div>
                     </div>
                 </div>

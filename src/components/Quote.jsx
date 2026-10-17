@@ -1,5 +1,7 @@
+import { useTranslation } from '../i18n/useTranslation';
 import './Quote.css';
 import { memo, useState, useEffect, useRef } from 'react';
+import { quoteTranslations } from '../i18n/quotes';
 
 const ANIME_QUOTES = [
     { text: "A lesson without pain is meaningless. For you cannot gain anything without sacrificing something else in return.", author: "Edward Elric", anime: "Fullmetal Alchemist" },
@@ -32,9 +34,10 @@ const ANIME_QUOTES = [
     { text: "Push through the pain, giving up hurts more.", author: "Vegeta", anime: "Dragon Ball Z" },
     { text: "The moment you think of giving up, think of the reason why you held on so long.", author: "Natsu Dragneel", anime: "Fairy Tail" },
     { text: "To know sorrow is not terrifying. What is terrifying is to know you can't go back to the happiness you could have.", author: "Matsumoto Rangiku", anime: "Bleach" }
-];
+].map((quote, localIndex) => ({ ...quote, localIndex }));
 
 export default memo(function Quote() {
+    const { t, locale } = useTranslation();
     const [quoteObj, setQuoteObj] = useState(() => {
         const randomIndex = Math.floor(Math.random() * ANIME_QUOTES.length);
         return ANIME_QUOTES[randomIndex];
@@ -42,6 +45,8 @@ export default memo(function Quote() {
     const [opacity, setOpacity] = useState(1);
     const transitionTimerRef = useRef(null);
     const isGeneratingRef = useRef(false);
+    const localeRef = useRef(locale);
+    useEffect(() => { localeRef.current = locale; }, [locale]);
 
     const generateNewQuote = async () => {
         if (isGeneratingRef.current) return;
@@ -50,6 +55,9 @@ export default memo(function Quote() {
 
         let newQuote = null;
         try {
+            // The remote quote provider only supplies English. Other locales use
+            // the bundled translations, without sending text to a translation service.
+            if (localeRef.current !== 'en') throw new Error('Use localized collection');
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 1000);
             const res = await fetch('https://animechan.io/api/v1/quotes/random', { signal: controller.signal });
@@ -92,22 +100,24 @@ export default memo(function Quote() {
     }, []);
 
     if (!quoteObj) return null;
+    const displayedQuote = locale !== 'en' && quoteObj.localIndex === undefined ? ANIME_QUOTES[0] : quoteObj;
+    const quoteText = quoteTranslations[locale]?.[displayedQuote.localIndex] || displayedQuote.text;
 
     return (
         <div 
             id="quote-container" 
             role="button"
-            aria-label="Click for a new quote"
-            title="Click for a new quote" 
+            aria-label={t("Click for a new quote")}
+            title={t("Click for a new quote")}
             onClick={generateNewQuote}
             style={{ opacity, transition: 'opacity 0.25s ease' }}
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); generateNewQuote(); } }}
         >
             <div className="quote-content">
-                <span className="quote-text">"{quoteObj.text}"</span>
+                <span className="quote-text">"{quoteText}"</span>
                 <span className="quote-author">
-                    {quoteObj.author} <span className="quote-anime">({quoteObj.anime})</span>
+                    {displayedQuote.author} <span className="quote-anime">({displayedQuote.anime})</span>
                 </span>
             </div>
         </div>

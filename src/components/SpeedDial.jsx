@@ -1,3 +1,4 @@
+import { useTranslation } from '../i18n/useTranslation';
 import './SpeedDial.css';
 import { memo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
@@ -6,6 +7,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { usePointerReorder } from '../hooks/usePointerReorder';
 
 export default memo(function SpeedDial() {
+    const { t } = useTranslation();
     const { speedDials, setSpeedDials } = useSettingsStore(useShallow(s => ({ speedDials: s.speedDials, setSpeedDials: s.setSpeedDials })));
     const safeSpeedDials = Array.isArray(speedDials) ? speedDials : [];
 
@@ -38,14 +40,14 @@ export default memo(function SpeedDial() {
 
     return (
         <>
-            <nav className="speed-dial" aria-label="Quick Links">
+            <nav className="speed-dial" aria-label={t("Quick Links")}>
                 {safeSpeedDials.length === 0 ? (
                     <button 
                         type="button"
                         className="add-dial-empty-btn"
                         onClick={() => window.dispatchEvent(new Event('open-settings-dials'))}
-                        title="Add Speed Dial"
-                        aria-label="Add Speed Dial"
+                        title={t("Add Speed Dial")}
+                        aria-label={t("Add Speed Dial")}
                     >
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -122,8 +124,8 @@ export default memo(function SpeedDial() {
                                                 e.stopPropagation();
                                                 setSpeedDials(safeSpeedDials.filter(d => d.id !== link.id));
                                             }}
-                                            title="Remove Speed Dial"
-                                            aria-label="Remove Speed Dial"
+                                            title={t("Remove Speed Dial")}
+                                            aria-label={t("Remove Speed Dial")}
                                         >
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -138,8 +140,8 @@ export default memo(function SpeedDial() {
                             type="button"
                             className="speed-dial-add-btn"
                             onClick={() => window.dispatchEvent(new Event('open-settings-dials'))}
-                            title="Add Speed Dial"
-                            aria-label="Add Speed Dial"
+                            title={t("Add Speed Dial")}
+                            aria-label={t("Add Speed Dial")}
                         >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="12" y1="5" x2="12" y2="19"></line>

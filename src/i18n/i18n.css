@@ -1,0 +1,21 @@
+.language-settings .sp-label { display: block; }
+.language-settings select { display: block; width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--glass-border); border-radius: var(--radius-md); background: var(--bg-base); color: var(--text-primary); font: inherit; font-size: 0.85rem; }
+.language-settings select:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 3px; }
+.language-settings p { margin-top: 8px; color: var(--text-secondary); font-size: 0.72rem; line-height: 1.6; }
+.settings-panel .pill { white-space: normal; text-align: center; overflow-wrap: anywhere; min-width: 0; }
+.settings-panel .sp-group input { min-width: 0; }
+.settings-panel .sp-group > div { gap: 8px; }
+.settings-panel .sp-group > div > div:has(> .pill) { flex-shrink: 0; }
+.settings-panel .sp-label, .settings-panel .sp-mal-message, .reset-modal p, .reset-modal h3 { overflow-wrap: anywhere; }
+.as-day-btn { min-width: 0; overflow-wrap: anywhere; text-align: center; }
+.focus-heading > div, .focus-controls { min-width: 0; }
+.focus-modes { max-width: 100%; }
+.focus-modes button { min-width: 0; }
+.focus-start { white-space: normal; }
+:is(:lang(ja), :lang(ko)) :is(.sp-label, #greeting, .focus-eyebrow, .focus-tasks-heading > span:first-child) { letter-spacing: normal; }
+:is(:lang(ja), :lang(ko)) :is(.sp-section, .focus-widget, .anime-info, .quote-content) { line-height: 1.65; }
+@media (max-width: 480px) {
+    .as-day-btn { font-size: 0.63rem; padding-inline: 1px; }
+    .focus-controls { flex-wrap: wrap; }
+    .focus-start { max-width: 100%; }
+}

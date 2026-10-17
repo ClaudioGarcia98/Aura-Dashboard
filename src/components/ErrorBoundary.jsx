@@ -1,4 +1,10 @@
 import { Component } from 'react';
+import { useTranslation } from '../i18n/useTranslation';
+
+function LocalizedText({ text }) {
+    const { t } = useTranslation();
+    return t(text);
+}
 
 export default class ErrorBoundary extends Component {
     constructor(props) {
@@ -34,7 +40,7 @@ export default class ErrorBoundary extends Component {
                     justifyContent: 'center',
                     gap: '12px'
                 }}>
-                    <span>Something went wrong with this component.</span>
+                    <span><LocalizedText text="Something went wrong with this component." /></span>
                     <button
                         type="button"
                         onClick={() => this.setState({ hasError: false, error: null })}
@@ -48,7 +54,7 @@ export default class ErrorBoundary extends Component {
                             fontSize: '0.75rem'
                         }}
                     >
-                        Retry
+                        <LocalizedText text="Retry" />
                     </button>
                 </div>
             );

@@ -1,3 +1,4 @@
+import { useTranslation } from '../i18n/useTranslation';
 import './TopNav.css';
 import { memo } from 'react';
 import logoUrl from '../assets/logo.png';
@@ -34,8 +35,9 @@ const ICONS = {
 };
 
 export default memo(function TopNav({ tabs, activeTab, onTabChange, lofiPlaying, onFocus }) {
+    const { t } = useTranslation();
     return (
-        <nav className="top-nav" aria-label="Primary" onFocusCapture={onFocus}>
+        <nav className="top-nav" aria-label={t("Primary")} onFocusCapture={onFocus}>
             <div className="top-nav-brand">
                 <img src={logoUrl} alt="Aura" className="top-nav-logo" />
                 <span className="top-nav-title">Aura</span>
@@ -60,7 +62,7 @@ export default memo(function TopNav({ tabs, activeTab, onTabChange, lofiPlaying,
                                 const index = tabs.findIndex(item => item.id === tab.id);
                                 const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length
                                     : event.key === 'ArrowLeft' ? (index - 1 + tabs.length) % tabs.length
-                                        : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
+                                        : event.key === t("Home") ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
                                 if (next < 0) return;
                                 event.preventDefault(); onTabChange(tabs[next].id);
                                 document.getElementById(`tab-${tabs[next].id}`)?.focus();

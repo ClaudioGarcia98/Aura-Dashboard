@@ -1,5 +1,7 @@
 import { THEMES, FONTS } from '../constants/settingsConstants';
 import { httpUrl, videoId } from '../utils/urls';
+import { LANGUAGES } from '../i18n/core';
+import { isTimeZone } from '../utils/timeZone';
 
 export const DEFAULT_STATIONS = [
     { videoId: 'lTRiuFIWV54', name: 'Lofi Girl' },
@@ -11,6 +13,8 @@ export const DEFAULT_STATIONS = [
 ].map((station, i) => ({ id: i + 1, ...station }));
 
 export const DEFAULT_SETTINGS = {
+    language: 'auto',
+    timeZone: 'auto', showJapanTime: true,
     theme: 'aurora', font: 'default', clockMode: 'digital', username: '',
     malUsername: '', fallbackCity: '', use24hClock: true, useCelsius: true,
     gifName: '', lofiId: 'Gu-g8FRG4Zs', lofiStations: DEFAULT_STATIONS,
@@ -24,6 +28,8 @@ const record = value => value && typeof value === 'object' && !Array.isArray(val
 const text = value => typeof value === 'string' && value.length <= 500;
 const id = value => (typeof value === 'string' && value.length > 0 && value.length <= 100) || (typeof value === 'number' && Number.isFinite(value));
 const checks = {
+    language: value => value === 'auto' || Object.hasOwn(LANGUAGES, value),
+    timeZone: value => value === 'auto' || isTimeZone(value),
     theme: value => typeof value === 'string' && Object.hasOwn(THEMES, value),
     font: value => typeof value === 'string' && Object.hasOwn(FONTS, value),
     clockMode: value => ['digital', 'analog', 'both'].includes(value),

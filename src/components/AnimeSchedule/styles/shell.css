@@ -58,7 +58,9 @@
 }
 .as-header-titles {
     display: flex; flex-direction: column; gap: 4px;
+    min-width: 0;
 }
+.as-time-zone { font-size: 0.68rem; color: var(--text-secondary); line-height: 1.5; overflow-wrap: anywhere; }
 .as-header-titles h2 {
     margin: 0;
     font-size: 1.5rem;

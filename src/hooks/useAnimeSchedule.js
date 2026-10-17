@@ -5,24 +5,22 @@ import { fetchDaySchedule, extractTrailerId } from '../services/animeService';
 import { useWatchingList } from './useWatchingList';
 import { safeStorage } from '../utils/storage';
 import { COMPACT_MEDIA_QUERY } from '../constants/responsive';
-
-const DAY_FILTERS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-export const getPortugalDayFilter = () => {
-    try {
-        const ptDay = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Lisbon', weekday: 'long' }).format(new Date()).toLowerCase();
-        return DAY_FILTERS.includes(ptDay) ? ptDay : DAY_FILTERS[(new Date().getDay() + 6) % 7];
-    } catch {
-        return DAY_FILTERS[(new Date().getDay() + 6) % 7];
-    }
-};
+import { useTimeZone } from './useTimeZone';
+import { getScheduleDayFilter } from '../services/anime/time';
+import { zonedDateKey } from '../utils/timeZone';
 
 export function useAnimeSchedule({ alwaysOpen = false, enabled = true } = {}) {
+    const timeZone = useTimeZone();
     const { volume, malUsername, setMalError, setMalLoading, setMalSuccess, setMalStatus, setMalSavedAt } = useSettingsStore(useShallow(s => ({ volume: s.volume, malUsername: s.malUsername, setMalError: s.setMalError, setMalLoading: s.setMalLoading, setMalSuccess: s.setMalSuccess, setMalStatus: s.setMalStatus, setMalSavedAt: s.setMalSavedAt })));
 
-    const [todayDay, setTodayDay] = useState(getPortugalDayFilter);
+    const [calendarNow, setCalendarNow] = useState(Date.now);
+    const todayDay = getScheduleDayFilter(timeZone, new Date(calendarNow));
+    const todayDate = zonedDateKey(new Date(calendarNow), timeZone);
     const [isSidebarOpen, setIsSidebarOpen] = useState(alwaysOpen);
     const [expandedAnime, setExpandedAnime] = useState(null);
-    const [activeDay, setActiveDay] = useState(todayDay);
+    const [selection, setSelection] = useState(() => ({ day: todayDay, date: todayDate, timeZone }));
+    const activeDay = selection.timeZone === timeZone && selection.date === todayDate ? selection.day : todayDay;
+    const setActiveDay = useCallback(day => setSelection({ day, date: todayDate, timeZone }), [todayDate, timeZone]);
 
     const [todayData, setTodayData] = useState([]);
     const [todayLoading, setTodayLoading] = useState(true);
@@ -78,28 +76,26 @@ export function useAnimeSchedule({ alwaysOpen = false, enabled = true } = {}) {
         return () => document.removeEventListener('mousedown', handleCollapseClick);
     }, [expandedAnime]);
 
-    // Check day rollover every minute and when window regains focus
+    // Refresh the calendar on minute boundaries and after travel/system changes.
     useEffect(() => {
-        const checkDay = () => {
-            const currentDay = getPortugalDayFilter();
-            setTodayDay(prev => {
-                if (prev !== currentDay) {
-                    setActiveDay(currentDay);
-                    return currentDay;
-                }
-                return prev;
-            });
+        let mounted = true;
+        let timer;
+        const checkDay = () => { if (mounted) setCalendarNow(Date.now()); };
+        const tick = () => {
+            if (!mounted) return;
+            checkDay();
+            timer = setTimeout(tick, 60000 - Date.now() % 60000);
         };
-
-        const interval = setInterval(checkDay, 60000);
+        queueMicrotask(tick);
         window.addEventListener('focus', checkDay);
         document.addEventListener('visibilitychange', checkDay);
         return () => {
-            clearInterval(interval);
+            mounted = false;
+            clearTimeout(timer);
             window.removeEventListener('focus', checkDay);
             document.removeEventListener('visibilitychange', checkDay);
         };
-    }, []);
+    }, [timeZone]);
 
     // Schedule and watching are independent: a stalled provider cannot block both.
     useEffect(() => {
@@ -107,7 +103,7 @@ export function useAnimeSchedule({ alwaysOpen = false, enabled = true } = {}) {
         const controller = new AbortController();
         let active = true;
         queueMicrotask(() => { if (active) { setTodayLoading(true); setTodayError(false); setTodayStale(false); } });
-        fetchDaySchedule(todayDay, { signal: controller.signal }).then(data => {
+        fetchDaySchedule(todayDay, { signal: controller.signal, timeZone }).then(data => {
             if (active) {
                 setTodayStale(!!data?.stale);
                 setTodayData([...new Map(data.filter(Boolean).map(item => [item.mal_id, item])).values()]);
@@ -115,7 +111,7 @@ export function useAnimeSchedule({ alwaysOpen = false, enabled = true } = {}) {
         }).catch(() => { if (active) setTodayError(true); })
             .finally(() => { if (active) setTodayLoading(false); });
         return () => { active = false; controller.abort(); };
-    }, [todayDay, enabled]);
+    }, [todayDay, todayDate, timeZone, enabled]);
 
     useEffect(() => {
         const handleClickOutside = e => {
@@ -136,7 +132,7 @@ export function useAnimeSchedule({ alwaysOpen = false, enabled = true } = {}) {
             setSidebarError(false);
             setSidebarStale(false);
             try {
-                const data = await fetchDaySchedule(activeDay, { signal: controller.signal });
+                const data = await fetchDaySchedule(activeDay, { signal: controller.signal, timeZone });
                 const uniqueSorted = Array.from(new Map(data.map(item => [item.mal_id, item])).values())
                     .filter(a => a.broadcast && a.broadcast.time)
                     .sort((a, b) => (a.airingAt || 0) - (b.airingAt || 0));
@@ -152,7 +148,7 @@ export function useAnimeSchedule({ alwaysOpen = false, enabled = true } = {}) {
         };
         loadSidebarData();
         return () => { isMounted = false; controller.abort(); };
-    }, [activeDay, isSidebarOpen, alwaysOpen, enabled]);
+    }, [activeDay, todayDate, timeZone, isSidebarOpen, alwaysOpen, enabled]);
 
     // Trailer: auto-unmute when a new trailer opens (if user preference is unmuted)
     useEffect(() => {

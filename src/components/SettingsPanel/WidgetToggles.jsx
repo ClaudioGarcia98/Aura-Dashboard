@@ -1,3 +1,4 @@
+import { useTranslation } from '../../i18n/useTranslation';
 import { memo } from 'react';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -25,6 +26,7 @@ const SETTER_KEYS = {
 };
 
 export default memo(function WidgetToggles() {
+    const { t } = useTranslation();
     const state = useSettingsStore(useShallow(s => ({
         showWeatherWidget: s.showWeatherWidget, setShowWeatherWidget: s.setShowWeatherWidget,
         showQuote:         s.showQuote,         setShowQuote:         s.setShowQuote,
@@ -39,7 +41,7 @@ export default memo(function WidgetToggles() {
 
     return (
         <div className="sp-section">
-            <div className="sp-label">Dashboard Layout</div>
+            <div className="sp-label">{t("Dashboard Layout")}</div>
             <div className="sp-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {WIDGETS.map(({ label, key }) => {
                     const setter = state[SETTER_KEYS[key]];
@@ -48,15 +50,15 @@ export default memo(function WidgetToggles() {
                     const effectiveValue = showDisabled ? false : value;
                     return (
                         <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>{label}</span>
+                            <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', minWidth: 0, overflowWrap: 'anywhere' }}>{t(label)}</span>
                             <div style={{ display: 'flex', gap: '4px' }}>
-                                <button className={`pill ${!effectiveValue ? 'active' : ''}`} onClick={() => setter(false)}>Hide</button>
+                                <button className={`pill ${!effectiveValue ? 'active' : ''}`} onClick={() => setter(false)}>{t("Hide")}</button>
                                 <button
                                     className={`pill ${effectiveValue ? 'active' : ''}`}
                                     onClick={() => !showDisabled && setter(true)}
                                     disabled={showDisabled}
                                     style={showDisabled ? { opacity: 0.35, cursor: 'not-allowed' } : undefined}
-                                >Show</button>
+                                >{t("Show")}</button>
                             </div>
                         </div>
                     );

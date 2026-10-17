@@ -2,4 +2,4 @@
 export { getScheduleCache, setScheduleCache, fetchDaySchedule } from './anime/schedule';
 export { fetchUserWatchingList, clearMalMemoryCache } from './anime/watching';
 export { parseMALItems, parseAniListSchedule, extractTrailerId } from './anime/parsers';
-export { getLocalDayRange, formatBroadcastTime } from './anime/time';
+export { getLocalDayRange, formatBroadcastTime, getScheduleDayFilter } from './anime/time';
