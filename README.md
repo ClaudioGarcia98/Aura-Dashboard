@@ -17,18 +17,20 @@ Live anime airing schedules, MyAnimeList watchlist sync, ambient Lofi radio, wea
 
 ## 🖥️ Visual Showcase
 
-### Desktop Start Page (Aurora / Sunset Theme)
+### Desktop Start Page with Today's Focus (Aurora)
 ![Aura Desktop Dashboard](.github/assets/desktop-hero.jpg)
 
 ### Live Anime Schedule & Dynamic Glassmorphism Themes
-| 📺 Weekly Anime Schedule (`AniList` + `MAL Sync`) | 🎨 Nine Themes & Shareable Appearance Presets |
+| 📺 Weekly Anime Schedule with Local Time Zones | 🎨 Nine Themes in One Gallery |
 | :---: | :---: |
 | ![Anime Schedule Sidebar](.github/assets/desktop-schedule.jpg) | ![Dynamic Themes & Settings](.github/assets/desktop-themes.jpg) |
 
 ### Mobile-First Compact Tabbed Shell
-| 📱 Mobile Home Tab | 📅 Mobile Anime Schedule Tab |
-| :---: | :---: |
-| <img src=".github/assets/mobile-home.jpg" alt="Mobile Home Tab" width="360" /> | <img src=".github/assets/mobile-schedule.jpg" alt="Mobile Anime Schedule Tab" width="360" /> |
+| 📱 Home & Focus Timer | 📅 Anime Schedule | ⚙️ Reorganized Settings |
+| :---: | :---: | :---: |
+| <img src=".github/assets/mobile-home.jpg" alt="Mobile Home tab with clock, focus timer and daily priorities" width="280" /> | <img src=".github/assets/mobile-schedule.jpg" alt="Mobile anime calendar with local broadcast times and optional Japan reference" width="280" /> | <img src=".github/assets/mobile-settings.jpg" alt="Mobile Settings with language, profile and MyAnimeList connection near the top" width="280" /> |
+
+Current screenshots captured at **1600 × 1200** (desktop) and **412 × 915** (phone viewport). The wallpaper is animated, so its frame and time-based accent colors can vary.
 
 ---
 
