@@ -18,15 +18,25 @@ beforeEach(() => {
         showTop5Anime:     true, setShowTop5Anime:     vi.fn(),
         showAnimeSidebar:  true, setShowAnimeSidebar:  vi.fn(),
         showLofiPlayer:    true, setShowLofiPlayer:    vi.fn(),
+        showFocusWidget:   true, setShowFocusWidget:   vi.fn(),
         lofiStations: [{ id: 1, videoId: 'abc', name: 'Test' }],
     };
 });
 
 describe('WidgetToggles', () => {
-    it('renders all 7 widget rows', () => {
+    it('shows and hides the Focus widget using its own setting', () => {
+        const { getByText } = render(<WidgetToggles />);
+        const row = getByText('Focus Timer & Tasks').closest('div[style]');
+        const [hide, show] = row.querySelectorAll('button');
+        fireEvent.click(hide);
+        expect(mockState.setShowFocusWidget).toHaveBeenCalledWith(false);
+        fireEvent.click(show);
+        expect(mockState.setShowFocusWidget).toHaveBeenCalledWith(true);
+    });
+    it('renders all 8 widget rows', () => {
         const { container } = render(<WidgetToggles />);
         const rows = container.querySelectorAll('[style*="justify-content: space-between"]');
-        expect(rows.length).toBe(7);
+        expect(rows.length).toBe(8);
     });
 
     it('renders Lofi Player row when stations is empty', () => {

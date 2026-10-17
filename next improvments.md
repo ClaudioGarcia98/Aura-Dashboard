@@ -2,19 +2,6 @@
 
 A curated, priority-ordered roadmap of feature improvements, distribution upgrades, and future monetization paths for the **Good Morning (Aura)** personal start-page dashboard.
 
----
-
-## Priority 1 — Immediate High-Impact (Free & Community Growth)
-
-### 1. Focus / Pomodoro Timer & "Today's Focus" Tasks
-* **What it is**: A built-in, minimalist productivity timer (`25m Focus / 5m Break`) and a lightweight 1–3 item daily task checklist.
-* **What it does**:
-  * Pairs naturally with the existing Lofi YouTube player and ambient clock so users can study or work directly inside the dashboard.
-  * Automatically dims non-essential widgets during an active Focus session to reduce distractions.
-  * Plays a soft completion chime when a session ends and persists daily focus tasks locally in `localStorage`.
-
----
-
 ## Priority 2 — Distribution & Reach (Free Core Enhancements)
 
 ### 2. Browser "New Tab" Extension Packaging (Chrome, Edge & Firefox)

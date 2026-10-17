@@ -45,6 +45,7 @@ beforeEach(() => {
 afterEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
 });
 
 describe('AnimeCard — sidebar variant rendering', () => {
@@ -382,6 +383,31 @@ describe('AnimeCard — in-card embedded trailer', () => {
             url: 'https://www.youtube.com/watch?v=sampleYt123'
         }
     };
+
+    it.each([
+        [390, 844, false], [820, 1180, false], [1180, 820, false],
+        [1200, 800, false], [1366, 1024, true], [1600, 1000, true],
+    ])('uses in-card trailers at %ix%i with touch=%s in both lists', (width, _height, touch) => {
+        vi.stubGlobal('matchMedia', vi.fn(query => ({
+            matches: width <= Number(query.match(/max-width: (\d+)px/)?.[1]) || touch,
+            addEventListener: vi.fn(), removeEventListener: vi.fn(),
+        })));
+        for (const variant of ['today', 'sidebar']) {
+            const onMouseEnter = vi.fn();
+            const onToggleExpand = vi.fn();
+            const { container, rerender, unmount } = render(
+                <AnimeCard {...defaultProps} anime={animeWithTrailer} variant={variant} onMouseEnter={onMouseEnter} onToggleExpand={onToggleExpand} />
+            );
+            fireEvent.mouseEnter(container.firstChild);
+            expect(onMouseEnter).not.toHaveBeenCalled();
+            expect(container.querySelector('iframe')).toBeNull();
+            fireEvent.click(container.firstChild);
+            expect(onToggleExpand).toHaveBeenCalledWith({ id: 1, source: variant });
+            rerender(<AnimeCard {...defaultProps} anime={animeWithTrailer} variant={variant} isExpanded />);
+            expect(container.querySelector('.anime-card-trailer iframe').src).toContain('sampleYt123');
+            unmount();
+        }
+    });
 
     it('renders iframe trailer inside card when isExpanded is true on mobile (sidebar variant)', () => {
         const { container } = render(

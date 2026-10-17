@@ -55,6 +55,21 @@ it('paginates complete MAL lists before returning them', async () => {
     expect(await fetchUserWatchingList('large')).toHaveLength(301);
 });
 
+it('requests live relay pages on the first sync and bypasses memory on a single refresh', async () => {
+    vi.stubGlobal('window', { location: { hostname: 'claudiogarcia98.github.io' } });
+    fetch.mockResolvedValueOnce(response([{ anime_id: 1, anime_title: 'Existing show' }]))
+        .mockResolvedValueOnce(response([{ anime_id: 1, anime_title: 'Existing show' }, { anime_id: 2, anime_title: 'New show' }]));
+    expect(await fetchUserWatchingList('alice')).toHaveLength(1);
+    expect(await fetchUserWatchingList('alice')).toHaveLength(1);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(await fetchUserWatchingList('alice', { force: true })).toHaveLength(2);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    for (const [, options] of fetch.mock.calls) {
+        expect(options.cache).toBe('no-store');
+        expect(options.headers['Cache-Control']).toBe('no-cache');
+    }
+});
+
 it('allows the local proxy to finish a cold connection taking over 15 seconds', async () => {
     vi.useFakeTimers();
     vi.stubGlobal('window', { location: { hostname: '127.0.0.1' } });

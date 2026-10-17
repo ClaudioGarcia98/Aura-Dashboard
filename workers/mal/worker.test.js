@@ -74,6 +74,23 @@ it('keeps usernames and page offsets separate in the cache', async () => {
     expect(entries.size).toBe(3);
 });
 
+it.each(['no-cache', 'no-store'])('bypasses a saved page on %s and replaces it with the live list', async directive => {
+    let saved = json([item(1)]);
+    const cache = {
+        match: vi.fn(async () => saved.clone()),
+        put: vi.fn(async (_key, value) => { saved = value; }),
+    };
+    const fetcher = vi.fn(async () => json([item(1), item(2)]));
+    const refreshed = await handleRequest(request(undefined, { headers: { Origin: origin, 'Cache-Control': directive } }), { cache, fetcher });
+    expect((await refreshed.json()).map(anime => anime.anime_id)).toEqual([1, 2]);
+    expect(refreshed.headers.get('X-Aura-Cache')).toBe('MISS');
+    expect(cache.match).not.toHaveBeenCalled();
+    const next = await handleRequest(request(), { cache, fetcher });
+    expect((await next.json()).map(anime => anime.anime_id)).toEqual([1, 2]);
+    expect(next.headers.get('X-Aura-Cache')).toBe('HIT');
+    expect(fetcher).toHaveBeenCalledTimes(1);
+});
+
 it.each([
     [],
     { error: 'Private' },

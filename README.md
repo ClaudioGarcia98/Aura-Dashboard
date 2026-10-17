@@ -82,9 +82,12 @@ Open the local URL shown in your terminal (default `http://localhost:5173`). In 
 ## 🛠️ Personalizing Your Dashboard
 
 1. **Set Your Display Name & MAL Profile**: Click the **⚙️ Settings** gear (bottom-left on desktop, top bar on mobile) and enter your display name and public **MyAnimeList username** to highlight your airing shows.
+
 2. **Customize Themes & Wallpapers**: Under **Theme & Typography** and **Background Media**, switch between *Aurora*, *Midnight*, *Ocean*, and *Cyberpunk* palettes or upload your own `.mp4` / `.webm` / image wallpaper (stored locally in IndexedDB).
 3. **Use Search Shortcuts**: Press `Ctrl + Space` anywhere on desktop to focus the search bar, or type a prefix (`/yt lofi hip hop`, `/mal frieren`, `/gh react`) to jump straight to your target search engine.
 4. **Backup Your Setup**: Scroll to **Backup & Restore** in Settings to export a portable `.json` snapshot of your speed dials, custom stations, and preferences.
+
+**Today's Focus**: Start a 25-minute focus session or a 5-minute break from the card below the clock. Pause, resume, or reset at any time, and keep up to three daily priorities with checkboxes. Sessions dim distracting widgets while keeping the clock, tasks, and Lofi controls available. A soft completion chime follows your volume setting and can be switched off with the bell. Tasks and the running timer are saved locally; tasks clear at local midnight. Use **Settings → Dashboard Layout → Focus Timer & Tasks** to hide the card (this also pauses the timer). Keep Aura open for a completion chime; a saved timer catches up when you reopen it.
 
 ---
 

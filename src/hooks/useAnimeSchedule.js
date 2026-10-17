@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { fetchDaySchedule, extractTrailerId } from '../services/animeService';
 import { useWatchingList } from './useWatchingList';
 import { safeStorage } from '../utils/storage';
+import { COMPACT_MEDIA_QUERY } from '../constants/responsive';
 
 const DAY_FILTERS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 export const getPortugalDayFilter = () => {
@@ -204,7 +205,7 @@ export function useAnimeSchedule({ alwaysOpen = false, enabled = true } = {}) {
     // Trailer hover handlers
     const handleMouseEnter = useCallback((e, anime) => {
         // Touch screens / mobile devices: do not show floating hover preview
-        if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse), (max-width: 1024px)').matches) {
+        if (typeof window !== 'undefined' && window.matchMedia?.(COMPACT_MEDIA_QUERY).matches) {
             return;
         }
 
@@ -229,6 +230,7 @@ export function useAnimeSchedule({ alwaysOpen = false, enabled = true } = {}) {
         x = Math.max(10, x);
 
         hoverTimer.current = setTimeout(() => {
+            if (window.matchMedia?.(COMPACT_MEDIA_QUERY).matches) return;
             setPreviewTrailer(yid);
             setPreviewPos({ x, y });
         }, 400);

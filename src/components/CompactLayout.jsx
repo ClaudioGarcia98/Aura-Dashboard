@@ -1,7 +1,6 @@
 import './CompactLayout.css';
 import ErrorBoundary from './ErrorBoundary';
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useAnimeSchedule } from '../hooks/useAnimeSchedule';
@@ -17,7 +16,7 @@ import LofiPlayer from './LofiPlayer';
 import SettingsPanel from './SettingsPanel/index.jsx';
 import TodayLaunch from './AnimeSchedule/TodayLaunch';
 import EmbeddedAnimeList from './AnimeSchedule/EmbeddedAnimeList';
-import TrailerPreview from './AnimeSchedule/TrailerPreview';
+import FocusWidget from './FocusWidget';
 
 /**
  * Small screens + touch-first tablets: a top-nav-driven, tabbed app shell. Replaces the
@@ -46,6 +45,7 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
     const lofiPlaying = externalPlayer ? externalPlaying : localPlaying;
 
     const lofiAvailable = showLofiPlayer && lofiStations.length > 0;
+    const showFocusWidget = useSettingsStore(s => s.showFocusWidget ?? true);
 
     const tabs = useMemo(() => {
         const t = [{ id: 'home', label: 'Home' }];
@@ -100,6 +100,7 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
                         <Greeting />
                         <Clock />
                     </div>
+                    {showFocusWidget && <ErrorBoundary><FocusWidget /></ErrorBoundary>}
                     {showQuote && <ErrorBoundary><Quote /></ErrorBoundary>}
                     {showSearchBox && <ErrorBoundary><SearchBox /></ErrorBoundary>}
                     {showWeatherWidget && <ErrorBoundary><WeatherWidget inline /></ErrorBoundary>}
@@ -152,20 +153,6 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
                 <LofiPlayer compact expanded={activeTab === 'lofi'} onPlayingChange={setLofiPlaying} />
             )}
 
-            {/* Trailer preview (hover-driven; harmless on touch) */}
-            {anime.previewTrailer && createPortal(
-                <TrailerPreview
-                    youtubeId={anime.previewTrailer}
-                    pos={anime.previewPos}
-                    muted={anime.trailerMuted}
-                    onMute={anime.handleMute}
-                    onUnmute={anime.handleUnmute}
-                    onMouseEnter={anime.handleTrailerMouseEnter}
-                    onMouseLeave={anime.handleTrailerMouseLeave}
-                    iframeRef={anime.trailerIframeRef}
-                />,
-                document.body
-            )}
         </div>
     );
 }

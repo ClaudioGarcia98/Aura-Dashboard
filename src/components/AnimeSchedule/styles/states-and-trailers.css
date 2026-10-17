@@ -172,14 +172,14 @@
 }
 
 /* Desktop with mouse cursor: hide in-card trailer */
-@media (hover: hover) and (pointer: fine) and (min-width: 1025px) {
+@media (hover: hover) and (pointer: fine) and (min-width: 1201px) {
     .anime-card-trailer {
         display: none !important;
     }
 }
 
 /* Mobile & touch screens: hide floating hover preview */
-@media (hover: none), (pointer: coarse), (max-width: 1024px) {
+@media (hover: none), (pointer: coarse), (max-width: 1200px) {
     .trailer-portal-container {
         display: none !important;
     }

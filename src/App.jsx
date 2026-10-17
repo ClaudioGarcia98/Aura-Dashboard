@@ -9,11 +9,14 @@ import SettingsPanel from './components/SettingsPanel/index.jsx';
 import AnimeSchedule from './components/AnimeSchedule/index.jsx';
 import LofiPlayer from './components/LofiPlayer';
 import CompactLayout from './components/CompactLayout';
+import FocusWidget from './components/FocusWidget';
+import { useFocusSession } from './hooks/useFocusSession';
 import { useSettingsStore } from './stores/useSettingsStore';
 import { useBackgroundLoader } from './hooks/useBackgroundLoader';
 import { useThemeEffect } from './hooks/useThemeEffect';
 import { useFontEffect } from './hooks/useFontEffect';
 import { useMediaQuery } from './hooks/useMediaQuery';
+import { COMPACT_MEDIA_QUERY } from './constants/responsive';
 import { useShallow } from 'zustand/react/shallow';
 import logoUrl from './assets/logo.png';
 
@@ -63,7 +66,9 @@ export default function App() {
     }, [pauseBackground, reducedMotion, backgroundUrl]);
     // Include landscape tablet widths even in previews that report mouse input.
     // Larger touch-first tablets keep the tabbed shell in either orientation.
-    const isCompact = useMediaQuery('(max-width: 1200px), (hover: none), (pointer: coarse)');
+    const isCompact = useMediaQuery(COMPACT_MEDIA_QUERY);
+    const showFocusWidget = useSettingsStore(s => s.showFocusWidget ?? true);
+    useFocusSession(showFocusWidget);
 
     const hasBottomContent = showSearchBox || showSpeedDial || showTop5Anime;
     const isTotallyEmptyBelowClock = !showQuote && !hasBottomContent;
@@ -159,6 +164,7 @@ export default function App() {
                     <header className="center-content" style={{ marginBottom: isTotallyEmptyBelowClock ? '-32px' : undefined }}>
                         <Greeting />
                         <Clock />
+                        {showFocusWidget && <ErrorBoundary><FocusWidget /></ErrorBoundary>}
                         {showQuote && (
                             <div style={{ opacity: 'var(--ui-opacity)', transition: 'opacity 0.8s ease-in-out', marginBottom: hasBottomContent ? '35px' : '0' }}>
                                 <ErrorBoundary>

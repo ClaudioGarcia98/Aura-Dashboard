@@ -1,6 +1,9 @@
 /* ── Quote ─────────────────────────────────────────── */
 #quote-container {
     position: relative;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     margin: 0 auto var(--space-4) auto;
     background: var(--glass-card);
     backdrop-filter: blur(20px);
@@ -32,6 +35,8 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .quote-text {

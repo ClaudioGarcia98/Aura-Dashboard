@@ -22,7 +22,7 @@ Configuration is defined in [wrangler.toml](wrangler.toml) (`name = "aura-mal-ap
 
 ### Post-deploy verification
 
-1. Open `https://aura-mal-api.claudio091998.workers.dev/`. The response must identify `Aura MAL connection` and version `3`.
+1. Open `https://aura-mal-api.claudio091998.workers.dev/`. The response must identify `Aura MAL connection` and version `4`.
 2. Verify a live public list at `/animelist/claclo98/load.json?offset=0&status=1`. It must return a JSON array, not a challenge page or an error object.
 3. Publish the updated dashboard after the live Worker succeeds. Its configured endpoint is `MAL_RELAY_BASE` in `src/services/api.js`.
 
@@ -34,6 +34,7 @@ If the address or GitHub Pages owner changes, update `MAL_RELAY_BASE` and `SITE_
 - Upstream response bodies are bounded to 1 MB (`UPSTREAM_TOO_LARGE` on overflow). Items are validated for unique positive `anime_id`s, bounded title/image strings, valid `0–10` scores, and non-negative watched episode counts.
 - Per-client rate limiting is enforced via an optional `RATE_LIMITER` binding (see [wrangler.toml](wrangler.toml)) or per-IP sliding window (`30 req/min`, returning HTTP 429 with `Retry-After: 60`). Concurrent cache misses for the same username and page offset are coalesced in-flight.
 - Successful pages are cached for five minutes, keyed separately by normalized username and page offset. Empty lists are valid; failures and malformed responses are never cached. `X-Aura-Cache` and `Retry-After` headers are exposed over CORS.
+- App network syncs send `Cache-Control: no-cache` to bypass the relay cache, fetch the current MAL list, and replace the cached page. Refresh requests do not join older ordinary lookups. Deploy version 4 of the Worker along with the frontend for this behavior to take effect.
 - Browser responses allow the configured origin rather than `*`; cookies and unrelated upstream metadata are not forwarded.
 - The MAL username is public request data sent to Cloudflare and MyAnimeList. No account credentials are used. Private lists cannot be read.
 - The frontend retains pagination, cancellation, and saved lists with timestamps. MAL blocks, private lists, or host limits can still prevent a full refresh. Deployment must be verified with real upstream requests; fixture tests cannot demonstrate production availability.

@@ -3,12 +3,21 @@ import { createSettingsBackup, parseSettingsBackup, restoreSettingsBackup, reset
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { DEFAULT_SETTINGS } from '../stores/settingsSchema';
 import { deleteBackgroundBlob } from './db';
+import { useFocusStore } from '../stores/useFocusStore';
 
 vi.mock('./db', () => ({ deleteBackgroundBlob: vi.fn().mockResolvedValue() }));
 beforeEach(() => { localStorage.clear(); sessionStorage.clear(); useSettingsStore.setState(structuredClone(DEFAULT_SETTINGS)); });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe('real settings persistence and backups', () => {
+    it('clears daily focus tasks and stops the timer on a full data reset', async () => {
+        useFocusStore.getState().addTask('Saved task');
+        useFocusStore.getState().start();
+        await resetAuraData();
+        expect(useFocusStore.getState().tasks).toEqual([]);
+        expect(useFocusStore.getState().endsAt).toBeNull();
+        expect(localStorage.getItem('dash_focus_v1')).toBeNull();
+    });
     it('sanitizes same-version hydration without accepting action names or invalid arrays', async () => {
         localStorage.setItem('dash_settings', JSON.stringify({ version: 1, state: { lofiStations: null, customEngines: {}, speedDials: [null], setUsername: 'broken', volume: 12 } }));
         await useSettingsStore.persist.rehydrate();

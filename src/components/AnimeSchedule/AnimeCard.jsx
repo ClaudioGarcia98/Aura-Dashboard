@@ -1,6 +1,7 @@
 import { memo, useState, useEffect } from 'react';
 import { formatBroadcastTime, extractTrailerId } from '../../services/animeService';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { COMPACT_MEDIA_QUERY } from '../../constants/responsive';
 
 const calculateTimeLeft = (broadcast, airingAt) => {
     if (airingAt && typeof airingAt === 'number') {
@@ -101,7 +102,7 @@ export default memo(function AnimeCard({
     onMouseEnter,
     onMouseLeave,
 }) {
-    const isTouchOrMobileMedia = useMediaQuery('(hover: none), (pointer: coarse), (max-width: 1024px)');
+    const isTouchOrMobileMedia = useMediaQuery(COMPACT_MEDIA_QUERY);
     const isTouchOrMobile = isMobileProp !== undefined ? isMobileProp : isTouchOrMobileMedia;
     const { idPrefix, handleToggle } = useExpandToggle(anime, variant, isExpanded, onToggleExpand);
     const trailerId = extractTrailerId(anime);

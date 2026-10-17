@@ -19,7 +19,11 @@ export async function fetchUserWatchingList(username, { signal, force = false } 
 
     const items = [];
     for (let page = 0; page < 100; page++) {
-        const raw = await fetchJson(`${base}/animelist/${encoded}/load.json?offset=${page * 300}&status=1`, { signal, cache: 'no-store' }, timeout);
+        // Browser cache options do not bypass the relay's Cloudflare Cache API.
+        // Every network sync must explicitly request a live upstream list.
+        const raw = await fetchJson(`${base}/animelist/${encoded}/load.json?offset=${page * 300}&status=1`, {
+            signal, cache: 'no-store', headers: { 'Cache-Control': 'no-cache' },
+        }, timeout);
         if (!Array.isArray(raw)) throw new Error('Invalid MAL response');
         const parsed = parseMALItems(raw);
         if (parsed.length !== raw.length) throw new Error('Malformed watching-list items');

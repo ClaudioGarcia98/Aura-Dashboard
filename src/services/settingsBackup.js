@@ -3,6 +3,7 @@ import { useSettingsStore } from '../stores/useSettingsStore';
 import { safeStorage } from '../utils/storage';
 import { clearMalMemoryCache } from './anime/watching';
 import { deleteBackgroundBlob } from './db';
+import { initialFocusState, useFocusStore } from '../stores/useFocusStore';
 
 export function createSettingsBackup(state) {
     return JSON.stringify({ format: 'aura-settings', version: 1, settings: sanitizeSettings(state) }, null, 2);
@@ -46,6 +47,7 @@ export async function resetAuraData() {
     // Do not erase settings if deleting the saved background failed.
     await deleteBackgroundBlob();
     clearMalMemoryCache();
+    useFocusStore.setState(initialFocusState());
     useSettingsStore.setState({
         ...structuredClone(DEFAULT_SETTINGS),
         backgroundUrl: null,

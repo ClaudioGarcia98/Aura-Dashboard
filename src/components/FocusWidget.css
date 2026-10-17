@@ -1,0 +1,76 @@
+.focus-widget {
+    --focus-muted: var(--text-secondary);
+    width: 100%;
+    min-width: 0;
+    flex-shrink: 0;
+    padding: 20px;
+    margin-bottom: 24px;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    background: var(--glass-panel);
+    box-shadow: var(--glass-highlight), 0 8px 24px #0003;
+    text-align: left;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+.focus-widget--running { border-color: var(--accent-border); box-shadow: var(--glass-highlight), 0 0 28px var(--accent-subtle); }
+.focus-heading, .focus-timer-row, .focus-controls, .focus-tasks-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.focus-eyebrow { display: block; color: var(--focus-muted); font-size: 0.66rem; letter-spacing: 0.04em; margin-bottom: 3px; }
+.focus-heading h2 { font-size: 1.02rem; font-weight: 650; color: var(--text-primary); line-height: 1.4; }
+.focus-widget button, .focus-widget input { font: inherit; }
+.focus-widget button { cursor: pointer; }
+.focus-icon-button { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; height: 36px; color: var(--text-secondary); background: transparent; border: 1px solid transparent; border-radius: var(--radius-md); }
+.focus-icon-button:hover { color: var(--text-primary); background: var(--surface-hover); border-color: var(--glass-border); }
+.focus-icon-button[aria-pressed="true"] { color: var(--accent-color); }
+.focus-icon-button:disabled { opacity: 0.35; cursor: default; }
+.focus-modes { display: flex; gap: 4px; width: fit-content; padding: 3px; margin: 17px 0 12px; background: var(--surface-30); border: 1px solid var(--glass-border); border-radius: 9px; }
+.focus-modes button { min-height: 32px; padding: 5px 12px; background: transparent; color: var(--text-secondary); border: 0; border-radius: 6px; font-size: 0.76rem; }
+.focus-modes button span { margin-left: 4px; opacity: 0.7; font-size: 0.65rem; }
+.focus-modes button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-color); }
+.focus-clock { display: flex; flex-direction: column; min-width: 0; }
+.focus-clock [role="timer"] { font-size: clamp(2.25rem, 5vw, 2.8rem); font-weight: 500; letter-spacing: -0.06em; font-variant-numeric: tabular-nums; line-height: 1.25; }
+.focus-timer-hint { color: var(--focus-muted); font-size: 0.66rem; margin-top: 4px; }
+.focus-controls { gap: 4px; }
+.focus-start { min-height: 40px; padding: 8px 14px; background: var(--accent-gradient); color: var(--on-accent); border: 0; border-radius: var(--radius-md); font-size: 0.77rem !important; font-weight: 650 !important; white-space: nowrap; }
+.focus-start:hover { filter: brightness(1.08); }
+.focus-progress { height: 3px; overflow: hidden; background: var(--surface-hover); border-radius: 4px; margin-top: 16px; }
+.focus-progress > div { height: 100%; background: var(--accent-color); transition: width 0.25s linear; }
+.focus-notice { color: var(--accent-color); font-size: 0.76rem; margin-top: 10px; }
+.focus-notice:empty { display: none; }
+.focus-tasks-heading { font-size: 0.68rem; color: var(--focus-muted); margin: 20px 0 12px; gap: 8px; flex-wrap: wrap; }
+.focus-tasks-heading > span:first-child { color: var(--accent-color); font-weight: 650; letter-spacing: 0.07em; text-transform: uppercase; }
+.focus-task-count { padding: 3px 8px; border: 1px solid var(--glass-border); border-radius: 999px; background: var(--surface-30); font-variant-numeric: tabular-nums; }
+.focus-tasks { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.focus-tasks li { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 6px 4px 12px; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--surface-30); box-shadow: var(--glass-highlight); transition: background 0.2s, border-color 0.2s; }
+.focus-tasks li:hover, .focus-tasks li:focus-within { background: var(--surface-hover); border-color: var(--accent-border); }
+.focus-tasks label { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; min-height: 44px; padding: 6px 0; cursor: pointer; font-size: 0.8rem; line-height: 1.5; }
+.focus-task-text { min-width: 0; overflow-wrap: anywhere; transition: color 0.2s; }
+.focus-task-toggle { position: relative; display: inline-flex; flex-shrink: 0; width: 20px; height: 20px; }
+.focus-task-toggle input { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; margin: 0; border: 1px solid var(--accent-border); border-radius: 6px; background: var(--glass-card); cursor: pointer; transition: background 0.2s, border-color 0.2s; }
+.focus-task-toggle input:checked { background: var(--accent-gradient); border-color: var(--accent-color); }
+.focus-task-toggle svg { position: absolute; inset: 2px; width: 16px; height: 16px; color: var(--on-accent); pointer-events: none; opacity: 0; transition: opacity 0.15s; }
+.focus-task-toggle input:checked + svg { opacity: 1; }
+.focus-tasks .focus-task--done { background: var(--accent-subtle); border-color: var(--accent-border); }
+.focus-task--done .focus-task-text { text-decoration: line-through; color: var(--text-secondary); }
+.focus-delete { width: 36px; height: 40px; border-radius: 8px; }
+.focus-delete:hover { color: var(--status-danger); background: var(--status-danger-soft); border-color: var(--status-danger-border); }
+.focus-task-form { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 4px 6px 4px 14px; border: 1px dashed var(--glass-border); border-radius: 12px; background: var(--surface-30); transition: border-color 0.2s, background 0.2s; }
+.focus-task-form:focus-within { border-style: solid; border-color: var(--accent-border-strong); background: var(--accent-subtle); }
+.focus-task-form input { width: 100%; min-width: 0; color: var(--text-primary); background: transparent; border: 0; outline: none; padding: 8px 0; font-size: 0.78rem; box-shadow: none; }
+.focus-add { color: var(--accent-color); background: var(--accent-soft); border-color: var(--accent-border); }
+.focus-add:not(:disabled):hover { color: var(--on-accent); background: var(--accent-gradient); border-color: var(--accent-color); }
+.focus-task-form input::placeholder { color: var(--text-secondary); }
+.focus-task-limit { font-size: 0.7rem; color: var(--focus-muted); margin-top: 12px; line-height: 1.5; }
+.compact-home .focus-widget { margin-bottom: 0; }
+/* Keep the timer, clock and music clear while quieting the surrounding widgets. */
+body.focus-session-active :is(#quote-container, .weather-widget, .search-container, .speed-dial, .today-anime-box, #animeToggle, .anime-sidebar) { opacity: 0.24 !important; transition: opacity 0.35s ease; }
+body.focus-session-active :is(#quote-container, .weather-widget, .search-container, .speed-dial, .today-anime-box, #animeToggle, .anime-sidebar):is(:hover, :focus-within) { opacity: 1 !important; }
+@media (max-width: 380px) {
+    .focus-widget { padding: 16px; }
+    .focus-timer-row { align-items: flex-start; flex-direction: column; }
+    .focus-controls { width: 100%; }
+    .focus-start { flex: 1; }
+}
+@media (max-height: 520px) {
+    .focus-widget { padding: 14px 16px; }
+    .focus-modes { margin-top: 10px; }
+}

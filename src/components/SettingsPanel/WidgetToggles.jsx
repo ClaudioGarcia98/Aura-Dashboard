@@ -10,6 +10,7 @@ const WIDGETS = [
     { label: "Today's Launch (Top 5)", key: 'showTop5Anime' },
     { label: 'Anime Sidebar',         key: 'showAnimeSidebar' },
     { label: 'Lofi Player',           key: 'showLofiPlayer' },
+    { label: "Focus Timer & Tasks",   key: 'showFocusWidget' },
 ];
 
 const SETTER_KEYS = {
@@ -20,6 +21,7 @@ const SETTER_KEYS = {
     showTop5Anime:     'setShowTop5Anime',
     showAnimeSidebar:  'setShowAnimeSidebar',
     showLofiPlayer:    'setShowLofiPlayer',
+    showFocusWidget:   'setShowFocusWidget',
 };
 
 export default memo(function WidgetToggles() {
@@ -31,6 +33,7 @@ export default memo(function WidgetToggles() {
         showTop5Anime:     s.showTop5Anime,     setShowTop5Anime:     s.setShowTop5Anime,
         showAnimeSidebar:  s.showAnimeSidebar,  setShowAnimeSidebar:  s.setShowAnimeSidebar,
         showLofiPlayer:    s.showLofiPlayer,    setShowLofiPlayer:    s.setShowLofiPlayer,
+        showFocusWidget:   s.showFocusWidget,   setShowFocusWidget:   s.setShowFocusWidget,
         lofiStations:      s.lofiStations,
     })));
 

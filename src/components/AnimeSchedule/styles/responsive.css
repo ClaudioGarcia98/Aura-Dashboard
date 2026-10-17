@@ -92,6 +92,26 @@
     border-color: var(--accent-border);
 }
 
+/* Anchor the hint to the full header. An invisible 280px popup anchored
+   to the small info icon otherwise widens the Home tab on portrait phones. */
+.compact-home .tab-header {
+    position: relative;
+}
+.compact-home .tab-header .info-badge-container {
+    position: static;
+}
+.compact-home .custom-hint-card {
+    left: 0;
+    width: min(280px, 100%);
+}
+.compact-home .custom-hint-card::after {
+    left: 140px;
+}
+.compact-home .hint-card-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
 .anime-embedded .as-days {
     background: rgba(16, 16, 22, 0.85);
     backdrop-filter: blur(24px);

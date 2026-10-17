@@ -1,5 +1,5 @@
 import './LofiPlayer.css';
-import { memo, useState, useEffect, useRef, useMemo } from 'react';
+import { memo, useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
 import { fetchJson } from '../services/http';
@@ -7,13 +7,62 @@ import { fetchJson } from '../services/http';
 export default memo(function LofiPlayer({ compact = false, expanded = false, onPlayingChange } = {}) {
     const { volume, lofiId, setLofiId, lofiStations } = useSettingsStore(useShallow(s => ({ volume: s.volume, lofiId: s.lofiId, setLofiId: s.setLofiId, lofiStations: s.lofiStations })));
     const [isPlaying, setIsPlaying] = useState(false);
+    const [isStarting, setIsStarting] = useState(false);
+    const [stationRevision, setStationRevision] = useState(0);
     const [playbackError, setPlaybackError] = useState('');
     const [showMenu, setShowMenu] = useState(false);
     const menuRef = useRef(null);
     const [title, setTitle] = useState('Loading...');
     const iframeRef = useRef(null);
-    const shouldAutoPlayRef = useRef(false); // tracks intent across iframe reloads
+    const playIntentRef = useRef(false);
+    const awaitingPlayRef = useRef(false);
+    const stopRequestedRef = useRef(false);
+    const readyRef = useRef(false);
+    const restartRef = useRef(false);
+    const listeningIntervalRef = useRef(null);
+    const listeningTimeoutRef = useRef(null);
     const playTimeoutRef = useRef(null);
+
+    const attachIframe = useCallback(node => {
+        iframeRef.current = node;
+        readyRef.current = false;
+        clearInterval(listeningIntervalRef.current);
+        clearTimeout(listeningTimeoutRef.current);
+    }, []);
+
+    const sendCommand = useCallback((func, args = []) => {
+        iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), 'https://www.youtube.com');
+    }, []);
+
+    const syncVolume = useCallback(() => {
+        sendCommand(volume === 0 ? 'mute' : 'unMute');
+        sendCommand('setVolume', [Math.round(volume * 100)]);
+    }, [volume, sendCommand]);
+
+    const listenForPlayer = () => {
+        clearInterval(listeningIntervalRef.current);
+        clearTimeout(listeningTimeoutRef.current);
+        const listen = () => iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'listening' }), 'https://www.youtube.com');
+        listen();
+        if (!readyRef.current) {
+            listeningIntervalRef.current = setInterval(listen, 250);
+            listeningTimeoutRef.current = setTimeout(() => clearInterval(listeningIntervalRef.current), 10000);
+        }
+    };
+
+    const startPlaybackTimeout = useCallback(() => {
+        clearTimeout(playTimeoutRef.current);
+        playTimeoutRef.current = setTimeout(() => {
+            playIntentRef.current = false;
+            awaitingPlayRef.current = false;
+            stopRequestedRef.current = true;
+            clearInterval(listeningIntervalRef.current);
+            clearTimeout(listeningTimeoutRef.current);
+            setIsStarting(false);
+            setIsPlaying(false);
+            setPlaybackError('Playback did not start. Try again or choose another station.');
+        }, 5000);
+    }, []);
 
     const stationsList = useMemo(() =>
         lofiStations.map(s => ({ id: s.videoId, name: s.name || null })),
@@ -27,6 +76,8 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
     useEffect(() => {
         return () => {
             if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
+            clearInterval(listeningIntervalRef.current);
+            clearTimeout(listeningTimeoutRef.current);
         };
     }, []);
 
@@ -47,16 +98,52 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
             try {
                 const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
                 if (!data || typeof data !== 'object') return;
-                if (data.event === 'onError') {
+                if (data.event === 'onError' || data.event === 'onAutoplayBlocked') {
+                    playIntentRef.current = false;
+                    awaitingPlayRef.current = false;
+                    stopRequestedRef.current = true;
+                    setIsStarting(false);
                     setIsPlaying(false);
-                    setPlaybackError('This station is unavailable. Try another station.');
+                    setPlaybackError(data.event === 'onAutoplayBlocked'
+                        ? 'Your browser blocked playback. Press Play to start this station.'
+                        : 'This station is unavailable. Try another station.');
                     clearTimeout(playTimeoutRef.current);
+                    clearInterval(listeningIntervalRef.current);
+                    clearTimeout(listeningTimeoutRef.current);
+                    return;
+                }
+                if (!readyRef.current && (data.event === 'onReady' || data.event === 'initialDelivery' || data.event === 'infoDelivery')) {
+                    readyRef.current = true;
+                    clearInterval(listeningIntervalRef.current);
+                    clearTimeout(listeningTimeoutRef.current);
+                    for (const event of ['onStateChange', 'onError', 'onAutoplayBlocked']) sendCommand('addEventListener', [event]);
+                    syncVolume();
+                    if (playIntentRef.current) {
+                        if (restartRef.current) {
+                            sendCommand('seekTo', [0, true]);
+                            restartRef.current = false;
+                        }
+                        sendCommand('playVideo');
+                    }
                 }
                 const playerState = data.event === 'onStateChange' ? data.info : data.info?.playerState;
                 if (typeof playerState === 'number') {
                     // YouTube states: 1 = Playing, 2 = Paused, 0 = Ended, 3 = Buffering
-                    if (playerState === 1) { setIsPlaying(true); setPlaybackError(''); clearTimeout(playTimeoutRef.current); }
-                    else if (playerState === 2 || playerState === 0) setIsPlaying(false);
+                    if (playerState === 1) {
+                        if (stopRequestedRef.current) { sendCommand('pauseVideo'); return; }
+                        playIntentRef.current = true;
+                        awaitingPlayRef.current = false;
+                        setIsStarting(false); setIsPlaying(true); setPlaybackError(''); clearTimeout(playTimeoutRef.current);
+                    } else if (playerState === 2 || playerState === 0) {
+                        setIsPlaying(false);
+                        if (playerState === 2 && !awaitingPlayRef.current) playIntentRef.current = false;
+                        if (playerState === 0) {
+                            playIntentRef.current = false;
+                            awaitingPlayRef.current = false;
+                            setIsStarting(false);
+                            clearTimeout(playTimeoutRef.current);
+                        }
+                    }
                 }
             } catch (err) {
                 console.error("YouTube message parse error:", err);
@@ -64,7 +151,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
         };
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, []);
+    }, [sendCommand, syncVolume]);
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -79,50 +166,47 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
 
     // Sync volume whenever it changes (YouTube expects 0-100)
     useEffect(() => {
-        if (iframeRef.current && iframeRef.current.contentWindow) {
-            iframeRef.current.contentWindow.postMessage(JSON.stringify({
-                event: 'command',
-                func: volume === 0 ? 'mute' : 'unMute',
-                args: []
-            }), 'https://www.youtube.com');
-            iframeRef.current.contentWindow.postMessage(JSON.stringify({
-                event: 'command',
-                func: 'setVolume',
-                args: [Math.round(volume * 100)]
-            }), 'https://www.youtube.com');
-        }
-    }, [volume]);
+        if (readyRef.current) syncVolume();
+    }, [syncVolume]);
 
     // Handle Play/Pause
     const togglePlay = () => {
         if (!iframeRef.current || !iframeRef.current.contentWindow) return;
-        
-        const func = isPlaying ? 'pauseVideo' : 'playVideo';
-        iframeRef.current.contentWindow.postMessage(JSON.stringify({
-            event: 'command',
-            func: func,
-            args: []
-        }), 'https://www.youtube.com');
-
-        // Force volume sync when playing
-        if (!isPlaying) {
-            iframeRef.current.contentWindow.postMessage(JSON.stringify({
-                event: 'command',
-                func: volume === 0 ? 'mute' : 'unMute',
-                args: []
-            }), 'https://www.youtube.com');
-            iframeRef.current.contentWindow.postMessage(JSON.stringify({
-                event: 'command',
-                func: 'setVolume',
-                args: [Math.round(volume * 100)]
-            }), 'https://www.youtube.com');
-        }
-        
+        const shouldPlay = !playIntentRef.current;
+        playIntentRef.current = shouldPlay;
+        awaitingPlayRef.current = shouldPlay;
+        stopRequestedRef.current = !shouldPlay;
         setPlaybackError('');
-        if (!isPlaying) {
+        setIsStarting(shouldPlay);
+        if (shouldPlay) {
+            startPlaybackTimeout();
+            if (readyRef.current) {
+                syncVolume();
+                sendCommand('playVideo');
+            } else listenForPlayer();
+        } else {
             clearTimeout(playTimeoutRef.current);
-            playTimeoutRef.current = setTimeout(() => setPlaybackError('Playback did not start. Try again or choose another station.'), 5000);
+            sendCommand('pauseVideo');
+            setIsPlaying(false);
         }
+    };
+
+    const selectStation = stationId => {
+        // Each selection creates a fresh player, including reselecting this station.
+        clearTimeout(playTimeoutRef.current);
+        clearInterval(listeningIntervalRef.current);
+        readyRef.current = false;
+        playIntentRef.current = true;
+        awaitingPlayRef.current = true;
+        stopRequestedRef.current = false;
+        restartRef.current = true;
+        setIsPlaying(false);
+        setIsStarting(true);
+        setPlaybackError('');
+        setShowMenu(false);
+        setLofiId(stationId);
+        setStationRevision(revision => revision + 1);
+        startPlaybackTimeout();
     };
 
     // Fetch custom title when lofiId changes (if unknown)
@@ -170,26 +254,8 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
     }, [lofiId, knownStation]);
 
     const handleIframeLoad = () => {
-        if (iframeRef.current && iframeRef.current.contentWindow) {
-            iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), 'https://www.youtube.com');
-            iframeRef.current.contentWindow.postMessage(JSON.stringify({
-                event: 'command', func: volume === 0 ? 'mute' : 'unMute', args: []
-            }), 'https://www.youtube.com');
-            iframeRef.current.contentWindow.postMessage(JSON.stringify({
-                event: 'command', func: 'setVolume', args: [Math.round(volume * 100)]
-            }), 'https://www.youtube.com');
-            if (isPlaying || shouldAutoPlayRef.current) {
-                shouldAutoPlayRef.current = false;
-                if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
-                playTimeoutRef.current = setTimeout(() => {
-                    if (iframeRef.current && iframeRef.current.contentWindow) {
-                        iframeRef.current.contentWindow.postMessage(JSON.stringify({
-                            event: 'command', func: 'playVideo', args: []
-                        }), 'https://www.youtube.com');
-                    }
-                }, 500);
-            }
-        }
+        // iframe load does not mean YouTube's player API is ready for commands.
+        listenForPlayer();
     };
 
     const originParam = typeof window !== 'undefined' && window.location.origin && window.location.origin !== 'null'
@@ -200,10 +266,11 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
     // switches in compact mode so audio never stops.
     const iframeEl = (
         <iframe
-            ref={iframeRef}
+            key={`${lofiId}:${stationRevision}`}
+            ref={attachIframe}
             width="0"
             height="0"
-            src={`https://www.youtube.com/embed/${lofiId}?enablejsapi=1&autoplay=0&controls=0&showinfo=0&rel=0${originParam}`}
+            src={`https://www.youtube.com/embed/${lofiId}?enablejsapi=1&autoplay=0&start=0&playsinline=1&controls=0&showinfo=0&rel=0${originParam}`}
             allow="autoplay; encrypted-media"
             style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', border: 'none' }}
             title="Lofi Background Stream"
@@ -230,12 +297,12 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                                     {Array.from({ length: 7 }).map((_, i) => <div key={i} className="bar" />)}
                                 </div>
                             ) : (
-                                <span className="lofi-expanded-paused">Paused</span>
+                                <span className="lofi-expanded-paused">{isStarting ? 'Starting...' : 'Paused'}</span>
                             )}
                         </div>
 
-                        <button className="lofi-expanded-play" onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
-                            {isPlaying ? (
+                        <button className="lofi-expanded-play" onClick={togglePlay} aria-label={isPlaying || isStarting ? 'Pause' : 'Play'}>
+                            {isPlaying || isStarting ? (
                                 <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
                             ) : (
                                 <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
@@ -250,11 +317,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                                         <button
                                             key={station.id}
                                             className={`lofi-station-btn ${lofiId === station.id ? 'active' : ''}`}
-                                            onClick={() => {
-                                                shouldAutoPlayRef.current = isPlaying;
-                                                setLofiId(station.id);
-                                                setIsPlaying(false);
-                                            }}
+                                            onClick={() => selectStation(station.id)}
                                         >
                                             <div className="lofi-station-icon" style={{ flexShrink: 0 }}>
                                                 {lofiId === station.id ? (
@@ -293,12 +356,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                                     type="button"
                                     key={station.id}
                                     className={`lofi-station-btn ${lofiId === station.id ? 'active' : ''}`}
-                                    onClick={() => {
-                                        shouldAutoPlayRef.current = isPlaying; // carry play intent across reload
-                                        setLofiId(station.id);
-                                        setIsPlaying(false);
-                                        setShowMenu(false);
-                                    }}
+                                    onClick={() => selectStation(station.id)}
                                 >
                                     <div className="lofi-station-icon" style={{ flexShrink: 0 }}>
                                         {lofiId === station.id ? (
@@ -321,8 +379,8 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                 )}
 
                 <div className="lofi-ui">
-                    <button type="button" className={`lofi-play-btn ${isPlaying ? 'playing' : ''}`} onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
-                        {isPlaying ? (
+                    <button type="button" className={`lofi-play-btn ${isPlaying ? 'playing' : ''}`} onClick={togglePlay} aria-label={isPlaying || isStarting ? 'Pause' : 'Play'}>
+                        {isPlaying || isStarting ? (
                             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                                 <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
                             </svg>
@@ -366,7 +424,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                                 <div className="bar"></div>
                             </div>
                         ) : (
-                            <span style={{ fontSize: '0.75rem', opacity: 0.8, display: 'inline-block', marginTop: '4px' }}>Paused</span>
+                            <span style={{ fontSize: '0.75rem', opacity: 0.8, display: 'inline-block', marginTop: '4px' }}>{isStarting ? 'Starting...' : 'Paused'}</span>
                         )}
                     </span>
                 </div>

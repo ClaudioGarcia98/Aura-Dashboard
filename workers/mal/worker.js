@@ -134,7 +134,7 @@ export async function handleRequest(request, { fetcher = fetch, cache = globalTh
 
     const url = new URL(request.url);
     if (url.pathname === '/' && !url.search && request.method === 'GET') {
-        return reply({ service: 'Aura MAL connection', version: 3, status: 'ok' }, 200, origin, {}, siteOrigin);
+        return reply({ service: 'Aura MAL connection', version: 4, status: 'ok' }, 200, origin, {}, siteOrigin);
     }
     const match = url.pathname.match(/^\/animelist\/([a-z\d_-]{1,32})\/load\.json$/i);
     const offsets = url.searchParams.getAll('offset');
@@ -171,12 +171,15 @@ export async function handleRequest(request, { fetcher = fetch, cache = globalTh
     const username = match[1].toLowerCase();
     const path = `/animelist/${username}/load.json?offset=${Number(offset)}&status=1`;
     const cacheKey = new Request(url.origin + path);
+    const bypassCache = /(?:^|,)\s*(?:no-cache|no-store)\s*(?:,|$)/i.test(request.headers.get('Cache-Control') || '');
     try {
-        const hit = await cache?.match(cacheKey);
+        const hit = !bypassCache && await cache?.match(cacheKey);
         if (hit) return reply(await hit.json(), 200, origin, { 'X-Aura-Cache': 'HIT' }, siteOrigin);
     } catch { /* A cache failure must not prevent a live lookup. */ }
 
-    let pending = inflight.get(path);
+    // A refresh must not join an older ordinary lookup already in progress.
+    const inflightKey = `${bypassCache ? 'live' : 'cached'}:${path}`;
+    let pending = inflight.get(inflightKey);
     if (!pending) {
         pending = (async () => {
             const controller = new AbortController();
@@ -188,6 +191,7 @@ export async function handleRequest(request, { fetcher = fetch, cache = globalTh
                     signal: controller.signal,
                     headers: {
                         Accept: 'application/json',
+                        'Cache-Control': 'no-cache',
                         Referer: 'https://myanimelist.net/',
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                     },
@@ -230,14 +234,14 @@ export async function handleRequest(request, { fetcher = fetch, cache = globalTh
                 };
             } finally { clearTimeout(timer); }
         })();
-        inflight.set(path, pending);
+        inflight.set(inflightKey, pending);
     }
 
     try {
         const result = await pending;
         return reply(result.data, result.status, origin, result.extra, siteOrigin);
     } finally {
-        inflight.delete(path);
+        inflight.delete(inflightKey);
     }
 }
 

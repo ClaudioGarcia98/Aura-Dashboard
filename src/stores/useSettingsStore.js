@@ -55,6 +55,7 @@ export const useSettingsStore = create(
             setShowTop5Anime:     (v) => set({ showTop5Anime: v }),
             setShowAnimeSidebar:  (v) => set({ showAnimeSidebar: v }),
             setShowLofiPlayer:    (v) => set({ showLofiPlayer: v }),
+            setShowFocusWidget:   (v) => set({ showFocusWidget: v }),
         }),
         {
             name: 'dash_settings',
@@ -73,6 +74,7 @@ export const useSettingsStore = create(
                 showSearchBox: s.showSearchBox, showSpeedDial: s.showSpeedDial,
                 showTop5Anime: s.showTop5Anime, showAnimeSidebar: s.showAnimeSidebar,
                 showLofiPlayer: s.showLofiPlayer,
+                showFocusWidget: s.showFocusWidget,
             }),
         }
     )

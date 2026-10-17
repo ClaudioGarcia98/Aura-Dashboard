@@ -27,6 +27,8 @@
 .tab-panel {
     flex: 1 1 auto;
     min-height: 0;
+    min-width: 0;
+    overflow-x: hidden;
     overflow-y: auto;
     padding-top: calc(var(--top-nav-height) + env(safe-area-inset-top, 0px));
     scroll-padding-top: calc(var(--top-nav-height) + env(safe-area-inset-top, 0px));

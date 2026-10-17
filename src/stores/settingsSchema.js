@@ -17,7 +17,7 @@ export const DEFAULT_SETTINGS = {
     volume: 0.2, speedDials: [], customEngines: [], remoteSuggestions: false,
     pauseBackground: false,
     showWeatherWidget: true, showQuote: true, showSearchBox: true, showSpeedDial: true,
-    showTop5Anime: true, showAnimeSidebar: true, showLofiPlayer: true,
+    showTop5Anime: true, showAnimeSidebar: true, showLofiPlayer: true, showFocusWidget: true,
 };
 
 const record = value => value && typeof value === 'object' && !Array.isArray(value);

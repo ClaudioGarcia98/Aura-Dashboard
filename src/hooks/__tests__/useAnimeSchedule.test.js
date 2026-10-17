@@ -15,6 +15,7 @@ vi.mock('../../stores/useSettingsStore', () => ({ useSettingsStore: selector => 
 vi.mock('../../services/animeService', () => ({
     fetchDaySchedule: vi.fn(),
     fetchUserWatchingList: vi.fn().mockResolvedValue([]),
+    extractTrailerId: anime => anime.trailer?.youtube_id,
 }));
 
 describe('useAnimeSchedule hook', () => {
@@ -22,16 +23,47 @@ describe('useAnimeSchedule hook', () => {
         localStorage.clear();
         vi.useFakeTimers();
         vi.clearAllMocks();
+        mockSettings.malRefreshKey = 0;
     });
 
     afterEach(() => {
         vi.useRealTimers();
+        vi.unstubAllGlobals();
     });
 
     it('getPortugalDayFilter returns a valid weekday', () => {
         const day = getPortugalDayFilter();
         const validDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
         expect(validDays).toContain(day);
+    });
+
+    it.each([820, 1180, 1200, 1201, 1366])('only opens floating previews on desktop at %ipx with a mouse', async width => {
+        vi.stubGlobal('matchMedia', vi.fn(query => ({
+            matches: width <= Number(query.match(/max-width: (\d+)px/)?.[1]),
+            addEventListener: vi.fn(), removeEventListener: vi.fn(),
+        })));
+        fetchDaySchedule.mockResolvedValue([]);
+        const { result } = renderHook(() => useAnimeSchedule());
+        act(() => result.current.handleMouseEnter({ currentTarget: {
+            getBoundingClientRect: () => ({ left: 10, right: 100, top: 10, height: 50 }),
+            closest: () => null,
+        } }, { trailer: { youtube_id: 'preview123' } }));
+        await act(async () => { await vi.advanceTimersByTimeAsync(400); });
+        expect(result.current.previewTrailer).toBe(width > 1200 ? 'preview123' : null);
+    });
+
+    it('cancels a pending desktop hover when resized to tablet width', async () => {
+        let width = 1366;
+        vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: width <= 1200 })));
+        fetchDaySchedule.mockResolvedValue([]);
+        const { result } = renderHook(() => useAnimeSchedule());
+        act(() => result.current.handleMouseEnter({ currentTarget: {
+            getBoundingClientRect: () => ({ left: 10, right: 100, top: 10, height: 50 }),
+            closest: () => null,
+        } }, { trailer: { youtube_id: 'preview123' } }));
+        width = 1180;
+        await act(async () => { await vi.advanceTimersByTimeAsync(400); });
+        expect(result.current.previewTrailer).toBeNull();
     });
 
     it('returns default loading state initially', () => {
@@ -143,6 +175,24 @@ describe('useAnimeSchedule hook', () => {
         expect(result.current.userWatchingIds).toContain(64254);
         // 99999 is the AniList mal_id matched by normalized title
         expect(result.current.userWatchingIds).not.toContain(99999);
+    });
+
+    it('adds a newly watched show to today launch after one refresh', async () => {
+        fetchDaySchedule.mockResolvedValue([
+            ...Array.from({ length: 5 }, (_, i) => ({ mal_id: i + 1, title: `Popular ${i}`, score: 9 })),
+            { mal_id: 6, title: 'Newly watching', score: 5 },
+        ]);
+        fetchUserWatchingList.mockResolvedValueOnce([])
+            .mockResolvedValueOnce([{ mal_id: 6, title: 'Newly watching' }]);
+        const { result, rerender } = renderHook(() => useAnimeSchedule());
+        await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+        expect(result.current.displayList.map(anime => anime.mal_id)).not.toContain(6);
+        mockSettings.malRefreshKey = 1;
+        rerender();
+        await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+        expect(result.current.displayList[0].mal_id).toBe(6);
+        expect(result.current.userWatchingIds).toContain(6);
+        expect(fetchUserWatchingList).toHaveBeenLastCalledWith('test', expect.objectContaining({ force: true }));
     });
 });
 
