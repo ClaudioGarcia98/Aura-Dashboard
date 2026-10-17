@@ -1,6 +1,7 @@
 // English source key | Portuguese (Portugal) | Portuguese (Brazil) | Spanish | French | German | Japanese | Korean.
 // Keep every row complete. Placeholders are interpolated as text, never HTML.
 const rows = `
+New priority…|Nova prioridade…|Nova prioridade…|Nueva prioridad…|Nouvelle priorité…|Neue Priorität…|新しい優先タスク…|새 우선 할 일…
 Time zone|Fuso horário|Fuso horário|Zona horaria|Fuseau horaire|Zeitzone|タイムゾーン|시간대
 Automatic — device time zone|Automático — fuso horário do dispositivo|Automático — fuso horário do dispositivo|Automático — zona horaria del dispositivo|Automatique — fuseau de l’appareil|Automatisch — Gerätezeitzone|自動 — デバイスのタイムゾーン|자동 — 기기 시간대
 Clock, date and anime schedule use this time zone. No location permission needed.|O relógio, a data e o calendário de anime usam este fuso horário. Não é necessária permissão de localização.|O relógio, a data e o calendário de anime usam este fuso horário. Não é necessária permissão de localização.|El reloj, la fecha y el calendario de anime usan esta zona horaria. No se necesita permiso de ubicación.|L’horloge, la date et le programme anime utilisent ce fuseau. Aucune autorisation de localisation n’est nécessaire.|Uhr, Datum und Anime-Zeitplan verwenden diese Zeitzone. Keine Standortberechtigung nötig.|時計、日付、アニメの予定にこのタイムゾーンを使用します。位置情報の許可は不要です。|시계, 날짜 및 애니메이션 편성표에 이 시간대를 사용합니다. 위치 권한이 필요하지 않습니다.

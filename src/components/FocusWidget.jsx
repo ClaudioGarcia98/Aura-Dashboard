@@ -49,10 +49,15 @@ export default function FocusWidget() {
         </div>
         <div className="focus-progress" aria-hidden="true"><div style={{ width: `${progress}%` }} /></div>
         <p className="focus-notice" role="status">{t(notice)}</p>
-        <div className="focus-tasks-heading">
-            <span>{t("Today's priorities")}</span>
-            <span className="focus-task-count">{tasks.length ? t('{completed}/{total} done', { completed, total: tasks.length }) : t("Up to 3 tasks")}</span>
-        </div>
+        <section className="focus-priorities" aria-labelledby="focus-priorities-title">
+            <header className="focus-tasks-heading">
+                <span className="focus-priorities-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="m4 6 1.5 1.5L8 5M11 6h9M4 12h3m4 0h9M4 18h3m4 0h9" /></svg></span>
+                <div className="focus-priorities-title">
+                    <h3 id="focus-priorities-title">{t("Today's priorities")}</h3>
+                    <span className="focus-task-count">{tasks.length ? t('{completed}/{total} done', { completed, total: tasks.length }) : t("Up to 3 tasks")}</span>
+                </div>
+                <div className="focus-task-slots" aria-hidden="true">{[0, 1, 2].map(index => <span key={index} className={index < completed ? 'complete' : index < tasks.length ? 'occupied' : ''} />)}</div>
+            </header>
         {tasks.length > 0 && <ul className="focus-tasks" aria-label={t("Today's focus tasks")}>{tasks.map(task => <li key={task.id} className={task.done ? 'focus-task--done' : ''}>
             <label>
                 <span className="focus-task-toggle">
@@ -66,8 +71,9 @@ export default function FocusWidget() {
             </button>
         </li>)}</ul>}
         {tasks.length < 3 ? <form className="focus-task-form" onSubmit={submitTask}>
-            <input aria-label={t("New focus task")} placeholder={tasks.length ? t("One more small goal…") : t("What matters most today?")} value={draft} onChange={event => setDraft(event.target.value)} maxLength={120} autoComplete="off" />
-            <button type="submit" className="focus-icon-button focus-add" aria-label={t("Add focus task")} title={t("Add task")} disabled={!draft.trim()}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
+            <input aria-label={t("New focus task")} placeholder={t("New priority…")} value={draft} onChange={event => setDraft(event.target.value)} maxLength={120} autoComplete="off" />
+            <button type="submit" className="focus-icon-button focus-add" aria-label={t("Add focus task")} disabled={!draft.trim()}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg><span>{t("Add task")}</span></button>
         </form> : <p className="focus-task-limit">{t("Your three priorities are set. You've got this.")}</p>}
+        </section>
     </section>;
 }
