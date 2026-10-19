@@ -1,5 +1,5 @@
 import { useTranslation } from '../i18n/useTranslation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FOCUS_DURATIONS, useFocusStore } from '../stores/useFocusStore';
 import { prepareFocusChime } from '../services/focusChime';
 import './FocusWidget.css';
@@ -8,6 +8,7 @@ export default function FocusWidget() {
     const { t } = useTranslation();
     const { tasks, mode, remainingMs, endsAt, chimeEnabled, notice, addTask, toggleTask, removeTask, start, pause, resetTimer, setMode, toggleChime } = useFocusStore();
     const [draft, setDraft] = useState('');
+    const taskInput = useRef(null);
     const [now, setNow] = useState(() => Date.now());
     useEffect(() => {
         if (!endsAt) return;
@@ -22,7 +23,10 @@ export default function FocusWidget() {
     const completed = tasks.filter(task => task.done).length;
     const submitTask = event => {
         event.preventDefault();
-        if (addTask(draft)) setDraft('');
+        if (addTask(draft)) {
+            setDraft('');
+            taskInput.current?.focus();
+        }
     };
     const toggleTimer = () => {
         if (endsAt) pause();
@@ -71,8 +75,8 @@ export default function FocusWidget() {
             </button>
         </li>)}</ul>}
         {tasks.length < 3 ? <form className="focus-task-form" onSubmit={submitTask}>
-            <input aria-label={t("New focus task")} placeholder={t("New priority…")} value={draft} onChange={event => setDraft(event.target.value)} maxLength={120} autoComplete="off" />
-            <button type="submit" className="focus-icon-button focus-add" aria-label={t("Add focus task")} disabled={!draft.trim()}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg><span>{t("Add task")}</span></button>
+            <input ref={taskInput} aria-label={t("New focus task")} placeholder={t("New priority…")} value={draft} onChange={event => setDraft(event.target.value)} maxLength={120} autoComplete="off" />
+            <button type="submit" className="focus-icon-button focus-add" aria-label={t("Add focus task")} title={t("Add focus task")} disabled={!draft.trim()}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
         </form> : <p className="focus-task-limit">{t("Your three priorities are set. You've got this.")}</p>}
         </section>
     </section>;

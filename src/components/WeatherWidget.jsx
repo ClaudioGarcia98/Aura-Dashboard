@@ -5,6 +5,8 @@ import { useSettingsStore } from '../stores/useSettingsStore';
 import { useWeather } from '../hooks/useWeather';
 import { WeatherIcon, FeelsLikeIcon, HumidityIcon, WindIcon, SunriseIcon, SunsetIcon } from './WeatherIcons';
 import { weekday } from '../i18n/core';
+import { weatherConditionLabel } from '../constants/weather';
+import { isTimeZone } from '../utils/timeZone';
 
 function forecastDay(day, locale) {
     if (typeof day.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day.date)) {
@@ -25,28 +27,28 @@ function formatWeatherValue(value, locale) {
 
 const getIconClassName = (type) => {
     if (type === 'sun') return 'weather-icon-sun';
-    if (type === 'partly-cloudy' || type === 'cloud') return 'weather-icon-cloud';
+    if (['moon', 'partly-cloudy-night', 'fog', 'partly-cloudy', 'cloud', 'unknown'].includes(type)) return 'weather-icon-cloud';
     return 'weather-icon-rain';
 };
 
-const getConditionLabel = (type) => {
-    switch (type) {
-        case 'sun': return 'Clear';
-        case 'partly-cloudy': return 'Partly cloudy';
-        case 'cloud': return 'Cloudy';
-        case 'rain': return 'Rain';
-        case 'snow': return 'Snow';
-        case 'storm': return 'Storm';
-        default: return 'Weather';
-    }
-};
+function WeatherStatus({ weather, stale, t, locale }) {
+    const updated = new Date(weather.observedAt || weather.timestamp).toLocaleString(locale, {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+        ...(isTimeZone(weather.timeZone) ? { timeZone: weather.timeZone } : {}),
+    });
+    return <div className="weather-status">
+        <span>{t('Updated {time}', { time: updated })}</span>
+        {stale && <span role="status">{t('Showing saved weather; refresh unavailable.')}</span>}
+    </div>;
+}
 
 export default memo(function WeatherWidget({ inline = false }) {
     const { t, locale } = useTranslation();
     const useCelsius = useSettingsStore(s => s.useCelsius);
     const fallbackCity = useSettingsStore(s => s.fallbackCity);
+    const cityLocation = useSettingsStore(s => s.fallbackCityLocation);
     const [expanded, setExpanded] = useState(false);
-    const { weather, error, isOffline, isFallback, fetchWeatherRef } = useWeather(useCelsius, fallbackCity);
+    const { weather, error, isOffline, isFallback, fetchWeatherRef } = useWeather(useCelsius, fallbackCity, cityLocation);
     const widgetRef = useRef(null);
     const panelRef = useRef(null);
 
@@ -59,8 +61,10 @@ export default memo(function WeatherWidget({ inline = false }) {
                 setExpanded(false);
             }
         };
+        const escape = event => { if (event.key === 'Escape') setExpanded(false); };
         document.addEventListener('click', handleClickOutside);
-        return () => document.removeEventListener('click', handleClickOutside);
+        document.addEventListener('keydown', escape);
+        return () => { document.removeEventListener('click', handleClickOutside); document.removeEventListener('keydown', escape); };
     }, []);
 
     if (!weather && !error) {
@@ -83,10 +87,11 @@ export default memo(function WeatherWidget({ inline = false }) {
     if (error) {
         if (inline) {
             return (
-                <div className="weather-inline-card" style={{ opacity: 0.7 }}>
+                <button type="button" className="weather-inline-card" style={{ opacity: 0.7 }}
+                    title={t("Weather failed to load. Click to retry.")} onClick={() => fetchWeatherRef.current?.()}>
                     <span className="weather-icon-cloud" style={{ display: 'flex', alignItems: 'center' }}>⚠️</span>
                     <span style={{ color: 'var(--text-primary)' }}>{t("Weather unavailable")}</span>
-                </div>
+                </button>
             );
         }
         return (
@@ -108,6 +113,7 @@ export default memo(function WeatherWidget({ inline = false }) {
         return (
             <div className="weather-inline" ref={widgetRef}>
                 <button
+                    type="button"
                     className={`weather-inline-card ${expanded ? 'expanded' : ''}`}
                     onClick={() => setExpanded(!expanded)}
                     aria-expanded={expanded}
@@ -119,8 +125,9 @@ export default memo(function WeatherWidget({ inline = false }) {
                     <span className="weather-inline-main">
                         <span className="weather-inline-temp">{weather ? formatWeatherValue(weather.temp, locale) : '--°'}</span>
                         <span className="weather-inline-cond">
-                            {weather ? t(getConditionLabel(weather.iconType)) : ''}
-                            {isFallback && <span title={t("Location access denied. Showing fallback.")} style={{ marginLeft: 6 }}>📍</span>}
+                            {weather ? t(weatherConditionLabel(weather.weatherCode)) : ''}
+                            {isFallback && <span title={t('Showing fallback location')} style={{ marginLeft: 6 }}>📍</span>}
+                            {isOffline && <span title={t('Showing saved weather; refresh unavailable.')} style={{ marginLeft: 6 }}>📡</span>}
                         </span>
                     </span>
                     <span className={`weather-inline-chevron ${expanded ? 'open' : ''}`} aria-hidden="true">
@@ -131,6 +138,7 @@ export default memo(function WeatherWidget({ inline = false }) {
                 </button>
 
                 <div className={`weather-inline-details ${expanded ? 'open' : ''}`} aria-hidden={!expanded} ref={panelRef} role="region" aria-label={t("Weather Details")}>
+                    <WeatherStatus weather={weather} stale={isOffline} t={t} locale={locale} />
                     <div className="wd-row">
                         <span className="wd-label"><FeelsLikeIcon /> {t("Feels like")}</span>
                         <span>{weather ? formatWeatherValue(weather.feelsLike, locale) : '--°'}</span>
@@ -191,7 +199,7 @@ export default memo(function WeatherWidget({ inline = false }) {
                 </span>
                 <span id="weatherTemp" style={{ color: 'var(--text-primary)' }}>{weather ? formatWeatherValue(weather.temp, locale) : '--°C'}</span>
                 <span className="weather-chevron" aria-hidden="true" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {isFallback && <span title={t("Location access denied. Showing fallback.")} style={{ fontSize: '0.8rem', marginRight: '4px' }}>📍</span>}
+                    {isFallback && <span title={t('Showing fallback location')} style={{ fontSize: '0.8rem', marginRight: '4px' }}>📍</span>}
                     {isOffline && <span title={t("Showing saved weather; refresh unavailable.")} style={{ fontSize: '0.8rem', marginRight: '4px', opacity: 0.8 }}>📡</span>}
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="6 9 12 15 18 9"></polyline>
@@ -206,6 +214,7 @@ export default memo(function WeatherWidget({ inline = false }) {
                 aria-hidden={!expanded}
                 aria-label={t("Weather Details")}
             >
+                <WeatherStatus weather={weather} stale={isOffline} t={t} locale={locale} />
                 <div className="wd-row">
                     <span className="wd-label"><FeelsLikeIcon /> {t("Feels like")}</span>
                     <span id="wFeels">{weather ? formatWeatherValue(weather.feelsLike, locale) : '--°C'}</span>
@@ -247,11 +256,6 @@ export default memo(function WeatherWidget({ inline = false }) {
                     </div>
                 )}
 
-                {isOffline && weather?.timestamp && (
-                    <div style={{ fontSize: '0.68rem', opacity: 0.5, textAlign: 'center', marginTop: '12px', paddingTop: '8px', borderTop: '1px dashed rgba(255,255,255,0.06)' }}>
-                        {t('Offline. Updated {time}', { time: new Date(weather.timestamp).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }) })}
-                    </div>
-                )}
             </div>
         </>
     );

@@ -41,6 +41,61 @@ it('enforces three tasks in the UI', () => {
     expect(screen.getByLabelText('New focus task')).toBeTruthy();
 });
 
+it('rejects blank submissions and trims tasks submitted from the keyboard', () => {
+    render(<FocusWidget />);
+    const input = screen.getByLabelText('New focus task');
+    const add = screen.getByRole('button', { name: 'Add focus task' });
+    expect(add.disabled).toBe(true);
+    fireEvent.change(input, { target: { value: '   ' } });
+    fireEvent.submit(input.closest('form'));
+    expect(useFocusStore.getState().tasks).toEqual([]);
+    expect(add.disabled).toBe(true);
+    fireEvent.change(input, { target: { value: '  Read a chapter  ' } });
+    fireEvent.submit(input.closest('form'));
+    expect(screen.getByRole('checkbox', { name: 'Read a chapter' })).toBeTruthy();
+    expect(input.value).toBe('');
+    expect(document.activeElement).toBe(input);
+    expect(add.disabled).toBe(true);
+    fireEvent.submit(input.closest('form'));
+    expect(useFocusStore.getState().tasks).toHaveLength(1);
+});
+
+it('adds three tasks, toggles completion both ways and allows a replacement after deletion', () => {
+    render(<FocusWidget />);
+    for (const text of ['One', 'Two', 'Three']) {
+        fireEvent.change(screen.getByLabelText('New focus task'), { target: { value: text } });
+        fireEvent.click(screen.getByRole('button', { name: 'Add focus task' }));
+    }
+    expect(screen.queryByLabelText('New focus task')).toBeNull();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'One' }));
+    expect(screen.getByText('1/3 done')).toBeTruthy();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'One' }));
+    expect(screen.getByText('0/3 done')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove task: Two' }));
+    const input = screen.getByLabelText('New focus task');
+    expect(input.value).toBe('');
+    fireEvent.change(input, { target: { value: 'Replacement' } });
+    fireEvent.submit(input.closest('form'));
+    expect(screen.getAllByRole('checkbox')).toHaveLength(3);
+    expect(screen.getByRole('checkbox', { name: 'Replacement' })).toBeTruthy();
+});
+
+it('accepts maximum-length and multilingual text as plain text and rejects oversized tasks', () => {
+    render(<FocusWidget />);
+    const input = screen.getByLabelText('New focus task');
+    expect(input.maxLength).toBe(120);
+    fireEvent.change(input, { target: { value: 'x'.repeat(121) } });
+    fireEvent.submit(input.closest('form'));
+    expect(useFocusStore.getState().tasks).toHaveLength(0);
+    expect(input.value).toHaveLength(121);
+    for (const text of ['x'.repeat(120), '日本語を勉強する ☕', '<img src=x onerror=alert(1)>']) {
+        fireEvent.change(input, { target: { value: text } });
+        fireEvent.submit(input.closest('form'));
+        expect(screen.getByRole('checkbox', { name: text })).toBeTruthy();
+    }
+    expect(screen.queryByRole('img')).toBeNull();
+});
+
 it('dims only an active focus session and keeps pause, resume, break and reset in sync', async () => {
     render(<FocusHarness />);
     expect(screen.getByRole('timer').textContent).toBe('25:00');

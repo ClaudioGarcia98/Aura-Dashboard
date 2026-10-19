@@ -18,7 +18,8 @@ import EmbeddedAnimeList from '../components/AnimeSchedule/EmbeddedAnimeList';
 import Quote from '../components/Quote';
 
 vi.mock('../hooks/useWeather', () => ({ useWeather: () => ({ weather: {
-    temp: '18°C', feelsLike: '17°C', humidity: '65%', wind: '12 km/h', iconType: 'cloud', sunrise: '07:00', sunset: '18:30',
+    temp: '18°C', feelsLike: '17°C', humidity: '65%', wind: '12 km/h', weatherCode: 3, iconType: 'cloud', sunrise: '07:00', sunset: '18:30',
+    timestamp: Date.now(), locationSource: 'gps',
     forecast: [{ day: 'Mon', date: '2026-10-19', max: 20, min: 12, iconType: 'sun' }],
 } }) }));
 

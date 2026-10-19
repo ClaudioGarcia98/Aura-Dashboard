@@ -1,6 +1,15 @@
 // English source key | Portuguese (Portugal) | Portuguese (Brazil) | Spanish | French | German | Japanese | Korean.
 // Keep every row complete. Placeholders are interpolated as text, never HTML.
 const rows = `
+Mainly clear|Céu pouco nublado|Predominantemente limpo|Mayormente despejado|Généralement dégagé|Überwiegend klar|おおむね晴れ|대체로 맑음
+Current location|Localização atual|Localização atual|Ubicación actual|Position actuelle|Aktueller Standort|現在地|현재 위치
+London (default)|Londres (predefinição)|Londres (padrão)|Londres (predeterminado)|Londres (par défaut)|London (Standard)|ロンドン（既定）|런던(기본값)
+Approximate location (IP)|Localização aproximada (IP)|Localização aproximada (IP)|Ubicación aproximada (IP)|Position approximative (IP)|Ungefährer Standort (IP)|おおよその位置（IP）|대략적인 위치(IP)
+Showing fallback location|A mostrar localização alternativa|Mostrando localização alternativa|Mostrando ubicación alternativa|Affichage de la position de secours|Ersatzstandort wird angezeigt|代替の位置を表示中|대체 위치 표시 중
+Updated {time}|Atualizado em {time}|Atualizado em {time}|Actualizado: {time}|Mis à jour : {time}|Aktualisiert: {time}|更新：{time}|업데이트: {time}
+Weather data by Open-Meteo|Dados meteorológicos da Open-Meteo|Dados meteorológicos da Open-Meteo|Datos meteorológicos de Open-Meteo|Données météo par Open-Meteo|Wetterdaten von Open-Meteo|気象データ：Open-Meteo|날씨 데이터: Open-Meteo
+Freezing drizzle|Chuvisco gelado|Garoa congelante|Llovizna helada|Bruine verglaçante|Gefrierender Nieselregen|着氷性の霧雨|어는 이슬비
+Freezing rain|Chuva gelada|Chuva congelante|Lluvia helada|Pluie verglaçante|Gefrierender Regen|着氷性の雨|어는 비
 New priority…|Nova prioridade…|Nova prioridade…|Nueva prioridad…|Nouvelle priorité…|Neue Priorität…|新しい優先タスク…|새 우선 할 일…
 Time zone|Fuso horário|Fuso horário|Zona horaria|Fuseau horaire|Zeitzone|タイムゾーン|시간대
 Automatic — device time zone|Automático — fuso horário do dispositivo|Automático — fuso horário do dispositivo|Automático — zona horaria del dispositivo|Automatique — fuseau de l’appareil|Automatisch — Gerätezeitzone|自動 — デバイスのタイムゾーン|자동 — 기기 시간대

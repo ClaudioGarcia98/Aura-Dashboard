@@ -65,12 +65,12 @@
 .focus-task--done .focus-task-text { text-decoration: line-through; color: var(--text-secondary); }
 .focus-delete { width: 36px; height: 40px; border-radius: 8px; }
 .focus-delete:hover { color: var(--status-danger); background: var(--status-danger-soft); border-color: var(--status-danger-border); }
-.focus-task-form { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 5px; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--glass-card); transition: border-color 0.2s, box-shadow 0.2s; }
+.focus-task-form { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 4px; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--glass-card); transition: border-color 0.2s, box-shadow 0.2s; }
 .focus-task-form:has(input:focus-visible) { border-color: var(--accent-color); box-shadow: 0 0 0 2px var(--accent-subtle); }
-.focus-task-form input { flex: 1; width: 0; min-width: 0; color: var(--text-primary); background: transparent; border: 0; padding: 10px 7px; font-size: 0.84rem; line-height: 1.4; }
+.focus-task-form input { flex: 1; width: 0; min-width: 0; color: var(--text-primary); background: transparent; border: 0; padding: 7px; font-size: 0.84rem; line-height: 1.4; }
 .focus-task-form input:focus-visible { outline: none; box-shadow: none; }
 .focus-task-form input::placeholder { color: var(--text-secondary); }
-.focus-task-form .focus-add { width: auto; min-height: 40px; height: auto; max-width: 55%; gap: 5px; padding: 8px 10px; border: 0; border-radius: 7px; color: var(--on-accent); background: var(--accent-gradient); font-size: 0.76rem; font-weight: 650; line-height: 1.35; }
+.focus-task-form .focus-add { width: 34px; height: 34px; padding: 0; border: 0; border-radius: 7px; color: var(--on-accent); background: var(--accent-gradient); }
 .focus-add svg { flex-shrink: 0; }
 .focus-task-form .focus-add:disabled { opacity: 1; color: var(--text-secondary); background: var(--surface-30); }
 .focus-task-form .focus-add:not(:disabled):hover { filter: brightness(1.1); }
@@ -79,11 +79,6 @@
 @media (max-width: 600px) {
     .focus-priorities { padding: 14px; }
     .focus-task-form input { font-size: 16px; }
-}
-@media (max-width: 380px) {
-    .focus-task-form { flex-wrap: wrap; }
-    .focus-task-form input { flex-basis: 100%; }
-    .focus-task-form .focus-add { width: 100%; max-width: none; min-height: 44px; }
 }
 .compact-home .focus-widget { margin-bottom: 0; }
 /* Keep the timer, clock and music clear while quieting the surrounding widgets. */

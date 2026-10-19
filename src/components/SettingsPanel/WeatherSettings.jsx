@@ -94,7 +94,7 @@ export default function WeatherSettings({ active }) {
                                         <li key={i} className="city-suggestion-item" role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => {
                                             const fullName = `${s.name}${s.admin1 ? ', ' + s.admin1 : ''}, ${s.country}`;
                                             setCitySearchText(fullName);
-                                            setFallbackCity(fullName);
+                                            setFallbackCity(fullName, { lat: s.latitude, lon: s.longitude });
                                             setShowCityDropdown(false);
                                         }}>
                                             <span style={{ fontWeight: 'bold' }}>{s.name}</span>

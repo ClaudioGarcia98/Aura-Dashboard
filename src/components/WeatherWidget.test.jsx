@@ -11,6 +11,7 @@ vi.mock('../stores/useSettingsStore', () => ({
 }));
 
 const mockWeatherData = {
+    timezone: 'Europe/Lisbon',
     current: {
         temperature_2m: 20,
         apparent_temperature: 18,
@@ -47,6 +48,7 @@ describe('WeatherWidget', () => {
     });
 
     afterEach(() => {
+        vi.unstubAllGlobals();
         vi.restoreAllMocks();
     });
 
@@ -132,5 +134,41 @@ describe('WeatherWidget', () => {
         // Close panel
         fireEvent.click(toggleBtn);
         expect(panel.classList.contains('open')).toBe(false);
+    });
+
+    it.each([true, false])('shows only the update timestamp in the header (inline=%s)', async inline => {
+        render(<WeatherWidget inline={inline} />);
+        await waitFor(() => expect(screen.getByText('20°C')).toBeTruthy());
+        fireEvent.click(screen.getByRole('button', { name: 'Toggle weather details' }));
+        for (const value of ['18°C', '50%', '10 km/h', '06:00', '18:00']) {
+            expect(screen.getByText(value)).toBeTruthy();
+        }
+        expect(screen.getByText(/^Updated /)).toBeTruthy();
+        expect(screen.queryByText('Current location')).toBeNull();
+        expect(screen.queryByText('Weather data by Open-Meteo')).toBeNull();
+        expect(screen.queryByText(/Europe\/Lisbon/)).toBeNull();
+        expect(document.querySelector('.weather-status').children).toHaveLength(1);
+        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(screen.getByRole('button', { name: 'Toggle weather details' }).getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('allows retrying errors in the compact view', async () => {
+        fetch.mockRejectedValue(new Error('Offline'));
+        render(<WeatherWidget inline />);
+        const retry = await screen.findByRole('button', { name: /Weather unavailable/ });
+        fetch.mockResolvedValue({ ok: true, json: async () => mockWeatherData });
+        fireEvent.click(retry);
+        await waitFor(() => expect(screen.getByText('20°C')).toBeTruthy());
+    });
+
+    it('marks saved data as stale in the compact view when the network fails', async () => {
+        const { fetchWeatherData } = await import('../services/weather');
+        const cached = await fetchWeatherData(true, 'London', new AbortController().signal);
+        localStorage.setItem('dash_weather_cache', JSON.stringify(cached));
+        fetch.mockRejectedValue(new Error('Offline'));
+        render(<WeatherWidget inline />);
+        fireEvent.click(screen.getByRole('button', { name: 'Toggle weather details' }));
+        await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Showing saved weather; refresh unavailable.'));
+        expect(screen.getByTitle('Showing saved weather; refresh unavailable.')).toBeTruthy();
     });
 });

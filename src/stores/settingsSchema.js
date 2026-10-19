@@ -16,7 +16,7 @@ export const DEFAULT_SETTINGS = {
     language: 'auto',
     timeZone: 'auto', showJapanTime: true,
     theme: 'aurora', font: 'default', clockMode: 'digital', username: '',
-    malUsername: '', fallbackCity: '', use24hClock: true, useCelsius: true,
+    malUsername: '', fallbackCity: '', fallbackCityLocation: null, use24hClock: true, useCelsius: true,
     gifName: '', lofiId: 'Gu-g8FRG4Zs', lofiStations: DEFAULT_STATIONS,
     volume: 0.2, speedDials: [], customEngines: [], remoteSuggestions: false,
     pauseBackground: false,
@@ -28,6 +28,9 @@ const record = value => value && typeof value === 'object' && !Array.isArray(val
 const text = value => typeof value === 'string' && value.length <= 500;
 const id = value => (typeof value === 'string' && value.length > 0 && value.length <= 100) || (typeof value === 'number' && Number.isFinite(value));
 const checks = {
+    fallbackCityLocation: value => value === null || (record(value) && text(value.city)
+        && Number.isFinite(value.lat) && Math.abs(value.lat) <= 90
+        && Number.isFinite(value.lon) && Math.abs(value.lon) <= 180),
     language: value => value === 'auto' || Object.hasOwn(LANGUAGES, value),
     timeZone: value => value === 'auto' || isTimeZone(value),
     theme: value => typeof value === 'string' && Object.hasOwn(THEMES, value),
@@ -71,7 +74,8 @@ export function sanitizeSettings(input, { strict = false } = {}) {
                     : { name: item.name, prefix: item.prefix, url: item.url });
         } else {
             const valid = checks[key] ? checks[key](value) : typeof fallback === 'boolean' ? typeof value === 'boolean' : text(value);
-            if (valid) result[key] = value;
+            if (valid) result[key] = key === 'fallbackCityLocation' && value
+                ? { city: value.city, lat: value.lat, lon: value.lon } : value;
             else if (strict) throw new Error(`Invalid setting: ${key}`);
         }
     }

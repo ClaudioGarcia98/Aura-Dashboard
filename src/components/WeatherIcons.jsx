@@ -6,12 +6,30 @@ const SunIcon = () => (
     </svg>
 );
 
+const MoonIcon = () => (
+    <svg className="weather-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" />
+    </svg>
+);
+
+const CloudyNightIcon = () => (
+    <svg className="weather-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 9a6 6 0 0 1-6-6 6 6 0 0 0-4 10" />
+        <path d="M8 21a4 4 0 1 1 0-8 5 5 0 0 1 9-1 4.5 4.5 0 1 1 1 9Z" />
+    </svg>
+);
+
+const FogIcon = () => (
+    <svg className="weather-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 12a4 4 0 0 1 2-7 5 5 0 0 1 9 0 4 4 0 0 1 3 7M3 16h18M5 20h14" />
+    </svg>
+);
+
 const PartlyCloudyIcon = () => (
     <svg className="weather-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2v2M4.93 4.93l1.41 1.41M2 12h2" />
-        <circle cx="12" cy="12" r="4" />
-        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" fill="rgba(255,255,255,0.1)" />
-        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+        <path d="M16 1v1M22 7h1M20.5 2.5l-.7.7M10.8 2.5l.7.7" />
+        <path d="M13 6a3.5 3.5 0 1 1 6 3" />
+        <path d="M7 21a4 4 0 1 1 0-8 5 5 0 0 1 9-1 4.5 4.5 0 1 1 1 9Z" fill="rgba(255,255,255,0.1)" />
     </svg>
 );
 
@@ -26,7 +44,7 @@ const RainIcon = () => (
     <svg className="weather-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" fill="rgba(255,255,255,0.05)" />
         <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
-        <path d="M8 22l-1 2M12 22l-1 2M16 22l-1 2" />
+        <path d="M8 21l-1 2M12 21l-1 2M16 21l-1 2" />
     </svg>
 );
 
@@ -42,7 +60,7 @@ const StormIcon = () => (
     <svg className="weather-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" fill="rgba(255,255,255,0.05)" />
         <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
-        <path d="M13 22l-2 3h3l-2 3" />
+        <path d="m13 14-3 5h4l-2 4" />
     </svg>
 );
 
@@ -79,11 +97,14 @@ export const SunsetIcon = () => (
 export const WeatherIcon = ({ type }) => {
     switch (type) {
         case 'sun': return <SunIcon />;
+        case 'moon': return <MoonIcon />;
         case 'partly-cloudy': return <PartlyCloudyIcon />;
+        case 'partly-cloudy-night': return <CloudyNightIcon />;
         case 'cloud': return <CloudIcon />;
+        case 'fog': return <FogIcon />;
         case 'rain': return <RainIcon />;
         case 'snow': return <SnowIcon />;
         case 'storm': return <StormIcon />;
-        default: return <SunIcon />;
+        default: return <CloudIcon />;
     }
 };
