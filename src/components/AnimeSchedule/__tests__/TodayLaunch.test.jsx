@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import TodayLaunch from '../TodayLaunch';
 
 vi.mock('../AnimeCard', () => ({
@@ -31,6 +31,13 @@ describe('TodayLaunch', () => {
     it('renders error state when todayError is truthy', () => {
         render(<TodayLaunch {...baseProps} todayError={true} />);
         expect(screen.getByText("Couldn't connect to AniList right now.")).toBeTruthy();
+    });
+
+    it.each([{ todayError: true }, { todayStale: true }])('offers an explicit retry for unavailable/stale data: %o', status => {
+        const onRetry = vi.fn();
+        render(<TodayLaunch {...baseProps} {...status} onRetry={onRetry} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+        expect(onRetry).toHaveBeenCalledOnce();
     });
 
     it('renders stale notice when todayStale is true', () => {

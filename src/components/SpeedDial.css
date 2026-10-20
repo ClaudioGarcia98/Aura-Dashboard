@@ -55,7 +55,8 @@
     z-index: 10;
     padding: 0;
 }
-.speed-dial-wrapper:hover .speed-dial-delete {
+.speed-dial-wrapper:hover .speed-dial-delete,
+.speed-dial-wrapper:focus-within .speed-dial-delete {
     opacity: 1;
     transform: scale(1);
 }

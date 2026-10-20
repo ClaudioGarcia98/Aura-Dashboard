@@ -1,7 +1,6 @@
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import MediaSettings from './MediaSettings';
-import BackgroundSettings from './BackgroundSettings';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 
 vi.mock('../../stores/useSettingsStore');
@@ -16,12 +15,14 @@ let mockState;
 beforeEach(() => {
     mockState = {
         volume: 0.5, setVolume: vi.fn(),
-        gifName: '', setGifName: vi.fn(),
-        setBackgroundUrl: vi.fn(), setBackgroundIsVideo: vi.fn(),
+        gifName: '',
         lofiId: 'lTRiuFIWV54',
         setLofiId: vi.fn(),
         lofiStations: [...STATIONS],
         setLofiStations: vi.fn(),
+        addLofiStation: vi.fn(() => true),
+        updateLofiStation: vi.fn(() => true),
+        removeLofiStation: vi.fn(),
     };
 
     useSettingsStore.mockImplementation((selector) =>
@@ -80,7 +81,7 @@ describe('MediaSettings — inline edit', () => {
         expect(getByPlaceholderText('Name')).toBeTruthy();
     });
 
-    it('save button calls setLofiStations with updated station', () => {
+    it('save button submits the edited fields through the station action', () => {
         const { container, getAllByPlaceholderText } = render(<MediaSettings />);
         fireEvent.click(container.querySelectorAll('button[title="Edit"]')[0]);
 
@@ -90,46 +91,24 @@ describe('MediaSettings — inline edit', () => {
         const saveBtn = [...container.querySelectorAll('button')].find(b => b.textContent === 'Save');
         fireEvent.click(saveBtn);
 
-        expect(mockState.setLofiStations).toHaveBeenCalledWith(
-            expect.arrayContaining([
-                expect.objectContaining({ id: 1, name: 'New Name' }),
-            ])
-        );
+        expect(mockState.updateLofiStation).toHaveBeenCalledWith(1, { videoId: 'lTRiuFIWV54', name: 'New Name' });
     });
 });
 
 describe('MediaSettings — delete station', () => {
-    it('delete button calls setLofiStations with station removed', () => {
+    it('delete button delegates to the validated station action', () => {
         const { container } = render(<MediaSettings />);
         const deleteBtns = container.querySelectorAll('button[title="Delete"]');
         fireEvent.click(deleteBtns[1]); // delete Synthwave Radio
-        expect(mockState.setLofiStations).toHaveBeenCalledWith(
-            expect.arrayContaining([expect.objectContaining({ videoId: 'lTRiuFIWV54' })])
-        );
-        expect(mockState.setLofiStations).toHaveBeenCalledWith(
-            expect.not.arrayContaining([expect.objectContaining({ videoId: '4xDzrJKXOOY' })])
-        );
+        expect(mockState.removeLofiStation).toHaveBeenCalledWith(2);
     });
 
-    it('deleting active station calls setLofiId with fallback videoId', () => {
+    it('deleting the active station delegates selection handling to the store', () => {
         const { container } = render(<MediaSettings />);
         const deleteBtns = container.querySelectorAll('button[title="Delete"]');
         fireEvent.click(deleteBtns[0]); // delete Lofi Girl (active)
-        expect(mockState.setLofiId).toHaveBeenCalledWith('4xDzrJKXOOY');
-    });
-
-    it('deleting non-active station does not call setLofiId', () => {
-        const { container } = render(<MediaSettings />);
-        const deleteBtns = container.querySelectorAll('button[title="Delete"]');
-        fireEvent.click(deleteBtns[1]); // delete Synthwave Radio (not active)
+        expect(mockState.removeLofiStation).toHaveBeenCalledWith(1);
         expect(mockState.setLofiId).not.toHaveBeenCalled();
-    });
-
-    it('deleting last station falls back to default videoId', () => {
-        mockState.lofiStations = [{ id: 1, videoId: 'lTRiuFIWV54', name: 'Lofi Girl' }];
-        const { container } = render(<MediaSettings />);
-        fireEvent.click(container.querySelector('button[title="Delete"]'));
-        expect(mockState.setLofiId).toHaveBeenCalledWith('Gu-g8FRG4Zs');
     });
 });
 
@@ -141,11 +120,7 @@ describe('MediaSettings — add station', () => {
         fireEvent.click([...container.querySelectorAll('button')].find(b => b.textContent === 'Add'));
 
         await waitFor(() => {
-            expect(mockState.setLofiStations).toHaveBeenCalledWith(
-                expect.arrayContaining([
-                    expect.objectContaining({ videoId: 'newVideoId1', name: 'My Station' }),
-                ])
-            );
+            expect(mockState.addLofiStation).toHaveBeenCalledWith(expect.objectContaining({ videoId: 'newVideoId1', name: 'My Station' }));
         });
         expect(fetch).not.toHaveBeenCalled();
     });
@@ -161,11 +136,7 @@ describe('MediaSettings — add station', () => {
             );
         });
         await waitFor(() => {
-            expect(mockState.setLofiStations).toHaveBeenCalledWith(
-                expect.arrayContaining([
-                    expect.objectContaining({ videoId: 'newVideoId1', name: 'Fetched Title' }),
-                ])
-            );
+            expect(mockState.addLofiStation).toHaveBeenCalledWith(expect.objectContaining({ videoId: 'newVideoId1', name: 'Fetched Title' }));
         });
     });
 
@@ -178,11 +149,7 @@ describe('MediaSettings — add station', () => {
         fireEvent.click([...container.querySelectorAll('button')].find(b => b.textContent === 'Add'));
 
         await waitFor(() => {
-            expect(mockState.setLofiStations).toHaveBeenCalledWith(
-                expect.arrayContaining([
-                    expect.objectContaining({ videoId: 'newVideoId1' }),
-                ])
-            );
+            expect(mockState.addLofiStation).toHaveBeenCalledWith(expect.objectContaining({ videoId: 'newVideoId1' }));
         });
     });
 
@@ -190,7 +157,7 @@ describe('MediaSettings — add station', () => {
         const { container } = render(<MediaSettings />);
         fireEvent.click([...container.querySelectorAll('button')].find(b => b.textContent === 'Add'));
         await waitFor(() => {
-            expect(mockState.setLofiStations).not.toHaveBeenCalled();
+            expect(mockState.addLofiStation).not.toHaveBeenCalled();
         });
     });
 
@@ -240,26 +207,5 @@ describe('MediaSettings — volume slider', () => {
         expect(muteBtn.classList.contains('muted')).toBe(true);
         fireEvent.click(muteBtn);
         expect(mockState.setVolume).toHaveBeenCalledWith(0.6);
-    });
-});
-
-describe('BackgroundSettings', () => {
-    it('displays default animation name when gifName is not set', () => {
-        mockState.gifName = '';
-        const { getByText } = render(<BackgroundSettings />);
-        expect(getByText('Default (animated_gif.mp4)')).toBeTruthy();
-    });
-
-    it('shows custom gif name and restore button when custom background is active', async () => {
-        mockState.gifName = 'my-custom-bg.gif';
-        const { getByText } = render(<BackgroundSettings />);
-        expect(getByText('my-custom-bg.gif')).toBeTruthy();
-        const restoreBtn = getByText('↺ Restore');
-        expect(restoreBtn).toBeTruthy();
-        fireEvent.click(restoreBtn);
-        await waitFor(() => {
-            expect(mockState.setGifName).toHaveBeenCalledWith('');
-            expect(mockState.setBackgroundIsVideo).toHaveBeenCalledWith(true);
-        });
     });
 });

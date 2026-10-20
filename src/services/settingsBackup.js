@@ -38,8 +38,11 @@ export function parseSettingsBackup(raw) {
 
 export function restoreSettingsBackup(raw) {
     const settings = parseSettingsBackup(raw);
-    // A single atomic storage write: validation/quota failure preserves the previous backup.
-    globalThis.localStorage.setItem('dash_settings', JSON.stringify({ state: settings, version: 1 }));
+    // Commit exactly the persisted preference shape before updating the mounted store.
+    // The subsequent store notification then skips an identical storage write.
+    const { name, version, partialize } = useSettingsStore.persist.getOptions();
+    safeStorage.setItemStrict(name, JSON.stringify({ state: partialize(settings), version }));
+    useSettingsStore.setState(settings);
     return settings;
 }
 

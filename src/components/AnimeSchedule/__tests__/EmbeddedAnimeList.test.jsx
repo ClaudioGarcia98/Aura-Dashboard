@@ -34,6 +34,13 @@ describe('EmbeddedAnimeList', () => {
         expect(screen.getByText('Sun')).toBeTruthy();
     });
 
+    it('exposes retry when the compact provider request fails', () => {
+        const onRetry = vi.fn();
+        render(<EmbeddedAnimeList {...baseProps} sidebarError onRetry={onRetry} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+        expect(onRetry).toHaveBeenCalledOnce();
+    });
+
     it('calls setActiveDay on day button click and keyboard interaction', () => {
         const handleSetActiveDay = vi.fn();
         render(<EmbeddedAnimeList {...baseProps} setActiveDay={handleSetActiveDay} />);

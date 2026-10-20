@@ -1,6 +1,7 @@
 import { useTranslation } from '../i18n/useTranslation';
 import { ENGINES } from '../constants/searchEngines';
 import { useSearchSuggestions } from '../hooks/useSearchSuggestions';
+import { getActiveModal } from '../hooks/useDialog';
 import { openUrl, httpUrl, normalizeUrl, faviconUrl } from '../utils/urls';
 import './SearchBox.css';
 import { memo, useState, useEffect, useRef, useLayoutEffect } from 'react';
@@ -70,6 +71,8 @@ export default memo(function SearchBox() {
     useEffect(() => {
         const handleCtrlSpace = (e) => {
             if (e.ctrlKey && e.code === 'Space') {
+                const modal = getActiveModal();
+                if (e.defaultPrevented || (modal && !modal.contains(inputRef.current))) return;
                 e.preventDefault();
                 inputRef.current?.focus();
                 inputRef.current?.select();
@@ -90,7 +93,7 @@ export default memo(function SearchBox() {
 
         // Only auto-focus (and pop the keyboard) on devices with a fine pointer —
         // avoids the keyboard springing up on every phone/tablet tab open.
-        if (window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
+        if (!getActiveModal() && window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
             inputRef.current?.focus();
         }
 

@@ -26,7 +26,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 export default function App() {
     const { t } = useTranslation();
     useDocumentLanguage();
-    useBackgroundLoader();
+    const { backgroundError, handleBackgroundError } = useBackgroundLoader() || {};
     useThemeEffect();
     useFontEffect();
 
@@ -131,6 +131,7 @@ export default function App() {
                 <video
                     ref={videoRef}
                     src={backgroundUrl}
+                    onError={() => handleBackgroundError?.(backgroundUrl)}
                     autoPlay={!pauseBackground && !reducedMotion}
                     loop
                     muted
@@ -145,6 +146,7 @@ export default function App() {
                 />
             )}
             <div className="overlay" id="overlay"></div>
+            {backgroundError && <div role="status" style={{ position: 'fixed', bottom: 12, left: 12, zIndex: 1001, pointerEvents: 'none', maxWidth: 'min(360px, calc(100vw - 24px))', padding: '8px 12px', borderRadius: 10, background: 'var(--glass-card)', color: 'var(--text-primary)', fontSize: '0.75rem' }}>{t(backgroundError)}</div>}
             {booting && (
                 <div id="bootScreen" className="boot-screen" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                     <img src={logoUrl} alt="Aura" style={{ width: '80px', height: '80px', marginBottom: '24px', animation: 'pulseGlow 2s infinite', filter: 'drop-shadow(0 0 20px var(--accent-color))' }} />
@@ -153,7 +155,7 @@ export default function App() {
             )}
             
             {isCompact ? (
-                <CompactLayout tab={compactTab} onTabChange={setCompactTab} lofiPlaying={lofiPlaying} externalPlayer />
+                <CompactLayout tab={compactTab} onTabChange={setCompactTab} lofiPlaying={lofiPlaying} />
             ) : (
             <main className={`interactive-ui ${booting ? 'boot-hidden' : ''}`} id="mainUi">
                 <section style={{ opacity: 'var(--ui-opacity)', transition: 'opacity 0.8s ease-in-out' }}>

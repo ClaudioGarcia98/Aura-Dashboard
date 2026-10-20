@@ -2,7 +2,9 @@ import { useTranslation } from '../i18n/useTranslation';
 import './Greeting.css';
 import { memo, useState, useEffect } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
-import { safeStorage, safeJsonParse } from '../utils/storage';
+import { weatherCacheKey } from '../services/weather';
+import { useWeatherStore, readCurrentWeather } from '../stores/useWeatherStore';
+import { weatherConditionLabel } from '../constants/weather';
 import { useTimeZone } from '../hooks/useTimeZone';
 import { zonedParts } from '../utils/timeZone';
 
@@ -10,20 +12,17 @@ export default memo(function Greeting() {
     const { t, locale } = useTranslation();
     const timeZone = useTimeZone();
     const username = useSettingsStore(s => s.username);
+    const useCelsius = useSettingsStore(s => s.useCelsius ?? true);
+    const city = useSettingsStore(s => s.fallbackCity);
+    const location = useSettingsStore(s => s.fallbackCityLocation);
+    const weatherEnabled = useSettingsStore(s => s.showWeatherWidget ?? true);
+    const weatherKey = weatherCacheKey(useCelsius, city, location);
+    const snapshot = useWeatherStore(state => state.snapshot);
     const [greeting, setGreeting] = useState('');
-    const [weatherCode, setWeatherCode] = useState(() => {
-        const data = safeJsonParse(safeStorage.getItem('dash_weather_cache'), null);
-        return typeof data?.weatherCode === 'number' ? data.weatherCode : null;
-    });
-
-    useEffect(() => {
-        const handleWeather = (e) => setWeatherCode(e.detail);
-        window.addEventListener('weather-update', handleWeather);
-        return () => window.removeEventListener('weather-update', handleWeather);
-    }, []);
 
     useEffect(() => {
         const updateGreeting = () => {
+            const weatherCode = readCurrentWeather(weatherKey, weatherEnabled)?.weatherCode ?? null;
             const hr = zonedParts(new Date(), timeZone).hour;
             let prefix = 'Good morning';
             
@@ -57,10 +56,7 @@ export default memo(function Greeting() {
             if (locale !== 'en') {
                 prefix = t(baseGreeting);
                 if (weatherCode !== null && baseGreeting !== 'Time to rest') {
-                    const condition = weatherCode === 0 ? 'Clear' : weatherCode <= 2 ? 'Partly cloudy' : weatherCode === 3 ? 'Cloudy'
-                        : weatherCode <= 48 ? 'Fog' : weatherCode <= 55 ? 'Drizzle' : weatherCode <= 57 ? 'Frost'
-                            : weatherCode <= 67 ? 'Rain' : weatherCode <= 77 ? 'Snow' : weatherCode <= 82 ? 'Rain' : weatherCode <= 86 ? 'Snow' : 'Storm';
-                    prefix += ` · ${t(condition)}`;
+                    prefix += ` · ${t(weatherConditionLabel(weatherCode))}`;
                 }
             }
             const cleanName = typeof username === 'string' ? username.trim() : '';
@@ -70,7 +66,7 @@ export default memo(function Greeting() {
         updateGreeting();
         const interval = setInterval(updateGreeting, 60000); // update every minute
         return () => clearInterval(interval);
-    }, [username, weatherCode, t, locale, timeZone]);
+    }, [username, snapshot, weatherKey, weatherEnabled, t, locale, timeZone]);
 
     return <div id="greeting">{greeting}</div>;
 });

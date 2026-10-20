@@ -7,6 +7,7 @@ import { formatDuration } from '../../i18n/core';
 import AnimeSynopsis from './AnimeSynopsis';
 import { useTimeZone } from '../../hooks/useTimeZone';
 import { useSettingsStore } from '../../stores/useSettingsStore';
+import EmbeddedTrailer from './EmbeddedTrailer';
 
 const calculateTimeLeft = (broadcast, airingAt) => {
     if (airingAt && typeof airingAt === 'number') {
@@ -172,15 +173,7 @@ export default memo(function AnimeCard({
                                 ))}
                             </div>
                             {isTouchOrMobile && trailerId && isExpanded && (
-                                <div className="anime-card-trailer" onClick={(e) => e.stopPropagation()}>
-                                    <iframe
-                                        title={t('{title} Trailer', { title })}
-                                        src={`https://www.youtube.com/embed/${trailerId}?enablejsapi=1&modestbranding=1&rel=0&playsinline=1`}
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowFullScreen
-                                        loading="lazy"
-                                    />
-                                </div>
+                                <EmbeddedTrailer videoId={trailerId} title={t('{title} Trailer', { title })} />
                             )}
                             <AnimeSynopsis anime={anime} />
                             <a href={anime.url} target="_blank" rel="noopener noreferrer" className="anime-mal-link" onClick={(e) => e.stopPropagation()}> {t("View on MyAnimeList ↗")} </a>
@@ -216,15 +209,7 @@ export default memo(function AnimeCard({
                 <div className="tab-synopsis-panel">
                     <div className="tab-synopsis-inner">
                         {isTouchOrMobile && trailerId && isExpanded && (
-                            <div className="anime-card-trailer" onClick={(e) => e.stopPropagation()}>
-                                <iframe
-                                    title={t('{title} Trailer', { title })}
-                                    src={`https://www.youtube.com/embed/${trailerId}?enablejsapi=1&modestbranding=1&rel=0&playsinline=1`}
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                    loading="lazy"
-                                />
-                            </div>
+                            <EmbeddedTrailer videoId={trailerId} title={t('{title} Trailer', { title })} />
                         )}
                         <AnimeSynopsis anime={anime} />
                         <a href={anime.url} target="_blank" rel="noopener noreferrer" className="anime-mal-link" onClick={(e) => e.stopPropagation()}> {t("View on MyAnimeList ↗")} </a>

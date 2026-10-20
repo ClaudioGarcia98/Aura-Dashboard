@@ -16,6 +16,7 @@ export default memo(function TodayLaunch({
     userWatchingIds,
     onMouseEnter,
     onMouseLeave,
+    onRetry,
 }) {
     const { t } = useTranslation();
     return (
@@ -36,11 +37,11 @@ export default memo(function TodayLaunch({
                 </span>
             </div>
             {todayStale && !todayLoading && !todayError && (
-                <div className="stale-state" role="status" style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '6px' }}> {t("Showing saved schedule · Live update unavailable")} </div>
+                <div className="stale-state" role="status" style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '6px' }}> {t("Showing saved schedule · Live update unavailable")} {onRetry && <button type="button" className="pill" onClick={onRetry}>{t('Retry')}</button>} </div>
             )}
             <div className="tab-list" id="tabList">
                 {todayError ? (
-                    <div className="error-state">{t("Couldn't connect to AniList right now.")}</div>
+                    <div className="error-state">{t("Couldn't connect to AniList right now.")} {onRetry && <button type="button" className="pill" onClick={onRetry}>{t('Retry')}</button>}</div>
                 ) : todayLoading ? (
                     <>
                         {[1, 2, 3, 4, 5].map(i => (

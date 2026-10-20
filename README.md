@@ -7,7 +7,7 @@ Live anime airing schedules, MyAnimeList watchlist sync, ambient Lofi radio, wea
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-GitHub_Pages-FF7B54?style=for-the-badge&logo=github)](https://claudiogarcia98.github.io/Aura-Dashboard/)
 [![Release](https://img.shields.io/badge/Release-v1.2.0-38BDF8?style=for-the-badge)](https://github.com/ClaudioGarcia98/Aura-Dashboard/releases/tag/v1.2.0)
-[![Tests](https://img.shields.io/badge/Tests-656_Passing-22C55E?style=for-the-badge&logo=vitest)](https://github.com/ClaudioGarcia98/Aura-Dashboard/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/ClaudioGarcia98/Aura-Dashboard/deploy.yml?branch=main&style=for-the-badge&label=Tests%20%26%20Build&logo=githubactions)](https://github.com/ClaudioGarcia98/Aura-Dashboard/actions/workflows/deploy.yml)
 [![Node](https://img.shields.io/badge/Node-%3E%3D22.12-339933?style=for-the-badge&logo=nodedotjs)](https://nodejs.org/)
 [![Buy Me A Coffee](https://img.shields.io/badge/Support-Buy_Me_a_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/claudio091s)
 
@@ -79,9 +79,12 @@ Open the local URL shown in your terminal (default `http://localhost:5173`). In 
 | `npm run dev` | Start the local Vite development server with HMR and `/api/mal` proxy |
 | `npm run lint` | Run ESLint across all JavaScript and React files |
 | `npm test` | Run the full Vitest unit & integration suite, including localization coverage |
+| `npm run test:browser` | Check the production build in Chromium: desktop/phone startup, keyboard focus, background recovery, and media lifecycles |
 | `npm run build` | Package the app into a single self-contained `dist/index.html` and verify CSP hashes |
 | `npm run preview` | Serve the production `dist/index.html` bundle locally |
 | `npm audit` | Check dependency security advisories |
+
+Before the first browser test run, install Chromium with `npx playwright install chromium`, then run `npm run build` and `npm run test:browser`. The suite starts a local production preview and uses controlled anime/YouTube responses. CI runs the same suite before deployment and saves traces for failures.
 
 ---
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchWeatherData, readWeatherCache, weatherCacheKey, WEATHER_REFRESH_MS } from '../services/weather';
 import { safeStorage } from '../utils/storage';
+import { useWeatherStore } from '../stores/useWeatherStore';
 
 export function useWeather(useCelsius, fallbackCity, cityLocation) {
     const key = weatherCacheKey(useCelsius, fallbackCity, cityLocation);
@@ -9,6 +10,7 @@ export function useWeather(useCelsius, fallbackCity, cityLocation) {
     useEffect(() => {
         let active = true, generation = 0, timer, controller;
         let current = readWeatherCache(key);
+        useWeatherStore.setState({ snapshot: { key, data: current, stale: !current || Date.now() - current.timestamp >= WEATHER_REFRESH_MS } });
         let delay = 60000;
         const refresh = async () => {
             const request = ++generation;
@@ -18,13 +20,14 @@ export function useWeather(useCelsius, fallbackCity, cityLocation) {
                 if (!active || request !== generation) return;
                 current = data; delay = 60000;
                 setState({ key, data, error: false, stale: false });
+                useWeatherStore.setState({ snapshot: { key, data, stale: false } });
                 safeStorage.setItem('dash_weather_cache', JSON.stringify(data));
                 safeStorage.setItem('dash_geo', JSON.stringify(data.location));
-                window.dispatchEvent(new CustomEvent('weather-update', { detail: data.weatherCode }));
                 timer = setTimeout(refresh, WEATHER_REFRESH_MS);
             } catch {
                 if (!active || request !== generation) return;
                 setState({ key, data: current, error: !current, stale: !!current });
+                useWeatherStore.setState({ snapshot: { key, data: current, stale: true } });
                 timer = setTimeout(refresh, delay); delay = Math.min(delay * 2, 600000);
             }
         };

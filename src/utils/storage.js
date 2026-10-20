@@ -36,6 +36,13 @@ export function safeJsonStringify(value, fallback = '{}') {
 const memory = new Map();
 const pending = new Set();
 export const safeStorage = {
+    // Commit durable imports before changing the in-memory fallback or mounted stores.
+    setItemStrict(key, value) {
+        const serialized = String(value);
+        globalThis.localStorage.setItem(key, serialized);
+        memory.set(key, serialized);
+        pending.delete(key);
+    },
     getItem(key) {
         if (pending.has(key)) return memory.get(key) ?? null;
         try { return globalThis.localStorage.getItem(key); }

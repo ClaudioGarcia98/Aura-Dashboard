@@ -22,6 +22,19 @@ it('isolates cached schedules by time zone and never falls back to another zone 
     expect(getScheduleCache('Asia/Tokyo').friday.timeZone).toBe('Asia/Tokyo');
 });
 
+it('preserves the cache timestamp on reads and allows an explicit live schedule refresh', async () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-19T12:00:00Z'));
+    fetch.mockResolvedValue(response({ data: { Page: { airingSchedules: [] } } }));
+    const live = await fetchDaySchedule('monday', { timeZone: 'UTC' });
+    vi.setSystemTime(new Date(Date.now() + 59 * 60000));
+    const cached = await fetchDaySchedule('monday', { timeZone: 'UTC' });
+    expect(cached.savedAt).toBe(live.savedAt);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const refreshed = await fetchDaySchedule('monday', { timeZone: 'UTC', force: true });
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(refreshed.savedAt).toBe(Date.now());
+});
+
 it.each([
     ['2026-03-29T12:00:00Z', '2026-03-29T00:00:00.000Z', '2026-03-29T23:00:00.000Z', 23],
     ['2026-10-25T12:00:00Z', '2026-10-24T23:00:00.000Z', '2026-10-26T00:00:00.000Z', 25],

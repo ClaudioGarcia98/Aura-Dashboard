@@ -4,6 +4,7 @@ import { useSettingsStore } from '../stores/useSettingsStore';
 import { DEFAULT_SETTINGS } from '../stores/settingsSchema';
 import { useFocusStore, initialFocusState } from '../stores/useFocusStore';
 import { getBackgroundBlob, saveBackgroundBlob, deleteBackgroundBlob } from './db';
+import { GIF_BASE64, gifBlob, mockMediaDecoder } from '../testSupport/backgroundMedia';
 
 vi.mock('./db', () => ({ getBackgroundBlob: vi.fn(), saveBackgroundBlob: vi.fn(), deleteBackgroundBlob: vi.fn() }));
 const preset = () => ({
@@ -11,7 +12,7 @@ const preset = () => ({
     appearance: { theme: 'mocha', font: 'outfit' }, wallpaper: { kind: 'keep' },
     music: { selectedVideoId: 'Gu-g8FRG4Zs', stations: [{ name: 'Anime Lofi', videoId: 'Gu-g8FRG4Zs' }] },
 });
-const wallpaper = () => ({ kind: 'embedded', name: 'cozy.png', dataUrl: 'data:image/png;base64,aGVsbG8=' });
+const wallpaper = () => ({ kind: 'embedded', name: 'cozy.gif', dataUrl: `data:image/gif;base64,${GIF_BASE64}` });
 
 it('preserves the recipient time zone and Japan reference when applying a shared preset', async () => {
     useSettingsStore.setState({ timeZone: 'Asia/Tokyo', showJapanTime: false });
@@ -25,6 +26,7 @@ beforeEach(() => {
     vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:imported'), revokeObjectURL: vi.fn() }));
     getBackgroundBlob.mockResolvedValue(null);
     saveBackgroundBlob.mockResolvedValue(); deleteBackgroundBlob.mockResolvedValue();
+    mockMediaDecoder();
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
@@ -39,13 +41,13 @@ it('exports a compact setup without personal profiles, tasks, layout or volume',
 });
 
 it('round-trips a local wallpaper in the preset without linking to a device-only blob URL', async () => {
-    getBackgroundBlob.mockResolvedValue(new Blob(['hello'], { type: 'image/png' }));
-    const raw = await createAppearancePreset({ ...useSettingsStore.getState(), gifName: 'cozy.png' });
+    getBackgroundBlob.mockResolvedValue(gifBlob());
+    const raw = await createAppearancePreset({ ...useSettingsStore.getState(), gifName: 'cozy.gif' });
     expect(parseAppearancePreset(raw).wallpaper).toEqual(wallpaper());
     await applyAppearancePreset(raw);
     expect(saveBackgroundBlob).toHaveBeenCalledWith(expect.any(Blob));
-    expect(saveBackgroundBlob.mock.calls[0][0].type).toBe('image/png');
-    expect(useSettingsStore.getState()).toMatchObject({ gifName: 'cozy.png', backgroundUrl: 'blob:imported', backgroundIsVideo: false });
+    expect(saveBackgroundBlob.mock.calls[0][0].type).toBe('image/gif');
+    expect(useSettingsStore.getState()).toMatchObject({ gifName: 'cozy.gif', backgroundUrl: 'blob:imported', backgroundIsVideo: false });
 });
 
 it('exports without a wallpaper when the user opts out and never reads their uploaded file', async () => {
@@ -107,7 +109,44 @@ it('does not write wallpaper or update UI settings if browser storage is full', 
     expect(useSettingsStore.getState().theme).toBe(DEFAULT_SETTINGS.theme);
 });
 
+it('rejects a corrupt embedded wallpaper before writing settings or media', async () => {
+    vi.stubGlobal('Image', class {
+        set src(value) { if (value) queueMicrotask(() => this.onerror?.()); }
+    });
+    const previous = localStorage.getItem('dash_settings');
+    await expect(applyAppearancePreset(JSON.stringify({ ...preset(), wallpaper: {
+        kind: 'embedded', name: 'corrupt.gif', dataUrl: 'data:image/gif;base64,aGVsbG8=',
+    } }))).rejects.toThrow('current setup has been kept');
+    expect(localStorage.getItem('dash_settings')).toBe(previous);
+    expect(useSettingsStore.getState().backgroundUrl).toBe('blob:current');
+    expect(saveBackgroundBlob).not.toHaveBeenCalled();
+});
+
 it('preserves an intentionally empty station list', async () => {
     await applyAppearancePreset(JSON.stringify({ ...preset(), music: { stations: [], selectedVideoId: null } }));
     expect(useSettingsStore.getState().lofiStations).toEqual([]);
+});
+
+it.each(['keep', 'embedded'])('clears a pending quota fallback before applying a %s preset', async kind => {
+    const failedWrite = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('Full', 'QuotaExceededError'); });
+    useSettingsStore.getState().setUsername('Pending preference');
+    failedWrite.mockRestore();
+    const value = { ...preset(), wallpaper: kind === 'embedded' ? wallpaper() : { kind: 'keep' } };
+    await applyAppearancePreset(JSON.stringify(value));
+    // Rehydration used to read the older pending-memory entry and replace the
+    // imported appearance even though its durable write had succeeded.
+    await useSettingsStore.persist.rehydrate();
+    expect(useSettingsStore.getState()).toMatchObject({ username: 'Pending preference', theme: 'mocha', font: 'outfit' });
+    useSettingsStore.getState().setMalStatus('loading');
+    expect(JSON.parse(localStorage.getItem('dash_settings')).state.theme).toBe('mocha');
+});
+
+it('retains pending preferences if a preset media transaction fails after storage recovers', async () => {
+    const failedWrite = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('Full', 'QuotaExceededError'); });
+    useSettingsStore.getState().setUsername('Pending preference');
+    failedWrite.mockRestore();
+    saveBackgroundBlob.mockRejectedValueOnce(new Error('Database full'));
+    await expect(applyAppearancePreset(JSON.stringify({ ...preset(), wallpaper: wallpaper() }))).rejects.toThrow();
+    await useSettingsStore.persist.rehydrate();
+    expect(useSettingsStore.getState()).toMatchObject({ username: 'Pending preference', theme: DEFAULT_SETTINGS.theme });
 });

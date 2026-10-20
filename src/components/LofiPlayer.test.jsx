@@ -281,4 +281,50 @@ describe('LofiPlayer', () => {
         await act(async () => { await vi.advanceTimersByTimeAsync(0); });
         expect(vi.getTimerCount()).toBe(0);
     });
+
+    it('applies the latest volume on readiness and then follows mute/unmute changes', () => {
+        const { container, rerender } = render(<LofiPlayer />);
+        const iframe = container.querySelector('iframe');
+        const post = vi.spyOn(iframe.contentWindow, 'postMessage');
+        mockState.volume = 0;
+        rerender(<LofiPlayer expanded />);
+        message(iframe, 'onReady');
+        expect(commands(post)).toContainEqual({ event: 'command', func: 'mute', args: [] });
+        expect(commands(post)).toContainEqual({ event: 'command', func: 'setVolume', args: [0] });
+        post.mockClear();
+        mockState.volume = 0.37;
+        rerender(<LofiPlayer expanded={false} />);
+        expect(commands(post)).toEqual([
+            { event: 'command', func: 'unMute', args: [] },
+            { event: 'command', func: 'setVolume', args: [37] },
+        ]);
+        expect(container.querySelector('iframe')).toBe(iframe);
+    });
+
+    it('silently ignores malformed own-player messages and wrong-origin state changes', () => {
+        const { container, getByLabelText } = render(<LofiPlayer />);
+        const iframe = container.querySelector('iframe');
+        const errors = vi.spyOn(console, 'error');
+        for (const data of ['{broken', 'null', '[]', '{}']) {
+            act(() => window.dispatchEvent(new MessageEvent('message', {
+                origin: 'https://www.youtube.com', source: iframe.contentWindow, data,
+            })));
+        }
+        act(() => window.dispatchEvent(new MessageEvent('message', {
+            origin: 'https://example.com', source: iframe.contentWindow,
+            data: JSON.stringify({ event: 'onStateChange', info: 1 }),
+        })));
+        expect(getByLabelText('Play')).toBeTruthy();
+        expect(errors).not.toHaveBeenCalled();
+        message(iframe, 'onStateChange', 1);
+        expect(getByLabelText('Pause')).toBeTruthy();
+    });
+
+    it.each([false, true])('gives unnamed stations a visible label in compact=%s', async compact => {
+        mockState.lofiStations = [{ id: 1, videoId: 'testVideoId', name: '' }];
+        const { container, getByRole } = render(<LofiPlayer compact={compact} expanded />);
+        if (!compact) fireEvent.click(container.querySelector('.lofi-info'));
+        expect(getByRole('button', { name: 'testVideoId' })).toBeTruthy();
+        await act(async () => {});
+    });
 });

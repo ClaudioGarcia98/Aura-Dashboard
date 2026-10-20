@@ -1,4 +1,4 @@
-import { ANILIST_GRAPHQL_ENDPOINT, SCHEDULE_CACHE_KEY } from '../api';
+import { ANILIST_GRAPHQL_ENDPOINT, SCHEDULE_CACHE_KEY, SCHEDULE_CACHE_TTL_MS } from '../api';
 import { fetchJson } from '../http';
 import { safeJsonParse, safeStorage } from '../../utils/storage';
 import { getLocalDayRange } from './time';
@@ -32,6 +32,12 @@ const query = `query ($start: Int, $end: Int, $page: Int) {
     }
 }`;
 
+function withFreshness(data, savedAt, stale = false) {
+    const items = [...data];
+    Object.defineProperties(items, { savedAt: { value: savedAt }, stale: { value: stale } });
+    return items;
+}
+
 async function aniListSchedule(day, range, signal) {
     const items = [];
     for (let page = 1; page <= 100; page++) {
@@ -47,27 +53,26 @@ async function aniListSchedule(day, range, signal) {
     throw new Error('Schedule pagination limit exceeded');
 }
 
-export async function fetchDaySchedule(day, { signal, timeZone = deviceTimeZone() } = {}) {
+export async function fetchDaySchedule(day, { signal, timeZone = deviceTimeZone(), force = false } = {}) {
+    if (signal?.aborted) throw signal.reason;
     const range = getLocalDayRange(day, timeZone);
     if (!range) throw new Error('Invalid schedule day');
     const entry = getScheduleCache(timeZone)[day];
     const matching = entry?.start === range.startUtcSec && Array.isArray(entry.data);
-    if (matching && Date.now() - entry.ts < 3600000) return entry.data;
+    if (!force && matching && Date.now() - entry.ts >= 0 && Date.now() - entry.ts < SCHEDULE_CACHE_TTL_MS) return withFreshness(entry.data, entry.ts);
     let data;
     try {
         data = await aniListSchedule(day, range, signal);
     } catch (error) {
         if (signal?.aborted) throw error;
         if (matching) {
-            const staleData = [...entry.data];
-            Object.defineProperty(staleData, 'stale', { value: true });
-            Object.defineProperty(staleData, 'savedAt', { value: entry.ts });
-            return staleData;
+            return withFreshness(entry.data, entry.ts, true);
         }
         throw error;
     }
     if (signal?.aborted) throw signal.reason;
     const unique = [...new Map(data.map(item => [item.mal_id, item])).values()];
-    setScheduleCache({ ...getScheduleCache(timeZone), [day]: { data: unique, ts: Date.now(), start: range.startUtcSec } }, timeZone);
-    return unique;
+    const savedAt = Date.now();
+    setScheduleCache({ ...getScheduleCache(timeZone), [day]: { data: unique, ts: savedAt, start: range.startUtcSec } }, timeZone);
+    return withFreshness(unique, savedAt);
 }

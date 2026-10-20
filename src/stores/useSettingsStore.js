@@ -3,9 +3,21 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { safeStorage } from '../utils/storage';
 import { DEFAULT_SETTINGS, readLegacySettings, sanitizeSettings } from './settingsSchema';
 
+const preferenceStorage = {
+    ...safeStorage,
+    setItem(key, value) {
+        // Request status and other ephemeral updates must not rewrite preferences.
+        if (safeStorage.getItem(key) !== value) safeStorage.setItem(key, value);
+    },
+};
+function normalizeLofiStation(station) {
+    try { return sanitizeSettings({ lofiStations: [station] }, { strict: true }).lofiStations[0]; }
+    catch { return null; }
+}
+
 export const useSettingsStore = create(
     persist(
-        (set) => ({
+        (set, get) => ({
             ...DEFAULT_SETTINGS,
             ...readLegacySettings(safeStorage),
 
@@ -37,9 +49,38 @@ export const useSettingsStore = create(
                 fallbackCityLocation: location ? { city: fallbackCity, lat: location.lat, lon: location.lon } : null }),
             setUse24hClock:       (use24hClock)     => set({ use24hClock }),
             setUseCelsius:        (useCelsius)      => set({ useCelsius }),
-            setGifName:           (gifName)         => set({ gifName }),
             setLofiId:            (lofiId)          => set({ lofiId }),
             setLofiStations:      (lofiStations)    => set({ lofiStations }),
+            addLofiStation: station => {
+                const next = normalizeLofiStation(station);
+                const { lofiStations } = get();
+                if (!next || lofiStations.length >= 200 || lofiStations.some(item =>
+                    item.videoId === next.videoId || String(item.id) === String(next.id))) return false;
+                set({ lofiStations: [...lofiStations, next] });
+                return true;
+            },
+            updateLofiStation: (id, patch) => {
+                const { lofiStations, lofiId } = get();
+                const existing = lofiStations.find(station => station.id === id);
+                if (!existing || !patch || typeof patch !== 'object' || Array.isArray(patch)) return false;
+                const next = normalizeLofiStation({ ...existing,
+                    ...(Object.hasOwn(patch, 'videoId') ? { videoId: patch.videoId } : {}),
+                    ...(Object.hasOwn(patch, 'name') ? { name: patch.name } : {}),
+                });
+                if (!next || lofiStations.some(station => station.id !== id && station.videoId === next.videoId)) return false;
+                set({ lofiStations: lofiStations.map(station => station.id === id ? next : station),
+                    lofiId: lofiId === existing.videoId ? next.videoId : lofiId });
+                return true;
+            },
+            removeLofiStation: id => {
+                const { lofiStations, lofiId } = get();
+                const existing = lofiStations.find(station => station.id === id);
+                if (!existing) return false;
+                const remaining = lofiStations.filter(station => station.id !== id);
+                set({ lofiStations: remaining, lofiId: existing.videoId === lofiId
+                    ? remaining[0]?.videoId || DEFAULT_SETTINGS.lofiId : lofiId });
+                return true;
+            },
             setVolume:            (volume)          => set({ volume }),
             setSpeedDials:        (valOrFn)         => set((state) => {
                 const current = Array.isArray(state.speedDials) ? state.speedDials : [];
@@ -47,8 +88,6 @@ export const useSettingsStore = create(
                 return { speedDials: Array.isArray(next) ? next : [] };
             }),
             setCustomEngines:     (customEngines)   => set({ customEngines }),
-            setBackgroundUrl:     (backgroundUrl)   => set({ backgroundUrl }),
-            setBackgroundIsVideo: (backgroundIsVideo) => set({ backgroundIsVideo }),
             setMalError:          (malError)        => set({ malError }),
             setMalLoading:        (malLoading)      => set({ malLoading }),
             setMalSuccess:        (malSuccess)      => set({ malSuccess }),
@@ -64,7 +103,7 @@ export const useSettingsStore = create(
         {
             name: 'dash_settings',
             version: 1,
-            storage: createJSONStorage(() => safeStorage),
+            storage: createJSONStorage(() => preferenceStorage),
             migrate: (state) => ({ ...readLegacySettings(safeStorage), ...sanitizeSettings(state) }),
             merge: (persisted, current) => ({ ...current, ...sanitizeSettings(persisted) }),
             partialize: (s) => ({

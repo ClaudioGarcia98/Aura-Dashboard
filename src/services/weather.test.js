@@ -8,6 +8,9 @@ import { useWeather } from '../hooks/useWeather';
 const rawWeather = temp => ({ current: { temperature_2m: temp, apparent_temperature: temp - 1, relative_humidity_2m: 50, wind_speed_10m: 5, weather_code: 85 },
     daily: { time: ['2026-10-16', '2026-10-17'], sunrise: ['2026-10-16T06:12'], sunset: ['2026-10-16T18:09'], temperature_2m_max: [20, 21], temperature_2m_min: [10, 11], weather_code: [85, 86] } });
 const response = data => ({ ok: true, json: async () => data });
+it('can build a default cache key without optional city or coordinate settings', () => {
+    expect(weatherCacheKey(true)).toBe(JSON.stringify([true, '']));
+});
 beforeEach(() => {
     localStorage.clear();
     vi.stubGlobal('navigator', { geolocation: { getCurrentPosition: success => success({ coords: { latitude: 0, longitude: 0 } }) } });

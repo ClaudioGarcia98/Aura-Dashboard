@@ -13,12 +13,11 @@ export default memo(function MediaSettings() {
     const { t } = useTranslation();
     const {
         volume, setVolume,
-        lofiStations, setLofiStations,
-        lofiId, setLofiId,
+        lofiStations, addLofiStation, updateLofiStation, removeLofiStation,
     } = useSettingsStore(useShallow(s => ({
         volume: s.volume, setVolume: s.setVolume,
-        lofiStations: s.lofiStations, setLofiStations: s.setLofiStations,
-        lofiId: s.lofiId, setLofiId: s.setLofiId,
+        lofiStations: s.lofiStations, addLofiStation: s.addLofiStation,
+        updateLofiStation: s.updateLofiStation, removeLofiStation: s.removeLofiStation,
     })));
 
     const [newStationVideoId, setNewStationVideoId] = useState('');
@@ -26,6 +25,7 @@ export default memo(function MediaSettings() {
     const [editingStationId, setEditingStationId] = useState(null);
     const [editStationVideoId, setEditStationVideoId] = useState('');
     const [editStationName, setEditStationName] = useState('');
+    const [stationError, setStationError] = useState('');
     const lastNonZeroVolumeRef = useRef(volume > 0 ? volume : 0.2);
 
     useEffect(() => {
@@ -48,39 +48,37 @@ export default memo(function MediaSettings() {
 
     const handleAddStation = async () => {
         const videoId = extractVideoId(newStationVideoId);
-        if (!videoId) return;
+        if (!videoId) { setStationError('Enter a valid YouTube ID or URL.'); return; }
+        if (useSettingsStore.getState().lofiStations.some(station => station.videoId === videoId)) {
+            setStationError('This station is already in your list.'); return;
+        }
+        setStationError('');
         let name = newStationName.trim();
         if (!name) {
             try {
                 const data = await fetchJson(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
-                name = data?.title || '';
+                name = typeof data?.title === 'string' ? data.title.slice(0, 500) : '';
             } catch { name = ''; }
         }
-        const current = useSettingsStore.getState().lofiStations;
-        if (current.some(station => station.videoId === videoId)) return;
-        setLofiStations([...current, { id: crypto.randomUUID(), videoId, name }]);
+        if (!addLofiStation({ id: crypto.randomUUID(), videoId, name })) {
+            setStationError(useSettingsStore.getState().lofiStations.some(station => station.videoId === videoId)
+                ? 'This station is already in your list.' : 'Could not save this station. Please try again.');
+            return;
+        }
         setNewStationVideoId('');
         setNewStationName('');
     };
 
     const handleSaveEdit = (stationId) => {
-        if (!extractVideoId(editStationVideoId)) return;
-        setLofiStations(lofiStations.map(s =>
-            s.id === stationId
-                ? { ...s, videoId: extractVideoId(editStationVideoId), name: editStationName.trim() }
-                : s
-        ));
-        setEditingStationId(null);
-    };
-
-    const handleDelete = (stationId) => {
-        const remaining = lofiStations.filter(s => s.id !== stationId);
-        const deleted = lofiStations.find(s => s.id === stationId);
-        if (deleted && lofiId === deleted.videoId) {
-            const fallback = remaining[0]?.videoId ?? 'Gu-g8FRG4Zs';
-            setLofiId(fallback);
+        const videoId = extractVideoId(editStationVideoId);
+        if (!videoId) { setStationError('Enter a valid YouTube ID or URL.'); return; }
+        if (!updateLofiStation(stationId, { videoId, name: editStationName.trim() })) {
+            setStationError(useSettingsStore.getState().lofiStations.some(station => station.id !== stationId && station.videoId === videoId)
+                ? 'This station is already in your list.' : 'Could not save this station. Please try again.');
+            return;
         }
-        setLofiStations(remaining);
+        setStationError('');
+        setEditingStationId(null);
     };
 
     // Pointer-based reorder (works for mouse + touch + pen)
@@ -129,6 +127,7 @@ export default memo(function MediaSettings() {
                         min="0"
                         max="1"
                         step="0.01"
+                        aria-label={t("Media Volume")}
                         value={volume}
                         onChange={(e) => setVolume(parseFloat(e.target.value))}
                         style={{ flex: 1, height: '4px', accentColor: 'var(--accent-color, #00ffcc)', cursor: 'pointer' }}
@@ -144,6 +143,7 @@ export default memo(function MediaSettings() {
             <div className="sp-section">
                 <div className="sp-label">{t("Lofi Stations")}</div>
                 <div className="sp-group">
+                    {stationError && <p role="alert">{t(stationError)}</p>}
                     {editingStationId === null && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
                             <input
@@ -157,6 +157,7 @@ export default memo(function MediaSettings() {
                                 <input
                                     type="text"
                                     placeholder={t("Name (optional)")}
+                                    maxLength={500}
                                     value={newStationName}
                                     onChange={e => setNewStationName(e.target.value)}
                                     onKeyDown={e => e.key === 'Enter' && handleAddStation()}
@@ -181,6 +182,7 @@ export default memo(function MediaSettings() {
                                             value={editStationName}
                                             onChange={e => setEditStationName(e.target.value)}
                                             placeholder={t("Name")}
+                                            maxLength={500}
                                         />
                                         <div style={{ display: 'flex', gap: '8px' }}>
                                             <input
@@ -234,7 +236,7 @@ export default memo(function MediaSettings() {
                                             </a>
                                             <button
                                                 type="button"
-                                                onClick={() => { setEditingStationId(station.id); setEditStationName(station.name); setEditStationVideoId(station.videoId); }}
+                                                onClick={() => { setStationError(''); setEditingStationId(station.id); setEditStationName(station.name); setEditStationVideoId(station.videoId); }}
                                                 className="sp-action-btn"
                                                 title={t("Edit")}
                                                 aria-label={t("Edit station")}
@@ -245,7 +247,7 @@ export default memo(function MediaSettings() {
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => handleDelete(station.id)}
+                                                onClick={() => { setStationError(''); removeLofiStation(station.id); }}
                                                 className="sp-action-btn delete"
                                                 title={t("Delete")}
                                                 aria-label={t("Delete station")}

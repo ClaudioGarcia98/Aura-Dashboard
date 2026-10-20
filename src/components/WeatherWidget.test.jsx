@@ -69,7 +69,7 @@ describe('WeatherWidget', () => {
         });
     });
 
-    it('loads cached weather immediately if present in localStorage', () => {
+    it('loads cached weather immediately and then replaces it with fresh data', async () => {
         const cached = {
             key: JSON.stringify([true, 'London']),
             locationSource: 'gps',
@@ -88,6 +88,7 @@ describe('WeatherWidget', () => {
 
         render(<WeatherWidget />);
         expect(screen.getByText(/22°C/i)).toBeTruthy();
+        await waitFor(() => expect(screen.getByText('20°C')).toBeTruthy());
     });
 
     it('shows error state when network fetch fails and allows retry', async () => {

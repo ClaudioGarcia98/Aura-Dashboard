@@ -1,261 +1,100 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { beforeEach, afterEach, expect, it, vi } from 'vitest';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { StrictMode } from 'react';
+import { useBackgroundLoader } from '../useBackgroundLoader';
+import { useSettingsStore } from '../../stores/useSettingsStore';
+import { DEFAULT_SETTINGS } from '../../stores/settingsSchema';
+import { DEFAULT_BACKGROUND } from '../../constants/background';
+import { getBackgroundBlob, deleteBackgroundBlob } from '../../services/db';
+import { gifBlob, mockMediaDecoder } from '../../testSupport/backgroundMedia';
 
-vi.mock('../../assets/animated_gif.mp4', () => ({ default: 'default-video.mp4' }));
-
-const mockSetBackgroundUrl = vi.fn();
-const mockSetBackgroundIsVideo = vi.fn();
-
-vi.mock('../../stores/useSettingsStore', () => ({
-    useSettingsStore: vi.fn((selector) =>
-        selector({
-            setBackgroundUrl: mockSetBackgroundUrl,
-            setBackgroundIsVideo: mockSetBackgroundIsVideo,
-        })
-    ),
-}));
-
-function makeIdbMock({ blob = null, openError = false, getError = false } = {}) {
-    const getRequest = { onsuccess: null, onerror: null };
-
-    const objectStore = {
-        get: vi.fn(() => {
-            Promise.resolve().then(() => {
-                if (getError) {
-                    getRequest.onerror?.({ target: { error: new Error('get failed') } });
-                } else {
-                    getRequest.onsuccess?.({ target: { result: blob } });
-                }
-            });
-            return getRequest;
-        }),
-    };
-
-    const transaction = { objectStore: vi.fn(() => objectStore) };
-    const db = { transaction: vi.fn(() => transaction), createObjectStore: vi.fn() };
-    const openRequest = { onupgradeneeded: null, onsuccess: null, onerror: null };
-
-    const open = vi.fn(() => {
-        Promise.resolve().then(() => {
-            if (openError) {
-                openRequest.onerror?.({ target: { error: new Error('open failed') } });
-            } else {
-                openRequest.onsuccess?.({ target: { result: db } });
-            }
-        });
-        return openRequest;
-    });
-
-    return { open, db, objectStore };
-}
-
-const flushPromises = () => new Promise((r) => setTimeout(r, 0));
-
+vi.mock('../../services/db', () => ({ getBackgroundBlob: vi.fn(), deleteBackgroundBlob: vi.fn(), saveBackgroundBlob: vi.fn() }));
+let decoder;
 beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
+    localStorage.clear();
+    useSettingsStore.setState({ ...structuredClone(DEFAULT_SETTINGS), backgroundUrl: null, backgroundIsVideo: false });
+    let next = 0;
+    vi.spyOn(URL, 'createObjectURL').mockImplementation(() => `blob:loaded-${++next}`);
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    decoder = mockMediaDecoder();
+    getBackgroundBlob.mockResolvedValue(null);
+    deleteBackgroundBlob.mockResolvedValue();
+});
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+it('loads a decoded saved image and marks it as an image', async () => {
+    getBackgroundBlob.mockResolvedValue(gifBlob());
+    renderHook(() => useBackgroundLoader());
+    await waitFor(() => expect(useSettingsStore.getState().backgroundUrl).toBe('blob:loaded-2'));
+    expect(useSettingsStore.getState().backgroundIsVideo).toBe(false);
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:loaded-1');
 });
 
-afterEach(() => {
-    vi.restoreAllMocks();
-    delete globalThis.indexedDB;
+it('loads a saved video only after its first frame decodes', async () => {
+    getBackgroundBlob.mockResolvedValue(new Blob(['video'], { type: 'video/mp4' }));
+    renderHook(() => useBackgroundLoader());
+    await waitFor(() => expect(useSettingsStore.getState().backgroundIsVideo).toBe(true));
+    expect(decoder.videos).toHaveLength(1);
+    expect(useSettingsStore.getState().backgroundUrl).toBe('blob:loaded-2');
 });
 
-const { useBackgroundLoader } = await import('../useBackgroundLoader.js');
-
-describe('useBackgroundLoader — video blob in IndexedDB', () => {
-    it('creates a blob URL and sets it as backgroundUrl', async () => {
-        const blob = new Blob(['data'], { type: 'video/mp4' });
-        const { open } = makeIdbMock({ blob });
-        globalThis.indexedDB = { open };
-
-        await act(async () => {
-            renderHook(() => useBackgroundLoader());
-            await flushPromises();
-        });
-
-        expect(URL.createObjectURL).toHaveBeenCalledWith(blob);
-        expect(mockSetBackgroundUrl).toHaveBeenCalledWith('blob:mock-url');
-    });
-
-    it('sets backgroundIsVideo to true for a video blob', async () => {
-        const blob = new Blob(['data'], { type: 'video/webm' });
-        const { open } = makeIdbMock({ blob });
-        globalThis.indexedDB = { open };
-
-        await act(async () => {
-            renderHook(() => useBackgroundLoader());
-            await flushPromises();
-        });
-
-        expect(mockSetBackgroundIsVideo).toHaveBeenCalledWith(true);
-    });
+it('uses the default video when there is no saved background', async () => {
+    renderHook(() => useBackgroundLoader());
+    await waitFor(() => expect(useSettingsStore.getState().backgroundUrl).toBe(DEFAULT_BACKGROUND.url));
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
 });
 
-describe('useBackgroundLoader — image blob in IndexedDB', () => {
-    it('creates a blob URL and sets it as backgroundUrl', async () => {
-        const blob = new Blob(['data'], { type: 'image/gif' });
-        const { open } = makeIdbMock({ blob });
-        globalThis.indexedDB = { open };
-
-        await act(async () => {
-            renderHook(() => useBackgroundLoader());
-            await flushPromises();
-        });
-
-        expect(URL.createObjectURL).toHaveBeenCalledWith(blob);
-        expect(mockSetBackgroundUrl).toHaveBeenCalledWith('blob:mock-url');
-    });
-
-    it('sets backgroundIsVideo to false for an image blob', async () => {
-        const blob = new Blob(['data'], { type: 'image/gif' });
-        const { open } = makeIdbMock({ blob });
-        globalThis.indexedDB = { open };
-
-        await act(async () => {
-            renderHook(() => useBackgroundLoader());
-            await flushPromises();
-        });
-
-        expect(mockSetBackgroundIsVideo).toHaveBeenCalledWith(false);
-    });
+it('recovers a damaged saved background and removes the broken file', async () => {
+    getBackgroundBlob.mockResolvedValue(new Blob([], { type: 'image/png' }));
+    useSettingsStore.setState({ gifName: 'broken.png' });
+    const { result } = renderHook(() => useBackgroundLoader());
+    await waitFor(() => expect(result.current.backgroundError).toContain('default background'));
+    expect(useSettingsStore.getState()).toMatchObject({ backgroundUrl: DEFAULT_BACKGROUND.url, gifName: '', backgroundIsVideo: true });
+    expect(deleteBackgroundBlob).toHaveBeenCalledOnce();
 });
 
-describe('useBackgroundLoader — no blob in IndexedDB', () => {
-    it('falls back to defaultVideo when get returns null', async () => {
-        const { open } = makeIdbMock({ blob: null });
-        globalThis.indexedDB = { open };
-
-        await act(async () => {
-            renderHook(() => useBackgroundLoader());
-            await flushPromises();
-        });
-
-        expect(URL.createObjectURL).not.toHaveBeenCalled();
-        expect(mockSetBackgroundUrl).toHaveBeenCalledWith('default-video.mp4');
-    });
-
-    it('sets backgroundIsVideo to true for the default .mp4 fallback', async () => {
-        const { open } = makeIdbMock({ blob: null });
-        globalThis.indexedDB = { open };
-
-        await act(async () => {
-            renderHook(() => useBackgroundLoader());
-            await flushPromises();
-        });
-
-        expect(mockSetBackgroundIsVideo).toHaveBeenCalledWith(true);
-    });
+it('does not replace a newer selection when a saved background finishes loading late', async () => {
+    let finish;
+    getBackgroundBlob.mockReturnValue(new Promise(resolve => { finish = resolve; }));
+    renderHook(() => useBackgroundLoader());
+    act(() => useSettingsStore.setState({ backgroundUrl: 'blob:new-upload', backgroundIsVideo: false }));
+    await act(async () => finish(gifBlob()));
+    expect(useSettingsStore.getState().backgroundUrl).toBe('blob:new-upload');
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
 });
 
-describe('useBackgroundLoader — IndexedDB open failure', () => {
-    it('falls back to defaultVideo when open errors', async () => {
-        const { open } = makeIdbMock({ openError: true });
-        globalThis.indexedDB = { open };
-
-        await act(async () => {
-            renderHook(() => useBackgroundLoader());
-            await flushPromises();
-        });
-
-        expect(URL.createObjectURL).not.toHaveBeenCalled();
-        expect(mockSetBackgroundUrl).toHaveBeenCalledWith('default-video.mp4');
-        expect(mockSetBackgroundIsVideo).toHaveBeenCalledWith(true);
-    });
+it('does not publish a background after unmount', async () => {
+    let finish;
+    getBackgroundBlob.mockReturnValue(new Promise(resolve => { finish = resolve; }));
+    const { unmount } = renderHook(() => useBackgroundLoader());
+    unmount();
+    await act(async () => finish(gifBlob()));
+    expect(useSettingsStore.getState().backgroundUrl).toBeNull();
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
 });
 
-describe('useBackgroundLoader — IndexedDB get failure', () => {
-    it('falls back to defaultVideo when the get transaction errors', async () => {
-        const { open } = makeIdbMock({ getError: true });
-        globalThis.indexedDB = { open };
-
-        await act(async () => {
-            renderHook(() => useBackgroundLoader());
-            await flushPromises();
-        });
-
-        expect(URL.createObjectURL).not.toHaveBeenCalled();
-        expect(mockSetBackgroundUrl).toHaveBeenCalledWith('default-video.mp4');
-        expect(mockSetBackgroundIsVideo).toHaveBeenCalledWith(true);
-    });
+it('revokes replaced blob URLs without revoking the active URL during StrictMode remount', async () => {
+    useSettingsStore.setState({ backgroundUrl: 'blob:active' });
+    let unmount;
+    await act(async () => { ({ unmount } = renderHook(() => useBackgroundLoader(), { wrapper: StrictMode })); });
+    expect(URL.revokeObjectURL).not.toHaveBeenCalledWith('blob:active');
+    await act(async () => useSettingsStore.setState({ backgroundUrl: 'blob:next' }));
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:active');
+    unmount();
+    expect(URL.revokeObjectURL).not.toHaveBeenCalledWith('blob:next');
 });
 
-describe('useBackgroundLoader — cleanup', () => {
-    it('does not create URLs or change state after an unfinished load is unmounted', async () => {
-        globalThis.indexedDB = { open: makeIdbMock({ blob: new Blob(['late'], { type: 'video/mp4' }) }).open };
-        const { unmount } = renderHook(() => useBackgroundLoader());
-        unmount();
-        await act(async () => { await flushPromises(); });
-        expect(URL.createObjectURL).not.toHaveBeenCalled();
-        expect(mockSetBackgroundUrl).not.toHaveBeenCalled();
-    });
-    it('revokes the blob URL on unmount when a blob was loaded', async () => {
-        const blob = new Blob(['data'], { type: 'video/mp4' });
-        const { open } = makeIdbMock({ blob });
-        globalThis.indexedDB = { open };
-
-        let unmount;
-        await act(async () => {
-            ({ unmount } = renderHook(() => useBackgroundLoader()));
-            await flushPromises();
-        });
-
-        unmount();
-        expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
-    });
-
-    it('does not call revokeObjectURL on unmount when no blob was loaded', async () => {
-        const { open } = makeIdbMock({ blob: null });
-        globalThis.indexedDB = { open };
-
-        let unmount;
-        await act(async () => {
-            ({ unmount } = renderHook(() => useBackgroundLoader()));
-            await flushPromises();
-        });
-
-        unmount();
-        expect(URL.revokeObjectURL).not.toHaveBeenCalled();
-    });
-
-    it('does not call revokeObjectURL on unmount after an open error', async () => {
-        const { open } = makeIdbMock({ openError: true });
-        globalThis.indexedDB = { open };
-
-        let unmount;
-        await act(async () => {
-            ({ unmount } = renderHook(() => useBackgroundLoader()));
-            await flushPromises();
-        });
-
-        unmount();
-        expect(URL.revokeObjectURL).not.toHaveBeenCalled();
-    });
-});
-
-describe('useBackgroundLoader — IndexedDB interactions', () => {
-    it('opens dashDB at version 1', async () => {
-        const { open } = makeIdbMock({ blob: null });
-        globalThis.indexedDB = { open };
-
-        await act(async () => {
-            renderHook(() => useBackgroundLoader());
-            await flushPromises();
-        });
-
-        expect(open).toHaveBeenCalledWith('dashDB', 1);
-    });
-
-    it('queries the bg key from object store s', async () => {
-        const { open, objectStore } = makeIdbMock({ blob: null });
-        globalThis.indexedDB = { open };
-
-        await act(async () => {
-            renderHook(() => useBackgroundLoader());
-            await flushPromises();
-        });
-
-        expect(objectStore.get).toHaveBeenCalledWith('bg');
-    });
+it('recovers runtime playback errors, ignores obsolete events, and stops retrying a broken default', async () => {
+    useSettingsStore.setState({ backgroundUrl: 'blob:active', backgroundIsVideo: true });
+    let result;
+    await act(async () => { ({ result } = renderHook(() => useBackgroundLoader())); });
+    await act(async () => result.current.handleBackgroundError('blob:obsolete'));
+    expect(result.current.backgroundError).toBe('');
+    await act(async () => result.current.handleBackgroundError('blob:active'));
+    expect(useSettingsStore.getState().backgroundUrl).toBe(DEFAULT_BACKGROUND.url);
+    expect(result.current.backgroundError).toContain('default background');
+    await act(async () => result.current.handleBackgroundError(DEFAULT_BACKGROUND.url));
+    expect(useSettingsStore.getState().backgroundUrl).toBeNull();
+    expect(result.current.backgroundError).toContain('Background unavailable');
 });

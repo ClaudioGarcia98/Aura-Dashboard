@@ -1,6 +1,8 @@
 import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Greeting from './Greeting';
+import { useWeatherStore } from '../stores/useWeatherStore';
+import { weatherCacheKey } from '../services/weather';
 
 let mockUsername = 'Claudio';
 
@@ -14,6 +16,7 @@ vi.mock('../stores/useSettingsStore', () => ({
 describe('Greeting Component', () => {
     beforeEach(() => {
         localStorage.clear();
+        useWeatherStore.setState({ snapshot: null });
         mockUsername = 'Claudio';
         vi.useFakeTimers();
     });
@@ -46,21 +49,23 @@ describe('Greeting Component', () => {
         expect(screen.getByText(/Time to rest, Claudio/i)).toBeTruthy();
     });
 
-    it('reacts to weather-update event and applies weather modifier', () => {
+    it('reacts to the validated weather snapshot and applies weather modifier', () => {
         vi.setSystemTime(new Date(2025, 0, 1, 10, 0, 0)); // 10:00 AM
         render(<Greeting />);
         expect(screen.getByText(/Good morning, Claudio/i)).toBeTruthy();
 
         // Dispatch clear sky (code 0)
         act(() => {
-            window.dispatchEvent(new CustomEvent('weather-update', { detail: 0 }));
+            const key = weatherCacheKey(true, undefined);
+            useWeatherStore.setState({ snapshot: { key, data: { key, weatherCode: 0, timestamp: Date.now() }, stale: false } });
         });
 
         expect(screen.getByText(/Clear skies this morning, Claudio/i)).toBeTruthy();
 
         // Dispatch rainy (code 61)
         act(() => {
-            window.dispatchEvent(new CustomEvent('weather-update', { detail: 61 }));
+            const key = weatherCacheKey(true, undefined);
+            useWeatherStore.setState({ snapshot: { key, data: { key, weatherCode: 61, timestamp: Date.now() }, stale: false } });
         });
 
         expect(screen.getByText(/Cozy rainy morning, Claudio/i)).toBeTruthy();

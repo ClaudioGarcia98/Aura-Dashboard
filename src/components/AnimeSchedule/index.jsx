@@ -16,15 +16,14 @@ export default memo(function AnimeSchedule() {
     const {
         isSidebarOpen, setIsSidebarOpen,
         activeDay, setActiveDay,
-        sidebarData, sidebarLoading, sidebarError, sidebarStale,
+        sidebarData, sidebarLoading, sidebarError, sidebarStale, refreshSidebar,
         sidebarRef, toggleRef,
-        todayLoading, todayError, todayStale,
+        todayLoading, todayError, todayStale, refreshToday,
         displayList,
         userWatchingIds,
         expandedAnime, setExpandedAnime,
         previewTrailer, previewPos,
         trailerMuted,
-        trailerIframeRef,
         handleMouseEnter, handleMouseLeave,
         handleTrailerMouseEnter, handleTrailerMouseLeave,
         handleUnmute, handleMute,
@@ -41,6 +40,7 @@ export default memo(function AnimeSchedule() {
                     todayLoading={todayLoading}
                     todayError={todayError}
                     todayStale={todayStale}
+                    onRetry={refreshToday}
                     expandedAnime={expandedAnime}
                     setExpandedAnime={setExpandedAnime}
                     userWatchingIds={userWatchingIds}
@@ -59,6 +59,7 @@ export default memo(function AnimeSchedule() {
                     sidebarLoading={sidebarLoading}
                     sidebarError={sidebarError}
                     sidebarStale={sidebarStale}
+                    onRetry={refreshSidebar}
                     expandedAnime={expandedAnime}
                     setExpandedAnime={setExpandedAnime}
                     userWatchingIds={userWatchingIds}
@@ -79,7 +80,6 @@ export default memo(function AnimeSchedule() {
                     onUnmute={handleUnmute}
                     onMouseEnter={handleTrailerMouseEnter}
                     onMouseLeave={handleTrailerMouseLeave}
-                    iframeRef={trailerIframeRef}
                 />,
                 trailerPortal
             )}

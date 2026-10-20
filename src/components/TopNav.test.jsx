@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import TopNav from './TopNav';
+import { useSettingsStore } from '../stores/useSettingsStore';
 
 describe('TopNav', () => {
     const tabs = [
@@ -61,5 +62,25 @@ describe('TopNav', () => {
             <TopNav tabs={tabs} activeTab="home" onTabChange={vi.fn()} lofiPlaying={true} />
         );
         expect(document.querySelector('.top-nav-pulse')).toBeTruthy();
+    });
+
+    it.each(['en', 'pt-PT'])('uses standard Home/End and wrapping arrow keys in %s', language => {
+        const previousLanguage = useSettingsStore.getState().language;
+        act(() => useSettingsStore.getState().setLanguage(language));
+        try {
+            const change = vi.fn();
+            const localizedTabs = tabs.map(tab => ({ ...tab, label: language === 'pt-PT' && tab.id === 'home' ? 'Início' : tab.label }));
+            render(<TopNav tabs={localizedTabs} activeTab="settings" onTabChange={change} />);
+            const home = screen.getByRole('tab', { name: localizedTabs[0].label });
+            const settings = screen.getByRole('tab', { name: 'Settings' });
+            for (const [from, key, selected, focused] of [
+                [settings, 'Home', 'home', home], [home, 'End', 'settings', settings],
+                [home, 'ArrowLeft', 'settings', settings], [settings, 'ArrowRight', 'home', home],
+            ]) {
+                fireEvent.keyDown(from, { key });
+                expect(change).toHaveBeenLastCalledWith(selected);
+                expect(document.activeElement).toBe(focused);
+            }
+        } finally { act(() => useSettingsStore.getState().setLanguage(previousLanguage)); }
     });
 });

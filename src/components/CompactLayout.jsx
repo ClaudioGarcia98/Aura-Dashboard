@@ -13,7 +13,6 @@ import Quote from './Quote';
 import SearchBox from './SearchBox';
 import SpeedDial from './SpeedDial';
 import WeatherWidget from './WeatherWidget';
-import LofiPlayer from './LofiPlayer';
 import SettingsPanel from './SettingsPanel/index.jsx';
 import TodayLaunch from './AnimeSchedule/TodayLaunch';
 import EmbeddedAnimeList from './AnimeSchedule/EmbeddedAnimeList';
@@ -24,7 +23,7 @@ import FocusWidget from './FocusWidget';
  * desktop floating-overlay layout. The page never scrolls — each tab is exactly
  * one screen with its own internal scroll, over a fixed background.
  */
-export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPlaying: externalPlaying = false, externalPlayer = false } = {}) {
+export default function CompactLayout({ tab = 'home', onTabChange, lofiPlaying = false }) {
     const { t } = useTranslation();
     const {
         showWeatherWidget, showQuote, showSearchBox, showSpeedDial,
@@ -39,12 +38,6 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
         showLofiPlayer: s.showLofiPlayer,
         lofiStations: s.lofiStations,
     })));
-
-    const [localTab, setLocalTab] = useState('home');
-    const tab = controlledTab ?? localTab;
-    const setTab = onTabChange || setLocalTab;
-    const [localPlaying, setLofiPlaying] = useState(false);
-    const lofiPlaying = externalPlayer ? externalPlaying : localPlaying;
 
     const lofiAvailable = showLofiPlayer && lofiStations.length > 0;
     const showFocusWidget = useSettingsStore(s => s.showFocusWidget ?? true);
@@ -65,7 +58,7 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
     const selectTab = (next) => {
         setHiddenNavTab(null);
         scrollState.current = { panel: null, top: 0, travel: 0 };
-        setTab(next);
+        onTabChange(next);
     };
     const handleScroll = (event) => {
         const panel = event.target;
@@ -82,14 +75,19 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
 
     // The empty SpeedDial "+" asks to open the dial settings — jump to the tab.
     useEffect(() => {
-        const goSettings = () => setTab('settings');
+        const goSettings = () => onTabChange('settings');
         window.addEventListener('open-settings-dials', goSettings);
         return () => window.removeEventListener('open-settings-dials', goSettings);
-    }, [setTab]);
+    }, [onTabChange]);
 
     // One anime data instance shared by the Home top-5 and the Anime tab.
     // Only force the full day-schedule load when the Anime tab actually exists.
     const anime = useAnimeSchedule({ alwaysOpen: showAnimeSidebar && activeTab === 'anime', enabled: showTop5Anime || showAnimeSidebar });
+    const { setExpandedAnime } = anime;
+    useEffect(() => {
+        // Returning to a panel must not resume an old trailer implicitly.
+        setExpandedAnime(null);
+    }, [activeTab, setExpandedAnime]);
 
     return (
         <div className={`compact-root${navHidden ? ' compact-root--nav-hidden' : ''}`} id="mainUi" onScrollCapture={handleScroll}>
@@ -113,7 +111,8 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
                             todayLoading={anime.todayLoading}
                             todayError={anime.todayError}
                             todayStale={anime.todayStale}
-                            expandedAnime={anime.expandedAnime}
+                            onRetry={anime.refreshToday}
+                            expandedAnime={activeTab === 'home' ? anime.expandedAnime : null}
                             setExpandedAnime={anime.setExpandedAnime}
                             userWatchingIds={anime.userWatchingIds}
                             onMouseEnter={anime.handleMouseEnter}
@@ -133,7 +132,8 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
                         sidebarLoading={anime.sidebarLoading}
                         sidebarError={anime.sidebarError}
                         sidebarStale={anime.sidebarStale}
-                        expandedAnime={anime.expandedAnime}
+                        onRetry={anime.refreshSidebar}
+                        expandedAnime={activeTab === 'anime' ? anime.expandedAnime : null}
                         setExpandedAnime={anime.setExpandedAnime}
                         userWatchingIds={anime.userWatchingIds}
                         onMouseEnter={anime.handleMouseEnter}
@@ -148,12 +148,6 @@ export default function CompactLayout({ tab: controlledTab, onTabChange, lofiPla
                     <ErrorBoundary><SettingsPanel embedded /></ErrorBoundary>
                 </div>
             </div>
-
-            {/* LOFI — mounted at root so audio never stops when switching tabs.
-                Renders only the hidden iframe unless the Lofi tab is active. */}
-            {lofiAvailable && !externalPlayer && (
-                <LofiPlayer compact expanded={activeTab === 'lofi'} onPlayingChange={setLofiPlaying} />
-            )}
 
         </div>
     );

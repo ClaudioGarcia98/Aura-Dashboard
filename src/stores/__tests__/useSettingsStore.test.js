@@ -171,11 +171,6 @@ describe('useSettingsStore — actions', () => {
         expect(useSettingsStore.getState().useCelsius).toBe(false);
     });
 
-    it('setGifName updates gifName', () => {
-        useSettingsStore.getState().setGifName('bg.gif');
-        expect(useSettingsStore.getState().gifName).toBe('bg.gif');
-    });
-
     it('setLofiId updates lofiId', () => {
         useSettingsStore.getState().setLofiId('abc123');
         expect(useSettingsStore.getState().lofiId).toBe('abc123');
@@ -221,16 +216,6 @@ describe('useSettingsStore — actions', () => {
         const engines = [{ name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=%s' }];
         useSettingsStore.getState().setCustomEngines(engines);
         expect(useSettingsStore.getState().customEngines).toEqual(engines);
-    });
-
-    it('setBackgroundUrl updates backgroundUrl', () => {
-        useSettingsStore.getState().setBackgroundUrl('blob:http://localhost/abc');
-        expect(useSettingsStore.getState().backgroundUrl).toBe('blob:http://localhost/abc');
-    });
-
-    it('setBackgroundIsVideo updates backgroundIsVideo', () => {
-        useSettingsStore.getState().setBackgroundIsVideo(true);
-        expect(useSettingsStore.getState().backgroundIsVideo).toBe(true);
     });
 
     it('setMalError updates malError', () => {

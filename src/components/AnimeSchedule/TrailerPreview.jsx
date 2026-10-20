@@ -1,11 +1,16 @@
 import { useTranslation } from '../../i18n/useTranslation';
-import { memo } from 'react';
+import { memo, useRef } from 'react';
+import { useSettingsStore } from '../../stores/useSettingsStore';
+import { useYouTubeVolume } from '../../hooks/useYouTubeVolume';
+import { youtubeEmbedOrigin } from '../../services/youtube';
 
 export default memo(function TrailerPreview({ youtubeId, pos, muted, onMute, onUnmute, onMouseEnter, onMouseLeave, iframeRef }) {
     const { t } = useTranslation();
-    const origin = (typeof window !== 'undefined' && window.location?.origin && window.location.origin !== 'null')
-        ? window.location.origin
-        : 'http://localhost';
+    const ownRef = useRef(null);
+    const playerRef = iframeRef || ownRef;
+    const volume = useSettingsStore(state => state.volume);
+    const onLoad = useYouTubeVolume(playerRef, youtubeId, volume, muted);
+    const origin = youtubeEmbedOrigin();
 
     return (
         <div
@@ -30,9 +35,10 @@ export default memo(function TrailerPreview({ youtubeId, pos, muted, onMute, onU
         >
             <div style={{ borderRadius: '12px', overflow: 'hidden', width: '300px', height: '169px', position: 'relative' }}>
                 <iframe
-                    ref={iframeRef}
+                    ref={playerRef}
                     title={t('Anime Trailer Preview')}
                     src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&enablejsapi=1&modestbranding=1&showinfo=0&rel=0&controls=0&playsinline=1&origin=${origin}`}
+                    onLoad={onLoad}
                     width="300"
                     height="169"
                     style={{ border: 'none', display: 'block' }}

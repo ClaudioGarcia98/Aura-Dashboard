@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import PrivacySettings from './PrivacySettings';
 import MalConnectionStatus from './MalConnectionStatus';
 import { useSettingsStore } from '../../stores/useSettingsStore';
@@ -37,7 +37,7 @@ it('displays distinct messages for rate-limited and temporarily unavailable stat
     useSettingsStore.setState({ malStatus: 'rate_limited', malLoading: false });
     const { rerender } = render(<MalConnectionStatus />);
     expect(screen.getByRole('status').textContent).toContain('Too many requests');
-    useSettingsStore.setState({ malStatus: 'unavailable', malLoading: false });
+    act(() => useSettingsStore.setState({ malStatus: 'unavailable', malLoading: false }));
     rerender(<MalConnectionStatus />);
     expect(screen.getByRole('status').textContent).toContain('temporarily unavailable');
 });
@@ -47,7 +47,7 @@ it('hides retry while loading and identifies complete successful syncs', () => {
     const { rerender } = render(<MalConnectionStatus />);
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.getByRole('status').textContent).toContain('Connecting');
-    useSettingsStore.setState({ malLoading: false, malStatus: 'fresh' });
+    act(() => useSettingsStore.setState({ malLoading: false, malStatus: 'fresh' }));
     rerender(<MalConnectionStatus />);
     expect(screen.getByRole('status').textContent).toContain('Full watching list synced');
     expect(screen.getByRole('button', { name: 'Refresh watching list' })).toBeTruthy();

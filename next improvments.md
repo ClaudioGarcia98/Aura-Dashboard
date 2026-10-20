@@ -13,17 +13,6 @@ Remaining work for the **Good Morning (Aura)** personal start-page dashboard, or
 
 ---
 
-## Priority 2 — Cozy Experience Polish (Optional Widgets)
-
-### 2. Ambient Sound Mixer
-
-* **What it is**: A multi-track ambient audio layer (Rain, Thunder, Fireplace, Keyboard Typing, Coffee Shop, Night Crickets) with independent volume sliders.
-* **What it does**:
-  * Runs alongside the YouTube Lofi stream so users can mix background rain or fireplace crackle over their music at custom volumes.
-  * Can also be used standalone when offline or when a user prefers pure nature sounds over music.
-
----
-
 ### 3. Interactive Desktop Companion / Mascot (Optional Widget)
 
 * **What it is**: An optional, toggleable pixel-art companion living in the corner of the dashboard (disabled by default for minimalists).

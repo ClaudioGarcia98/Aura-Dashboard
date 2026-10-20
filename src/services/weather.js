@@ -3,7 +3,7 @@ import { safeJsonParse, safeStorage } from '../utils/storage';
 import { weatherIconType } from '../constants/weather';
 
 const coordinates = (lat, lon) => Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
-const selectedLocation = (city, location) => location?.city === city && coordinates(location.lat, location.lon);
+const selectedLocation = (city, location) => !!location && location.city === city && coordinates(location.lat, location.lon);
 export const weatherCacheKey = (useCelsius, city, location) => JSON.stringify([!!useCelsius, city || '',
     ...(selectedLocation(city, location) ? [location.lat, location.lon] : [])]);
 export const WEATHER_REFRESH_MS = 10 * 60 * 1000;

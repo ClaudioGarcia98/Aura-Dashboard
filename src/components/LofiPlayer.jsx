@@ -4,6 +4,7 @@ import { memo, useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
 import { fetchJson } from '../services/http';
+import { applyYouTubeVolume, isYouTubeReadyMessage, listenYouTubePlayer, readYouTubeMessage, sendYouTubeCommand } from '../services/youtube';
 
 export default memo(function LofiPlayer({ compact = false, expanded = false, onPlayingChange } = {}) {
     const { t } = useTranslation();
@@ -33,18 +34,17 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
     }, []);
 
     const sendCommand = useCallback((func, args = []) => {
-        iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), 'https://www.youtube.com');
+        sendYouTubeCommand(iframeRef.current, func, args);
     }, []);
 
     const syncVolume = useCallback(() => {
-        sendCommand(volume === 0 ? 'mute' : 'unMute');
-        sendCommand('setVolume', [Math.round(volume * 100)]);
-    }, [volume, sendCommand]);
+        applyYouTubeVolume(iframeRef.current, volume);
+    }, [volume]);
 
     const listenForPlayer = () => {
         clearInterval(listeningIntervalRef.current);
         clearTimeout(listeningTimeoutRef.current);
-        const listen = () => iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'listening' }), 'https://www.youtube.com');
+        const listen = () => listenYouTubePlayer(iframeRef.current);
         listen();
         if (!readyRef.current) {
             listeningIntervalRef.current = setInterval(listen, 250);
@@ -96,59 +96,54 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
     // Listen for YouTube IFrame state changes
     useEffect(() => {
         const handleMessage = (e) => {
-            if (e.origin !== "https://www.youtube.com" || e.source !== iframeRef.current?.contentWindow) return;
-            try {
-                const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
-                if (!data || typeof data !== 'object') return;
-                if (data.event === 'onError' || data.event === 'onAutoplayBlocked') {
-                    playIntentRef.current = false;
+            const data = readYouTubeMessage(e, iframeRef.current);
+            if (!data) return;
+            if (data.event === 'onError' || data.event === 'onAutoplayBlocked') {
+                playIntentRef.current = false;
+                awaitingPlayRef.current = false;
+                stopRequestedRef.current = true;
+                setIsStarting(false);
+                setIsPlaying(false);
+                setPlaybackError(data.event === 'onAutoplayBlocked'
+                    ? 'Your browser blocked playback. Press Play to start this station.'
+                    : 'This station is unavailable. Try another station.');
+                clearTimeout(playTimeoutRef.current);
+                clearInterval(listeningIntervalRef.current);
+                clearTimeout(listeningTimeoutRef.current);
+                return;
+            }
+            if (!readyRef.current && isYouTubeReadyMessage(data)) {
+                readyRef.current = true;
+                clearInterval(listeningIntervalRef.current);
+                clearTimeout(listeningTimeoutRef.current);
+                for (const event of ['onStateChange', 'onError', 'onAutoplayBlocked']) sendCommand('addEventListener', [event]);
+                syncVolume();
+                if (playIntentRef.current) {
+                    if (restartRef.current) {
+                        sendCommand('seekTo', [0, true]);
+                        restartRef.current = false;
+                    }
+                    sendCommand('playVideo');
+                }
+            }
+            const playerState = data.event === 'onStateChange' ? data.info : data.info?.playerState;
+            if (typeof playerState === 'number') {
+                // YouTube states: 1 = Playing, 2 = Paused, 0 = Ended, 3 = Buffering
+                if (playerState === 1) {
+                    if (stopRequestedRef.current) { sendCommand('pauseVideo'); return; }
+                    playIntentRef.current = true;
                     awaitingPlayRef.current = false;
-                    stopRequestedRef.current = true;
-                    setIsStarting(false);
+                    setIsStarting(false); setIsPlaying(true); setPlaybackError(''); clearTimeout(playTimeoutRef.current);
+                } else if (playerState === 2 || playerState === 0) {
                     setIsPlaying(false);
-                    setPlaybackError(data.event === 'onAutoplayBlocked'
-                        ? 'Your browser blocked playback. Press Play to start this station.'
-                        : 'This station is unavailable. Try another station.');
-                    clearTimeout(playTimeoutRef.current);
-                    clearInterval(listeningIntervalRef.current);
-                    clearTimeout(listeningTimeoutRef.current);
-                    return;
-                }
-                if (!readyRef.current && (data.event === 'onReady' || data.event === 'initialDelivery' || data.event === 'infoDelivery')) {
-                    readyRef.current = true;
-                    clearInterval(listeningIntervalRef.current);
-                    clearTimeout(listeningTimeoutRef.current);
-                    for (const event of ['onStateChange', 'onError', 'onAutoplayBlocked']) sendCommand('addEventListener', [event]);
-                    syncVolume();
-                    if (playIntentRef.current) {
-                        if (restartRef.current) {
-                            sendCommand('seekTo', [0, true]);
-                            restartRef.current = false;
-                        }
-                        sendCommand('playVideo');
-                    }
-                }
-                const playerState = data.event === 'onStateChange' ? data.info : data.info?.playerState;
-                if (typeof playerState === 'number') {
-                    // YouTube states: 1 = Playing, 2 = Paused, 0 = Ended, 3 = Buffering
-                    if (playerState === 1) {
-                        if (stopRequestedRef.current) { sendCommand('pauseVideo'); return; }
-                        playIntentRef.current = true;
+                    if (playerState === 2 && !awaitingPlayRef.current) playIntentRef.current = false;
+                    if (playerState === 0) {
+                        playIntentRef.current = false;
                         awaitingPlayRef.current = false;
-                        setIsStarting(false); setIsPlaying(true); setPlaybackError(''); clearTimeout(playTimeoutRef.current);
-                    } else if (playerState === 2 || playerState === 0) {
-                        setIsPlaying(false);
-                        if (playerState === 2 && !awaitingPlayRef.current) playIntentRef.current = false;
-                        if (playerState === 0) {
-                            playIntentRef.current = false;
-                            awaitingPlayRef.current = false;
-                            setIsStarting(false);
-                            clearTimeout(playTimeoutRef.current);
-                        }
+                        setIsStarting(false);
+                        clearTimeout(playTimeoutRef.current);
                     }
                 }
-            } catch (err) {
-                console.error("YouTube message parse error:", err);
             }
         };
         window.addEventListener('message', handleMessage);
@@ -329,7 +324,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                                                 )}
                                             </div>
                                             <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {station.name}
+                                                {station.name || station.id}
                                             </span>
                                         </button>
                                     ))}
@@ -372,7 +367,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
                                         )}
                                     </div>
                                     <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                        {station.name}
+                                        {station.name || station.id}
                                     </span>
                                 </button>
                             ))}

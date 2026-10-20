@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import CompactLayout from './CompactLayout';
+import { useState } from 'react';
+import CompactShell from './CompactLayout';
+
+function CompactLayout(props) {
+    const [tab, setTab] = useState('home');
+    return <CompactShell tab={tab} onTabChange={setTab} {...props} />;
+}
 
 vi.mock('../assets/logo.png', () => ({ default: 'logo.png' }));
 
@@ -60,7 +66,6 @@ vi.mock('./SpeedDial', () => ({ default: () => <div data-testid="compact-speeddi
 vi.mock('./SettingsPanel/index.jsx', () => ({ default: ({ embedded }) => <div data-testid="compact-settings-panel" data-embedded={embedded ? 'true' : 'false'}>Settings</div> }));
 vi.mock('./AnimeSchedule/TodayLaunch', () => ({ default: () => <div data-testid="compact-today-launch">TodayLaunch</div> }));
 vi.mock('./AnimeSchedule/EmbeddedAnimeList', () => ({ default: () => <div data-testid="compact-anime-list">EmbeddedAnimeList</div> }));
-vi.mock('./LofiPlayer', () => ({ default: ({ compact, expanded }) => <div data-testid="compact-lofi" data-compact={compact ? 'true' : 'false'} data-expanded={expanded ? 'true' : 'false'}>Lofi</div> }));
 
 describe('CompactLayout', () => {
     beforeEach(() => {
@@ -152,6 +157,12 @@ describe('CompactLayout', () => {
         mockSettings.lofiStations = [];
         render(<CompactLayout />);
         expect(screen.queryByRole('tab', { name: 'Lofi' })).toBeNull();
+    });
+
+    it('reports root playback in navigation without mounting a second player', () => {
+        const { container } = render(<CompactLayout lofiPlaying />);
+        expect(container.querySelector('#tab-lofi .top-nav-pulse')).toBeTruthy();
+        expect(container.querySelector('iframe')).toBeNull();
     });
 
     it('switches to settings on open-settings-dials custom event', () => {

@@ -164,7 +164,8 @@
     display: flex; align-items: center; justify-content: center;
 }
 .suggestions-list li:hover .sug-remove, .suggestions-list li.selected .sug-remove,
-.suggestions-list li:hover .sug-add, .suggestions-list li.selected .sug-add { opacity: 1; }
+.suggestions-list li:hover .sug-add, .suggestions-list li.selected .sug-add,
+.suggestions-list li:focus-within .sug-remove, .suggestions-list li:focus-within .sug-add { opacity: 1; }
 .sug-remove:hover, .sug-add:hover { color: rgba(255,255,255,0.85) !important; background: rgba(255,255,255,0.08); }
 
 /* -- Touch devices: action buttons can't rely on hover ---- */

@@ -4,12 +4,51 @@ import { useSettingsStore } from '../stores/useSettingsStore';
 import { DEFAULT_SETTINGS } from '../stores/settingsSchema';
 import { deleteBackgroundBlob } from './db';
 import { useFocusStore } from '../stores/useFocusStore';
+import { safeStorage } from '../utils/storage';
 
 vi.mock('./db', () => ({ deleteBackgroundBlob: vi.fn().mockResolvedValue() }));
 beforeEach(() => { localStorage.clear(); sessionStorage.clear(); useSettingsStore.setState(structuredClone(DEFAULT_SETTINGS)); });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe('real settings persistence and backups', () => {
+    it('applies restored preferences immediately and keeps them through transient updates before reload', () => {
+        const backup = createSettingsBackup({ ...DEFAULT_SETTINGS, username: 'From backup', volume: 0.7 });
+        useSettingsStore.getState().setUsername('Current user');
+        restoreSettingsBackup(backup);
+        expect(useSettingsStore.getState()).toMatchObject({ username: 'From backup', volume: 0.7 });
+        useSettingsStore.getState().setMalStatus('loading');
+        useSettingsStore.getState().setShowQuote(false);
+        expect(JSON.parse(localStorage.getItem('dash_settings')).state).toMatchObject({ username: 'From backup', volume: 0.7, showQuote: false });
+    });
+
+    it('does not rewrite saved preferences for ephemeral connection status changes', () => {
+        useSettingsStore.getState().setUsername('Saved');
+        const write = vi.spyOn(Storage.prototype, 'setItem');
+        useSettingsStore.getState().setMalStatus('loading');
+        useSettingsStore.getState().setMalLoading(true);
+        useSettingsStore.getState().setMalSavedAt(Date.now());
+        expect(write).not.toHaveBeenCalled();
+    });
+
+    it('restores correctly after storage recovers from a pending memory-only write', async () => {
+        const blocked = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('Full', 'QuotaExceededError'); });
+        useSettingsStore.getState().setUsername('Pending old preference');
+        blocked.mockRestore();
+        restoreSettingsBackup(createSettingsBackup({ ...DEFAULT_SETTINGS, username: 'Durable imported preference' }));
+        expect(JSON.parse(safeStorage.getItem('dash_settings')).state.username).toBe('Durable imported preference');
+        await useSettingsStore.persist.rehydrate();
+        expect(useSettingsStore.getState().username).toBe('Durable imported preference');
+    });
+
+    it('leaves both mounted state and durable storage unchanged if restore cannot be saved', () => {
+        useSettingsStore.getState().setUsername('Keep me');
+        const previous = localStorage.getItem('dash_settings');
+        const state = useSettingsStore.getState();
+        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('Full', 'QuotaExceededError'); });
+        expect(() => restoreSettingsBackup(createSettingsBackup({ username: 'Cannot save' }))).toThrow();
+        expect(useSettingsStore.getState()).toBe(state);
+        expect(localStorage.getItem('dash_settings')).toBe(previous);
+    });
     it('clears daily focus tasks and stops the timer on a full data reset', async () => {
         useFocusStore.getState().addTask('Saved task');
         useFocusStore.getState().start();

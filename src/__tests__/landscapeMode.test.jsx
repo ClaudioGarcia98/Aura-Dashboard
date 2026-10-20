@@ -38,6 +38,13 @@ vi.mock('../hooks/useWatchingList', () => ({ useWatchingList: () => [] }));
 vi.mock('../hooks/useBackgroundLoader', () => ({ useBackgroundLoader: vi.fn() }));
 vi.mock('../hooks/useThemeEffect', () => ({ useThemeEffect: vi.fn() }));
 vi.mock('../hooks/useFontEffect', () => ({ useFontEffect: vi.fn() }));
+vi.mock('../hooks/useWeather', () => ({ useWeather: () => ({ weather: null, error: false }) }));
+vi.mock('../hooks/useAnimeSchedule', () => ({ useAnimeSchedule: () => ({
+    displayList: [], todayLoading: false, todayError: false,
+    sidebarData: [], sidebarLoading: false, sidebarError: false,
+    activeDay: 'monday', setActiveDay: vi.fn(), userWatchingIds: [],
+    expandedAnime: null, setExpandedAnime: vi.fn(),
+}) }));
 
 describe('Landscape Mode & Mobile Resolutions', () => {
     const originalInnerWidth = window.innerWidth;
@@ -100,7 +107,7 @@ describe('Landscape Mode & Mobile Resolutions', () => {
     resolutions.forEach(({ name, width, height }) => {
         it(`renders CompactLayout cleanly on ${name} (${width}x${height})`, () => {
             setViewport(width, height);
-            const { container } = render(<CompactLayout />);
+            const { container } = render(<CompactLayout tab="home" onTabChange={vi.fn()} />);
 
             expect(container.querySelector('.compact-root')).toBeTruthy();
             expect(container.querySelector('.top-nav')).toBeTruthy();

@@ -3,44 +3,10 @@ import './WeatherWidget.css';
 import { memo, useState, useEffect, useRef } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useWeather } from '../hooks/useWeather';
-import { WeatherIcon, FeelsLikeIcon, HumidityIcon, WindIcon, SunriseIcon, SunsetIcon } from './WeatherIcons';
-import { weekday } from '../i18n/core';
+import { WeatherIcon } from './WeatherIcons';
+import WeatherDetails from './WeatherDetails';
+import { formatWeatherValue, getIconClassName } from '../utils/weatherPresentation';
 import { weatherConditionLabel } from '../constants/weather';
-import { isTimeZone } from '../utils/timeZone';
-
-function forecastDay(day, locale) {
-    if (typeof day.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day.date)) {
-        return new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(new Date(`${day.date}T12:00:00Z`));
-    }
-    const names = { Sun: 'sunday', Mon: 'monday', Tue: 'tuesday', Wed: 'wednesday', Thu: 'thursday', Fri: 'friday', Sat: 'saturday' };
-    return names[day.day] ? weekday(locale, names[day.day]) : day.day;
-}
-
-function formatWeatherValue(value, locale) {
-    const match = String(value).match(/^(-?\d+(?:\.\d+)?)(.*)$/);
-    if (!match) return value;
-    const number = Number(match[1]);
-    if (match[2] === '%') return new Intl.NumberFormat(locale, { style: 'percent' }).format(number / 100);
-    if (match[2].trim() === 'km/h') return new Intl.NumberFormat(locale, { style: 'unit', unit: 'kilometer-per-hour', unitDisplay: 'short' }).format(number);
-    return new Intl.NumberFormat(locale).format(number) + match[2];
-}
-
-const getIconClassName = (type) => {
-    if (type === 'sun') return 'weather-icon-sun';
-    if (['moon', 'partly-cloudy-night', 'fog', 'partly-cloudy', 'cloud', 'unknown'].includes(type)) return 'weather-icon-cloud';
-    return 'weather-icon-rain';
-};
-
-function WeatherStatus({ weather, stale, t, locale }) {
-    const updated = new Date(weather.observedAt || weather.timestamp).toLocaleString(locale, {
-        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-        ...(isTimeZone(weather.timeZone) ? { timeZone: weather.timeZone } : {}),
-    });
-    return <div className="weather-status">
-        <span>{t('Updated {time}', { time: updated })}</span>
-        {stale && <span role="status">{t('Showing saved weather; refresh unavailable.')}</span>}
-    </div>;
-}
 
 export default memo(function WeatherWidget({ inline = false }) {
     const { t, locale } = useTranslation();
@@ -138,46 +104,7 @@ export default memo(function WeatherWidget({ inline = false }) {
                 </button>
 
                 <div className={`weather-inline-details ${expanded ? 'open' : ''}`} aria-hidden={!expanded} ref={panelRef} role="region" aria-label={t("Weather Details")}>
-                    <WeatherStatus weather={weather} stale={isOffline} t={t} locale={locale} />
-                    <div className="wd-row">
-                        <span className="wd-label"><FeelsLikeIcon /> {t("Feels like")}</span>
-                        <span>{weather ? formatWeatherValue(weather.feelsLike, locale) : '--°'}</span>
-                    </div>
-                    <div className="wd-row">
-                        <span className="wd-label"><HumidityIcon /> {t("Humidity")}</span>
-                        <span>{weather ? formatWeatherValue(weather.humidity, locale) : '--%'}</span>
-                    </div>
-                    <div className="wd-row">
-                        <span className="wd-label"><WindIcon /> {t("Wind")}</span>
-                        <span>{weather ? formatWeatherValue(weather.wind, locale) : '-- km/h'}</span>
-                    </div>
-                    <div className="wd-row">
-                        <span className="wd-label"><SunriseIcon /> {t("Sunrise")}</span>
-                        <span>{weather ? weather.sunrise : '--:--'}</span>
-                    </div>
-                    <div className="wd-row">
-                        <span className="wd-label"><SunsetIcon /> {t("Sunset")}</span>
-                        <span>{weather ? weather.sunset : '--:--'}</span>
-                    </div>
-                    {weather?.forecast && weather.forecast.length > 0 && (
-                        <div className="weather-forecast">
-                            <div className="weather-forecast-title">{t("3-Day Forecast")}</div>
-                            <div className="weather-forecast-grid">
-                                {weather.forecast.map((day, idx) => (
-                                    <div key={idx} className="weather-forecast-day">
-                                        <span className="weather-forecast-name">{forecastDay(day, locale)}</span>
-                                        <span className={`weather-forecast-icon ${getIconClassName(day.iconType)}`}>
-                                            <WeatherIcon type={day.iconType} />
-                                        </span>
-                                        <div className="weather-forecast-temps">
-                                            <span className="weather-forecast-max">{new Intl.NumberFormat(locale).format(day.max)}°</span>
-                                            <span className="weather-forecast-min">{new Intl.NumberFormat(locale).format(day.min)}°</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    <WeatherDetails weather={weather} stale={isOffline} t={t} locale={locale} inline />
                 </div>
             </div>
         );
@@ -214,48 +141,7 @@ export default memo(function WeatherWidget({ inline = false }) {
                 aria-hidden={!expanded}
                 aria-label={t("Weather Details")}
             >
-                <WeatherStatus weather={weather} stale={isOffline} t={t} locale={locale} />
-                <div className="wd-row">
-                    <span className="wd-label"><FeelsLikeIcon /> {t("Feels like")}</span>
-                    <span id="wFeels">{weather ? formatWeatherValue(weather.feelsLike, locale) : '--°C'}</span>
-                </div>
-                <div className="wd-row">
-                    <span className="wd-label"><HumidityIcon /> {t("Humidity")}</span>
-                    <span id="wHumidity">{weather ? formatWeatherValue(weather.humidity, locale) : '--%'}</span>
-                </div>
-                <div className="wd-row">
-                    <span className="wd-label"><WindIcon /> {t("Wind")}</span>
-                    <span id="wWind">{weather ? formatWeatherValue(weather.wind, locale) : '-- km/h'}</span>
-                </div>
-                <div className="wd-row">
-                    <span className="wd-label"><SunriseIcon /> {t("Sunrise")}</span>
-                    <span id="wSunrise">{weather ? weather.sunrise : '--:--'}</span>
-                </div>
-                <div className="wd-row">
-                    <span className="wd-label"><SunsetIcon /> {t("Sunset")}</span>
-                    <span id="wSunset">{weather ? weather.sunset : '--:--'}</span>
-                </div>
-                
-                {weather?.forecast && weather.forecast.length > 0 && (
-                    <div className="weather-forecast">
-                        <div className="weather-forecast-title">{t("3-Day Forecast")}</div>
-                        <div className="weather-forecast-grid">
-                            {weather.forecast.map((day, idx) => (
-                                <div key={idx} className="weather-forecast-day">
-                                    <span className="weather-forecast-name">{forecastDay(day, locale)}</span>
-                                    <span className={`weather-forecast-icon ${getIconClassName(day.iconType)}`}>
-                                        <WeatherIcon type={day.iconType} />
-                                    </span>
-                                    <div className="weather-forecast-temps">
-                                        <span className="weather-forecast-max">{new Intl.NumberFormat(locale).format(day.max)}°</span>
-                                        <span className="weather-forecast-min">{new Intl.NumberFormat(locale).format(day.min)}°</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
+                <WeatherDetails weather={weather} stale={isOffline} t={t} locale={locale} />
             </div>
         </>
     );
