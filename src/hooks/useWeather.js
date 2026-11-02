@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { fetchWeatherData, readWeatherCache, weatherCacheKey, WEATHER_REFRESH_MS } from '../services/weather';
 import { safeStorage } from '../utils/storage';
 import { useWeatherStore } from '../stores/useWeatherStore';
+import { subscribeExtensionPermissions } from '../services/extensionPermissions';
 
 export function useWeather(useCelsius, fallbackCity, cityLocation) {
     const key = weatherCacheKey(useCelsius, fallbackCity, cityLocation);
@@ -38,11 +39,13 @@ export function useWeather(useCelsius, fallbackCity, cityLocation) {
             if (!current || Date.now() - current.timestamp >= WEATHER_REFRESH_MS) refresh();
         };
         window.addEventListener('online', refresh);
+        const unsubscribePermissions = subscribeExtensionPermissions(refresh);
         window.addEventListener('focus', resume);
         document.addEventListener('visibilitychange', resume);
         return () => {
             active = false; controller?.abort(); clearTimeout(timer);
             window.removeEventListener('online', refresh);
+            unsubscribePermissions();
             window.removeEventListener('focus', resume);
             document.removeEventListener('visibilitychange', resume);
         };

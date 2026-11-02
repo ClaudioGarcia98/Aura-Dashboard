@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { fetchUserWatchingList } from '../services/animeService';
 import { safeJsonParse, safeStorage } from '../utils/storage';
 import { WATCHING_CACHE_KEY } from '../services/api';
+import { useExtensionPermission } from './useExtensionPermission';
 
 function readValidSavedEntry(raw, user) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw) || raw.partial === true) return null;
@@ -21,6 +22,7 @@ function readValidSavedEntry(raw, user) {
 }
 
 export function useWatchingList(username, enabled, { setMalLoading, setMalError, setMalSuccess, setMalStatus, setMalSavedAt, refreshKey = 0 }) {
+    const permissionGranted = useExtensionPermission('authenticationInfo');
     const [watching, setWatching] = useState({ username: '', data: [] });
     const prevRefreshRef = useRef(refreshKey);
     useEffect(() => {
@@ -38,9 +40,9 @@ export function useWatchingList(username, enabled, { setMalLoading, setMalError,
             if (!active) return;
             setWatching({ username: user, data: enabled && valid ? saved.data : [] });
             setMalSavedAt?.(enabled && valid ? saved.ts : null);
-            setMalLoading(!!(enabled && user)); setMalError(false); setMalSuccess(false); setMalStatus?.(enabled && user ? 'loading' : 'idle');
+            setMalLoading(!!(enabled && user && permissionGranted)); setMalError(false); setMalSuccess(false); setMalStatus?.(enabled && user && permissionGranted ? 'loading' : 'idle');
         });
-        if (!enabled || !user) return () => { active = false; controller.abort(); };
+        if (!enabled || !user || !permissionGranted) return () => { active = false; controller.abort(); };
         const timer = setTimeout(async () => {
             setMalLoading(true); setMalStatus?.('loading');
             try {
@@ -67,6 +69,6 @@ export function useWatchingList(username, enabled, { setMalLoading, setMalError,
             } finally { if (active) setMalLoading(false); }
         }, 500);
         return () => { active = false; controller.abort(); clearTimeout(timer); };
-    }, [username, enabled, refreshKey, setMalLoading, setMalError, setMalSuccess, setMalStatus, setMalSavedAt]);
+    }, [username, enabled, refreshKey, permissionGranted, setMalLoading, setMalError, setMalSuccess, setMalStatus, setMalSavedAt]);
     return enabled && watching.username === (username || '').trim().toLowerCase() ? watching.data : [];
 }

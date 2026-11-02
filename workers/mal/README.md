@@ -22,11 +22,13 @@ Configuration is defined in [wrangler.toml](wrangler.toml) (`name = "aura-mal-ap
 
 ### Post-deploy verification
 
-1. Open `https://aura-mal-api.claudio091998.workers.dev/`. The response must identify `Aura MAL connection` and version `4`.
+1. Open `https://aura-mal-api.claudio091998.workers.dev/`. The response must identify `Aura MAL connection` and version `5`.
 2. Verify a live public list at `/animelist/claclo98/load.json?offset=0&status=1`. It must return a JSON array, not a challenge page or an error object.
 3. Publish the updated dashboard after the live Worker succeeds. Its configured endpoint is `MAL_RELAY_BASE` in `src/services/api.js`.
 
-If the address or GitHub Pages owner changes, update `MAL_RELAY_BASE` and `SITE_ORIGIN` in [wrangler.toml](wrangler.toml) / [worker.js](worker.js). The allowed browser origin is `https://claudiogarcia98.github.io` (origins do not contain repository paths). Localhost HTTP origins are also supported for development.
+If the address or GitHub Pages owner changes, update `MAL_RELAY_BASE` and `SITE_ORIGIN` in [wrangler.toml](wrangler.toml) / [worker.js](worker.js). The allowed website origin is `https://claudiogarcia98.github.io` (origins do not contain repository paths). Localhost HTTP origins are also supported for development. Version 5 additionally supports correctly formed `chrome-extension://<32-character-id>` origins for Chrome/Edge and `moz-extension://<UUID>` origins for Firefox. Install IDs vary, so this public endpoint accepts that origin family without maintaining a per-install registry. Requests with no Origin header remain supported.
+
+The extension package does not deploy this Worker. Deploy version 5 separately before verifying MyAnimeList sync in installed extensions; an older deployment may reject extension origins with HTTP 403. If the relay address changes, also update the extension host permissions and CSP.
 
 ## Behavior and limits
 
@@ -35,7 +37,7 @@ If the address or GitHub Pages owner changes, update `MAL_RELAY_BASE` and `SITE_
 - Per-client rate limiting is enforced via an optional `RATE_LIMITER` binding (see [wrangler.toml](wrangler.toml)) or per-IP sliding window (`30 req/min`, returning HTTP 429 with `Retry-After: 60`). Concurrent cache misses for the same username and page offset are coalesced in-flight.
 - Successful pages are cached for five minutes, keyed separately by normalized username and page offset. Empty lists are valid; failures and malformed responses are never cached. `X-Aura-Cache` and `Retry-After` headers are exposed over CORS.
 - App network syncs send `Cache-Control: no-cache` to bypass the relay cache, fetch the current MAL list, and replace the cached page. Refresh requests do not join older ordinary lookups. Deploy version 4 of the Worker along with the frontend for this behavior to take effect.
-- Browser responses allow the configured origin rather than `*`; cookies and unrelated upstream metadata are not forwarded.
+- Browser responses echo an allowed website or extension origin rather than `*`; cookies and unrelated upstream metadata are not forwarded. CORS and Origin are not authentication: non-browser clients can omit/spoof Origin. Fixed upstream targets, input validation, bounded responses, caching, and rate limits are the protection against misuse. Use the Cloudflare rate-limit binding for production; the fallback counter is per Worker isolate, not a global quota.
 - The MAL username is public request data sent to Cloudflare and MyAnimeList. No account credentials are used. Private lists cannot be read.
 - The frontend retains pagination, cancellation, and saved lists with timestamps. MAL blocks, private lists, or host limits can still prevent a full refresh. Deployment must be verified with real upstream requests; fixture tests cannot demonstrate production availability.
 

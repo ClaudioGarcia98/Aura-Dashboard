@@ -1,4 +1,7 @@
+import { checkExtensionRequestPermission, usesFirefoxDataConsent } from './extensionPermissions';
+
 export async function fetchJson(url, { signal, ...options } = {}, timeout = 6000) {
+    if (usesFirefoxDataConsent()) await checkExtensionRequestPermission(url);
     const controller = new AbortController();
     const abort = () => controller.abort(signal?.reason);
     if (signal?.aborted) abort();

@@ -15,6 +15,12 @@ export function resetWorkerState() {
 
 function allowedOrigin(origin, siteOrigin = DEFAULT_SITE_ORIGIN) {
     if (!origin || origin === siteOrigin) return true;
+    // This is a public read-only relay, not an authenticated API. Unpacked
+    // Chromium IDs and per-install Firefox UUIDs cannot be pinned here. Origin
+    // validation only controls browser CORS; the fixed target and rate limits
+    // remain the abuse controls for every client, including extensions.
+    if (/^chrome-extension:\/\/[a-p]{32}$/.test(origin)
+        || /^moz-extension:\/\/[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/i.test(origin)) return true;
     try {
         const url = new URL(origin);
         return url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname);
@@ -134,7 +140,7 @@ export async function handleRequest(request, { fetcher = fetch, cache = globalTh
 
     const url = new URL(request.url);
     if (url.pathname === '/' && !url.search && request.method === 'GET') {
-        return reply({ service: 'Aura MAL connection', version: 4, status: 'ok' }, 200, origin, {}, siteOrigin);
+        return reply({ service: 'Aura MAL connection', version: 5, status: 'ok' }, 200, origin, {}, siteOrigin);
     }
     const match = url.pathname.match(/^\/animelist\/([a-z\d_-]{1,32})\/load\.json$/i);
     const offsets = url.searchParams.getAll('offset');

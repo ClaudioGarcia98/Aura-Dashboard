@@ -5,21 +5,15 @@ import { createPortal } from 'react-dom';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
 import { usePointerReorder } from '../hooks/usePointerReorder';
+import { useExtensionPermission } from '../hooks/useExtensionPermission';
+import { faviconUrl } from '../utils/urls';
 
 export default memo(function SpeedDial() {
     const { t } = useTranslation();
     const { speedDials, setSpeedDials } = useSettingsStore(useShallow(s => ({ speedDials: s.speedDials, setSpeedDials: s.setSpeedDials })));
     const safeSpeedDials = Array.isArray(speedDials) ? speedDials : [];
-
-    const getFavicon = (url) => {
-        try {
-            if (!url) return '';
-            const dom = new URL(url).hostname;
-            return `https://www.google.com/s2/favicons?domain=${dom}&sz=64`;
-        } catch {
-            return '';
-        }
-    };
+    const faviconsAllowed = useExtensionPermission('browsingActivity');
+    const getFavicon = url => faviconsAllowed ? faviconUrl(url) : '';
 
     // Pointer-based reorder (works for mouse + touch + pen)
     const handleReorder = useCallback((fromId, toId) => {
@@ -158,12 +152,12 @@ export default memo(function SpeedDial() {
                     className="custom-drag-ghost"
                     style={{ left: pointer.x, top: pointer.y }}
                 >
-                    <img
+                    {faviconsAllowed ? <img
                         src={getFavicon(draggedItem.url)}
                         alt={draggedItem.name}
                         style={{ width: '26px', height: '26px', borderRadius: '4px' }}
                         onError={(e) => { e.target.style.display = 'none'; }}
-                    />
+                    /> : <span>{(draggedItem.name || 'S').charAt(0).toUpperCase()}</span>}
                 </div>,
                 document.body
             )}

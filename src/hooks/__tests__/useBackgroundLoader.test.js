@@ -7,6 +7,7 @@ import { DEFAULT_SETTINGS } from '../../stores/settingsSchema';
 import { DEFAULT_BACKGROUND } from '../../constants/background';
 import { getBackgroundBlob, deleteBackgroundBlob } from '../../services/db';
 import { gifBlob, mockMediaDecoder } from '../../testSupport/backgroundMedia';
+import { BACKGROUND_REVISION_KEY } from '../../services/backgroundSync';
 
 vi.mock('../../services/db', () => ({ getBackgroundBlob: vi.fn(), deleteBackgroundBlob: vi.fn(), saveBackgroundBlob: vi.fn() }));
 let decoder;
@@ -97,4 +98,41 @@ it('recovers runtime playback errors, ignores obsolete events, and stops retryin
     await act(async () => result.current.handleBackgroundError(DEFAULT_BACKGROUND.url));
     expect(useSettingsStore.getState().backgroundUrl).toBeNull();
     expect(result.current.backgroundError).toContain('Background unavailable');
+});
+
+it('reloads a committed wallpaper from another tab and releases its old local blob URL', async () => {
+    useSettingsStore.setState({ backgroundUrl: 'blob:previous', backgroundIsVideo: false });
+    renderHook(() => useBackgroundLoader());
+    getBackgroundBlob.mockResolvedValue(gifBlob());
+    localStorage.setItem(BACKGROUND_REVISION_KEY, 'new-upload');
+    act(() => window.dispatchEvent(new StorageEvent('storage', { key: BACKGROUND_REVISION_KEY })));
+    await waitFor(() => expect(useSettingsStore.getState().backgroundUrl).toBe('blob:loaded-2'));
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:previous');
+    expect(useSettingsStore.getState().backgroundIsVideo).toBe(false);
+});
+
+it('restores the default after a peer reset and catches up on focus after a missed revision', async () => {
+    localStorage.setItem(BACKGROUND_REVISION_KEY, 'old-upload');
+    useSettingsStore.setState({ backgroundUrl: 'blob:previous', backgroundIsVideo: false });
+    renderHook(() => useBackgroundLoader());
+    localStorage.removeItem(BACKGROUND_REVISION_KEY);
+    act(() => window.dispatchEvent(new Event('focus')));
+    await waitFor(() => expect(useSettingsStore.getState().backgroundUrl).toBe(DEFAULT_BACKGROUND.url));
+    expect(useSettingsStore.getState().backgroundIsVideo).toBe(true);
+});
+
+it('discards an older peer reload that resolves after a newer wallpaper revision', async () => {
+    useSettingsStore.setState({ backgroundUrl: 'blob:previous', backgroundIsVideo: false });
+    renderHook(() => useBackgroundLoader());
+    let finishOlder;
+    getBackgroundBlob.mockReturnValueOnce(new Promise(resolve => { finishOlder = resolve; }));
+    localStorage.setItem(BACKGROUND_REVISION_KEY, 'first');
+    act(() => window.dispatchEvent(new StorageEvent('storage', { key: BACKGROUND_REVISION_KEY })));
+    getBackgroundBlob.mockResolvedValue(null);
+    localStorage.setItem(BACKGROUND_REVISION_KEY, 'second');
+    act(() => window.dispatchEvent(new StorageEvent('storage', { key: BACKGROUND_REVISION_KEY })));
+    await waitFor(() => expect(useSettingsStore.getState().backgroundUrl).toBe(DEFAULT_BACKGROUND.url));
+    await act(async () => finishOlder(gifBlob()));
+    expect(useSettingsStore.getState().backgroundUrl).toBe(DEFAULT_BACKGROUND.url);
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
 });

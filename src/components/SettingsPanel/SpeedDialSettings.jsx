@@ -2,13 +2,12 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useState } from 'react';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
-import { normalizeUrl } from '../../utils/urls';
-const getFaviconUrl = (url) => {
-    try { return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=16`; }
-    catch { return ''; }
-};
+import { normalizeUrl, faviconUrl } from '../../utils/urls';
+import { useExtensionPermission } from '../../hooks/useExtensionPermission';
 
 export default function SpeedDialSettings() {
+    const faviconsAllowed = useExtensionPermission('browsingActivity');
+    const getFaviconUrl = url => faviconsAllowed ? faviconUrl(url, 16) : undefined;
     const { t } = useTranslation();
     const { speedDials, setSpeedDials } = useSettingsStore(useShallow(s => ({ speedDials: s.speedDials, setSpeedDials: s.setSpeedDials })));
     const [newDialUrl, setNewDialUrl] = useState('');

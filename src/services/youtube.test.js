@@ -66,3 +66,8 @@ it('uses the hosting origin and provides a stable file-session fallback', () => 
     vi.stubGlobal('window', undefined);
     expect(youtubeEmbedOrigin()).toBe('http://localhost');
 });
+
+it.each(['chrome-extension://abcdefghijklmnopabcdefghijklmnop', 'moz-extension://12345678-abcd-abcd-abcd-123456789012'])('preserves the extension origin for player messaging: %s', origin => {
+    vi.stubGlobal('window', { location: { origin } });
+    expect(youtubeEmbedOrigin()).toBe(origin);
+});

@@ -22,6 +22,16 @@ beforeEach(() => {
 
 afterEach(() => {
     cleanHead();
+    vi.unstubAllEnvs();
+});
+
+describe('extension fonts', () => {
+    it('loads the packaged stylesheet instead of contacting Google Fonts', () => {
+        vi.stubEnv('MODE', 'extension-chromium');
+        mockFont = 'raleway';
+        renderHook(() => useFontEffect());
+        expect(document.getElementById('gf-raleway').getAttribute('href')).toBe('./fonts/raleway.css');
+    });
 });
 
 describe('useFontEffect — default font (no URL)', () => {

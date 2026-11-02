@@ -204,3 +204,18 @@
         font-size: 0.85rem !important;
     }
 }
+.search-permission-notice {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: var(--bg-primary, #181824);
+    color: var(--text-primary);
+    border: 1px solid var(--accent-color);
+    font-size: 0.8rem;
+}
+.search-permission-notice p { margin: 0 0 8px; line-height: 1.5; }
+.search-permission-notice button { color: var(--accent-color); cursor: pointer; }

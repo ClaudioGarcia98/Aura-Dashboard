@@ -14,6 +14,7 @@ export default function EmbeddedTrailer({ videoId, title }) {
             src={`https://www.youtube.com/embed/${encodeURIComponent(videoId)}?mute=1&enablejsapi=1&modestbranding=1&rel=0&playsinline=1&origin=${encodeURIComponent(youtubeEmbedOrigin())}`}
             onLoad={onLoad}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            referrerPolicy="strict-origin-when-cross-origin"
             allowFullScreen
             loading="lazy"
         />

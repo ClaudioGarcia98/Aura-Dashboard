@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchJson } from '../services/http';
+import { useExtensionPermission } from './useExtensionPermission';
 
 export function useSearchSuggestions(query, engine, enabled) {
+    const permissionGranted = useExtensionPermission('searchTerms');
     const key = `${engine?.name || 'Google'}:${query}`;
     const [result, setResult] = useState({ key: '', items: [] });
     const generation = useRef(0);
     const name = engine?.name || 'Google';
     useEffect(() => {
         const request = ++generation.current;
-        if (!enabled || !query.trim() || !['Google', 'YouTube'].includes(name)) return;
+        if (!enabled || !permissionGranted || !query.trim() || !['Google', 'YouTube'].includes(name)) return;
         const controller = new AbortController();
         const timer = setTimeout(async () => {
             try {
@@ -20,6 +22,6 @@ export function useSearchSuggestions(query, engine, enabled) {
             } catch { if (!controller.signal.aborted && request === generation.current) setResult({ key, items: [] }); }
         }, 250);
         return () => { controller.abort(); clearTimeout(timer); };
-    }, [query, name, key, enabled]);
-    return enabled && query.trim() && result.key === key ? result.items : [];
+    }, [query, name, key, enabled, permissionGranted]);
+    return enabled && permissionGranted && query.trim() && result.key === key ? result.items : [];
 }

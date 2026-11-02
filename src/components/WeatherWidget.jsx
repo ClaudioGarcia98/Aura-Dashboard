@@ -7,6 +7,8 @@ import { WeatherIcon } from './WeatherIcons';
 import WeatherDetails from './WeatherDetails';
 import { formatWeatherValue, getIconClassName } from '../utils/weatherPresentation';
 import { weatherConditionLabel } from '../constants/weather';
+import { useExtensionPermission } from '../hooks/useExtensionPermission';
+import { requestExtensionDataPermissions } from '../services/extensionPermissions';
 
 export default memo(function WeatherWidget({ inline = false }) {
     const { t, locale } = useTranslation();
@@ -17,6 +19,7 @@ export default memo(function WeatherWidget({ inline = false }) {
     const { weather, error, isOffline, isFallback, fetchWeatherRef } = useWeather(useCelsius, fallbackCity, cityLocation);
     const widgetRef = useRef(null);
     const panelRef = useRef(null);
+    const permissionGranted = useExtensionPermission('locationInfo');
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -32,6 +35,10 @@ export default memo(function WeatherWidget({ inline = false }) {
         document.addEventListener('keydown', escape);
         return () => { document.removeEventListener('click', handleClickOutside); document.removeEventListener('keydown', escape); };
     }, []);
+
+    if (!permissionGranted) return <button type="button" className={inline ? 'weather-inline-card' : 'weather-widget'}
+        title={t('Allow location data to load weather and search cities with Open-Meteo. Approximate location may use IPAPI.')}
+        onClick={() => requestExtensionDataPermissions(['locationInfo'])}>{t('Enable weather')}</button>;
 
     if (!weather && !error) {
         if (inline) {

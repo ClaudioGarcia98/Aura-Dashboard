@@ -3,6 +3,7 @@ import { sanitizeSettings } from '../stores/settingsSchema';
 import { saveBackgroundBlob, deleteBackgroundBlob } from './db';
 import { DEFAULT_BACKGROUND } from '../constants/background';
 import { safeStorage } from '../utils/storage';
+import { notifyBackgroundChanged } from './backgroundSync';
 
 export const MAX_WALLPAPER_BYTES = 50 * 1024 * 1024;
 export const BACKGROUND_MEDIA_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']);
@@ -103,6 +104,7 @@ export async function changeBackground({ blob = null, name = '', settings = {}, 
             throw error;
         }
         useSettingsStore.setState(updates);
+        notifyBackgroundChanged();
         return true;
     });
 }
@@ -117,7 +119,10 @@ export function recoverBackground(failedUrl) {
         backgroundIsVideo: !defaultFailed, gifName: '' });
     if (!defaultFailed) {
         void enqueueWrite(async () => {
-            if (useSettingsStore.getState().backgroundUrl === DEFAULT_BACKGROUND.url) await deleteBackgroundBlob();
+            if (useSettingsStore.getState().backgroundUrl === DEFAULT_BACKGROUND.url) {
+                await deleteBackgroundBlob();
+                notifyBackgroundChanged();
+            }
         }).catch(() => {});
     }
     return true;

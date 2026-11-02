@@ -6,10 +6,11 @@ Remaining work for the **Good Morning (Aura)** personal start-page dashboard, or
 
 ### 1. Browser "New Tab" Extension Packaging (Chrome, Edge & Firefox)
 
-* **What it is**: A lightweight Manifest V3 wrapper (`manifest.json` with `chrome_url_overrides.newtab`) generated from the Vite build.
+* **Implementation**: A separate Manifest V3 Vite build (`manifest.json` with `chrome_url_overrides.newtab`), local fonts/media, Chromium and Firefox ZIP packages, and an extension smoke-test suite. See [installation and release instructions](docs/extensions.md).
 * **What it does**:
-  * Allows users to install **Good Morning (Aura)** from the Chrome Web Store, Edge Add-ons, or Firefox Add-ons so it opens automatically with zero latency every time they press `Ctrl+T` (New Tab).
+  * Opens **Good Morning (Aura)** locally without waiting for a dashboard download whenever users press `Ctrl+T` (New Tab). Live widgets still need network access.
   * Gives the dashboard organic discovery in browser extension stores and makes it a true daily-driver start page.
+* **Release work remaining**: Deploy the extension-compatible MAL Worker, verify live integrations in each browser, prepare store listings/privacy links, and submit the generated packages for review/signing. Packaging does not publish the extension.
 
 ---
 

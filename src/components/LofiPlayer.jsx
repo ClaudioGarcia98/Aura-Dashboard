@@ -269,6 +269,7 @@ export default memo(function LofiPlayer({ compact = false, expanded = false, onP
             height="0"
             src={`https://www.youtube.com/embed/${lofiId}?enablejsapi=1&autoplay=0&start=0&playsinline=1&controls=0&showinfo=0&rel=0${originParam}`}
             allow="autoplay; encrypted-media"
+            referrerPolicy="strict-origin-when-cross-origin"
             style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', border: 'none' }}
             title={t("Lofi Background Stream")}
             onLoad={handleIframeLoad}

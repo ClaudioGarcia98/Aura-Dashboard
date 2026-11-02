@@ -7,9 +7,10 @@ export function useFontEffect() {
 
     useEffect(() => {
         const f = FONTS[font] || FONTS.default;
+        const url = f.url && (import.meta.env.MODE.startsWith('extension-') ? `./fonts/${font}.css` : f.url);
         if (f.url && !document.getElementById('gf-' + font)) {
             const l = document.createElement('link');
-            l.id = 'gf-' + font; l.rel = 'stylesheet'; l.href = f.url;
+            l.id = 'gf-' + font; l.rel = 'stylesheet'; l.href = url;
             document.head.appendChild(l);
         }
         document.documentElement.style.setProperty('--font-family', f.family);

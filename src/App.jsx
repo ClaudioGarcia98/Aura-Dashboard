@@ -13,6 +13,7 @@ import FocusWidget from './components/FocusWidget';
 import { useFocusSession } from './hooks/useFocusSession';
 import { useSettingsStore } from './stores/useSettingsStore';
 import { useBackgroundLoader } from './hooks/useBackgroundLoader';
+import { useSettingsSync } from './hooks/useSettingsSync';
 import { useThemeEffect } from './hooks/useThemeEffect';
 import { useFontEffect } from './hooks/useFontEffect';
 import { useMediaQuery } from './hooks/useMediaQuery';
@@ -26,6 +27,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 export default function App() {
     const { t } = useTranslation();
     useDocumentLanguage();
+    useSettingsSync();
     const { backgroundError, handleBackgroundError } = useBackgroundLoader() || {};
     useThemeEffect();
     useFontEffect();
@@ -64,8 +66,13 @@ export default function App() {
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
-        if (pauseBackground || reducedMotion) video.pause();
-        else video.play()?.catch(() => {});
+        const updatePlayback = () => {
+            if (pauseBackground || reducedMotion || document.hidden) video.pause();
+            else video.play()?.catch(() => {});
+        };
+        updatePlayback();
+        document.addEventListener('visibilitychange', updatePlayback);
+        return () => document.removeEventListener('visibilitychange', updatePlayback);
     }, [pauseBackground, reducedMotion, backgroundUrl]);
     // Include landscape tablet widths even in previews that report mouse input.
     // Larger touch-first tablets keep the tabbed shell in either orientation.
@@ -132,7 +139,7 @@ export default function App() {
                     ref={videoRef}
                     src={backgroundUrl}
                     onError={() => handleBackgroundError?.(backgroundUrl)}
-                    autoPlay={!pauseBackground && !reducedMotion}
+                    autoPlay={!pauseBackground && !reducedMotion && !document.hidden}
                     loop
                     muted
                     playsInline

@@ -128,7 +128,7 @@ it('catches up on window focus, chimes once and waits for an explicit break star
     expect(screen.getByRole('status').textContent).toContain('Focus complete');
     expect(screen.getByRole('button', { name: 'Start break' })).toBeTruthy();
     expect(document.body.classList.contains('focus-session-active')).toBe(false);
-    expect(playFocusChime).toHaveBeenCalledExactlyOnceWith(0.3);
+    expect(playFocusChime).toHaveBeenCalledExactlyOnceWith(0.3, expect.stringMatching(/^focus:\d+$/));
     fireEvent.focus(window);
     await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
     expect(playFocusChime).toHaveBeenCalledTimes(1);

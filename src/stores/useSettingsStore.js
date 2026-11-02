@@ -3,11 +3,12 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { safeStorage } from '../utils/storage';
 import { DEFAULT_SETTINGS, readLegacySettings, sanitizeSettings } from './settingsSchema';
 
+let receivingSettings = false;
 const preferenceStorage = {
     ...safeStorage,
     setItem(key, value) {
         // Request status and other ephemeral updates must not rewrite preferences.
-        if (safeStorage.getItem(key) !== value) safeStorage.setItem(key, value);
+        if (!receivingSettings && safeStorage.getItem(key) !== value) safeStorage.setItem(key, value);
     },
 };
 function normalizeLofiStation(station) {
@@ -125,3 +126,18 @@ export const useSettingsStore = create(
         }
     )
 );
+
+// Storage events can arrive after a newer write. Always read the latest value,
+// sanitize it, and apply it without echoing it back into the other tabs.
+export function syncSettingsFromStorage(raw = safeStorage.getItem('dash_settings')) {
+    let saved;
+    try {
+        saved = raw === null ? null : JSON.parse(raw);
+        if (raw !== null && (!saved || ![0, 1].includes(saved.version ?? 0)
+            || !saved.state || typeof saved.state !== 'object' || Array.isArray(saved.state))) return false;
+    } catch { return false; }
+    receivingSettings = true;
+    try { useSettingsStore.setState({ ...structuredClone(DEFAULT_SETTINGS), ...sanitizeSettings(saved?.state) }); }
+    finally { receivingSettings = false; }
+    return true;
+}

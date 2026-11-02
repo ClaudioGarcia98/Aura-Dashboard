@@ -17,7 +17,9 @@ export function useFocusSession(enabled = true) {
     useEffect(() => {
         let mounted = true;
         const unsubscribe = useFocusStore.subscribe((state, previous) => {
-            if (state.notice && state.notice !== previous.notice && state.chimeEnabled) playFocusChime(volume);
+            if (state.notice && state.notice !== previous.notice && state.chimeEnabled) {
+                playFocusChime(volume, `${previous.mode}:${previous.endsAt}`);
+            }
         });
         const update = () => {
             if (!mounted) return;

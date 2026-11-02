@@ -4,6 +4,8 @@ import { createPortal } from 'react-dom';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
 import { fetchJson } from '../../services/http';
+import { isExtensionPage, requestExtensionDataPermissions, requestExtensionGeolocation, removeExtensionGeolocation } from '../../services/extensionPermissions';
+import { useExtensionPermission } from '../../hooks/useExtensionPermission';
 
 export default function WeatherSettings({ active }) {
     const { t } = useTranslation();
@@ -16,10 +18,13 @@ export default function WeatherSettings({ active }) {
     const [isSearchingCity, setIsSearchingCity] = useState(false);
     const [showCityDropdown, setShowCityDropdown] = useState(false);
     const [cityHintPos, setCityHintPos] = useState(null);
+    const locationAllowed = useExtensionPermission('locationInfo');
+    const gpsAllowed = useExtensionPermission('geolocation');
+    const [permissionMessage, setPermissionMessage] = useState('');
 
     // Debounced city geocoding
     useEffect(() => {
-        if (!active || citySearchText === fallbackCity || !showCityDropdown) return;
+        if (!active || !locationAllowed || citySearchText === fallbackCity || !showCityDropdown) return;
         const controller = new AbortController();
         let current = true;
         const delayDebounceFn = setTimeout(async () => {
@@ -37,12 +42,24 @@ export default function WeatherSettings({ active }) {
             }
         }, 500);
         return () => { current = false; controller.abort(); clearTimeout(delayDebounceFn); };
-    }, [active, citySearchText, fallbackCity, showCityDropdown]);
+    }, [active, citySearchText, fallbackCity, showCityDropdown, locationAllowed]);
 
     return (<>
                 {/* Weather */}
                 <div className="sp-section">
                     <div className="sp-label">{t("Weather")}</div>
+                    {!locationAllowed && <div className="sp-group">
+                        <p className="sp-preference-description">{t('Allow location data to load weather and search cities with Open-Meteo. Approximate location may use IPAPI.')}</p>
+                        <button type="button" className="pill" onClick={() => requestExtensionDataPermissions(['locationInfo'])}>{t('Enable weather')}</button>
+                    </div>}
+                    {isExtensionPage() && <div className="sp-group">
+                        <p className="sp-preference-description">{t('Device location is optional. Without it, weather uses your selected city or approximate IP location.')}</p>
+                        <button type="button" className="pill" onClick={() => {
+                            const action = gpsAllowed ? removeExtensionGeolocation() : requestExtensionGeolocation();
+                            action.then(granted => setPermissionMessage(granted ? '' : 'Permission was not granted. Choose a city instead.'));
+                        }}>{gpsAllowed ? t('Stop using device location') : t('Use device location')}</button>
+                        {permissionMessage && <p role="status" className="sp-preference-description">{t(permissionMessage)}</p>}
+                    </div>}
                     <div className="sp-group" style={{ position: 'relative' }}>
                         <label htmlFor="fallbackCityInput" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}> {t("Your City")} <span
                                 ref={cityHintRef}
@@ -70,6 +87,7 @@ export default function WeatherSettings({ active }) {
                         </label>
                         <input
                             type="text"
+                            disabled={!locationAllowed}
                             id="fallbackCityInput"
                             placeholder={t("e.g. London")}
                             value={citySearchText}

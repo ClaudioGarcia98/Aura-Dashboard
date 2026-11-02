@@ -8,6 +8,8 @@ import { memo, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
 import { safeStorage, safeJsonParse, safeJsonStringify } from '../utils/storage';
+import { useExtensionPermission } from '../hooks/useExtensionPermission';
+import { isExtensionPage, requestExtensionDataPermissions } from '../services/extensionPermissions';
 
 export default memo(function SearchBox() {
     const { t } = useTranslation();
@@ -19,6 +21,9 @@ export default memo(function SearchBox() {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [focusIdx, setFocusIdx] = useState(-1);
     const [badgeWidth, setBadgeWidth] = useState(0);
+    const searchAllowed = useExtensionPermission('searchTerms');
+    const faviconsAllowed = useExtensionPermission('browsingActivity');
+    const [needsSearchPermission, setNeedsSearchPermission] = useState(false);
 
     // Combine default engines with custom engines
     const combinedEngines = { ...ENGINES };
@@ -93,7 +98,7 @@ export default memo(function SearchBox() {
 
         // Only auto-focus (and pop the keyboard) on devices with a fine pointer —
         // avoids the keyboard springing up on every phone/tablet tab open.
-        if (!getActiveModal() && window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
+        if (!isExtensionPage() && !getActiveModal() && window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
             inputRef.current?.focus();
         }
 
@@ -126,6 +131,7 @@ export default memo(function SearchBox() {
     const processQuery = (q) => {
         const trimmed = q.trim();
         if (!trimmed) return;
+        if (!searchAllowed) { setNeedsSearchPermission(true); return; }
 
         if (activeEngine) {
             const url = activeEngine.url(trimmed);
@@ -220,6 +226,7 @@ export default memo(function SearchBox() {
     };
 
     const selectHistory = item => {
+        if (!searchAllowed) { setNeedsSearchPermission(true); return; }
         if (httpUrl(item.url)) openUrl(item.url);
         else {
             const engine = Object.values(combinedEngines).find(e => e.name === item.engineName);
@@ -255,7 +262,7 @@ export default memo(function SearchBox() {
         }
     };
 
-    const getFavicon = value => faviconUrl(value, 16);
+    const getFavicon = value => faviconsAllowed ? faviconUrl(value, 16) : '';
 
     const isTyping = query.length > 0;
 
@@ -331,7 +338,7 @@ export default memo(function SearchBox() {
                                 className={idx === focusIdx ? 'selected' : ''}
                                 onClick={() => selectHistory(item)}
                             >
-                                {item.url ? (
+                                {item.url && faviconsAllowed ? (
                                     <img src={getFavicon(item.url)} className="sug-favicon" onError={(e) => e.target.style.display='none'} alt=""/>
                                 ) : (
                                     <span className="sug-icon">🕒</span>
@@ -351,6 +358,10 @@ export default memo(function SearchBox() {
                     </>
                 )}
             </ul>
+            {needsSearchPermission && !searchAllowed && <div className="search-permission-notice">
+                <p role="status">{t('Allow searches to send text to your chosen search provider. Online suggestions are controlled separately in Settings.')}</p>
+                <button type="button" onClick={() => requestExtensionDataPermissions(['searchTerms'])}>{t('Enable searches')}</button>
+            </div>}
         </form>
     );
 });

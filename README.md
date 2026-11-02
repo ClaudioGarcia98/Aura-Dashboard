@@ -81,10 +81,16 @@ Open the local URL shown in your terminal (default `http://localhost:5173`). In 
 | `npm test` | Run the full Vitest unit & integration suite, including localization coverage |
 | `npm run test:browser` | Check the production build in Chromium: desktop/phone startup, keyboard focus, background recovery, and media lifecycles |
 | `npm run build` | Package the app into a single self-contained `dist/index.html` and verify CSP hashes |
+| `npm run build:extensions` | Build unpacked Chrome/Edge and Firefox new-tab extensions with local assets |
+| `npm run lint:extension` | Validate the Firefox package with Mozilla's extension validator |
+| `npm run test:extension` | Test the installed new-tab extension in bundled Chromium |
+| `npm run package:extensions` | Build, validate, and ZIP both extensions plus review source and checksums |
 | `npm run preview` | Serve the production `dist/index.html` bundle locally |
 | `npm audit` | Check dependency security advisories |
 
 Before the first browser test run, install Chromium with `npx playwright install chromium`, then run `npm run build` and `npm run test:browser`. The suite starts a local production preview and uses controlled anime/YouTube responses. CI runs the same suite before deployment and saves traces for failures.
+
+**Browser new-tab extension:** Run `npm run package:extensions`, then load `dist-extensions/chromium` using **Load unpacked** in Chrome or Edge's extensions page. Firefox 142+ can load `dist-extensions/firefox/manifest.json` temporarily through `about:debugging`; persistent Firefox installation requires Mozilla signing. The dashboard opens from packaged local files; live widgets still use their providers. See [extension installation, testing, and release instructions](docs/extensions.md) and the [privacy disclosure](extensions/PRIVACY.md). Store publication and Worker deployment are separate from packaging.
 
 ---
 

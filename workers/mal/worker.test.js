@@ -58,6 +58,38 @@ it('supports a browser preflight without an upstream request', async () => {
     expect(fetcher).not.toHaveBeenCalled();
 });
 
+it.each([
+    'chrome-extension://abcdefghijklmnopabcdefghijklmnop',
+    'moz-extension://12345678-abcd-1234-abcd-1234567890ab',
+])('supports the extension origin %s with bounded read-only requests', async extensionOrigin => {
+    const fetcher = vi.fn(async () => json([item(7)]));
+    const headers = { Origin: extensionOrigin };
+    const preflight = await handleRequest(request(undefined, { method: 'OPTIONS', headers }), { fetcher });
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get('Access-Control-Allow-Origin')).toBe(extensionOrigin);
+    const result = await handleRequest(request(undefined, { headers }), { fetcher });
+    expect(result.status).toBe(200);
+    expect(result.headers.get('Access-Control-Allow-Origin')).toBe(extensionOrigin);
+    expect(result.headers.get('Access-Control-Allow-Credentials')).toBeNull();
+    expect((await handleRequest(request(undefined, { method: 'POST', headers }), { fetcher })).status).toBe(405);
+    expect((await handleRequest(request('/?url=https://elsewhere.example', { headers }), { fetcher })).status).toBe(400);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+});
+
+it.each([
+    'chrome-extension://unrelated',
+    'chrome-extension://abcdefghijklmnopabcdefghijklmnop.evil.example',
+    'chrome-extension://abcdefghijklmnopabcdefghijklmnop/path',
+    'moz-extension://12345678-abcd-1234-abcd-1234567890ab@evil.example',
+    'moz-extension://12345678-abcd-1234-abcd-1234567890ab:1234',
+    'null',
+])('rejects malformed or spoofed extension origins: %s', async extensionOrigin => {
+    const fetcher = vi.fn();
+    const result = await handleRequest(request(undefined, { headers: { Origin: extensionOrigin } }), { fetcher });
+    expect(result.status).toBe(403);
+    expect(fetcher).not.toHaveBeenCalled();
+});
+
 it('keeps usernames and page offsets separate in the cache', async () => {
     const entries = new Map();
     const cache = {

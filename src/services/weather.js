@@ -1,6 +1,7 @@
 import { fetchJson } from './http';
 import { safeJsonParse, safeStorage } from '../utils/storage';
 import { weatherIconType } from '../constants/weather';
+import { hasExtensionPermission, requireExtensionPermission, usesFirefoxDataConsent } from './extensionPermissions';
 
 const coordinates = (lat, lon) => Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
 const selectedLocation = (city, location) => !!location && location.city === city && coordinates(location.lat, location.lon);
@@ -44,15 +45,19 @@ function gps(signal) {
 
 export async function resolveLocation(city, signal, cityLocation) {
     if (signal.aborted) throw signal.reason || new DOMException('Aborted', 'AbortError');
+    if (usesFirefoxDataConsent()) await requireExtensionPermission('locationInfo');
+    const gpsAllowed = await hasExtensionPermission('geolocation');
     const selectionKey = weatherCacheKey(true, city, cityLocation);
     const cached = safeJsonParse(safeStorage.getItem('dash_geo'), null);
-    if (cached?.selectionKey === selectionKey && coordinates(cached.lat, cached.lon)
+    if (cached?.selectionKey === selectionKey && (cached.source !== 'gps' || gpsAllowed) && coordinates(cached.lat, cached.lon)
         && ['gps', 'ip', 'city', 'default'].includes(cached.source) && Number.isFinite(cached.ts)
         && cached.ts <= Date.now() && Date.now() - cached.ts < WEATHER_REFRESH_MS) return cached;
     let location;
     try {
-        const coords = await gps(signal);
-        if (coordinates(coords.latitude, coords.longitude)) location = { lat: coords.latitude, lon: coords.longitude, source: 'gps' };
+        if (gpsAllowed) {
+            const coords = await gps(signal);
+            if (coordinates(coords.latitude, coords.longitude)) location = { lat: coords.latitude, lon: coords.longitude, source: 'gps' };
+        }
     } catch (error) { if (signal.aborted) throw error; }
     // A configured fallback city is more intentional than an approximate IP location.
     if (!location && city?.trim()) {

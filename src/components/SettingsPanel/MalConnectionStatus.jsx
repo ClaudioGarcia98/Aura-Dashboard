@@ -1,5 +1,7 @@
 import { useTranslation } from '../../i18n/useTranslation';
 import { useSettingsStore } from '../../stores/useSettingsStore';
+import { useExtensionPermission } from '../../hooks/useExtensionPermission';
+import { requestExtensionDataPermissions } from '../../services/extensionPermissions';
 
 function formatSavedTime(ts, locale) {
     if (!Number.isFinite(ts) || ts <= 0) return '';
@@ -15,7 +17,12 @@ export default function MalConnectionStatus() {
     const loading = useSettingsStore(s => s.malLoading);
     const username = useSettingsStore(s => s.malUsername);
     const refresh = useSettingsStore(s => s.refreshMal);
+    const permissionGranted = useExtensionPermission('authenticationInfo');
     if (!username?.trim()) return null;
+    if (!permissionGranted) return <div className="sp-mal-connection">
+        <p role="status" className="sp-mal-message">{t('Allow your public username to be sent to the Aura relay and MyAnimeList to sync your watching list.')}</p>
+        <button type="button" className="pill" onClick={() => requestExtensionDataPermissions(['authenticationInfo'])}>{t('Enable MyAnimeList sync')}</button>
+    </div>;
 
     const message = loading ? t("Connecting to MyAnimeList… This may take a few moments.") : {
         stale: formatSavedTime(savedAt, locale)

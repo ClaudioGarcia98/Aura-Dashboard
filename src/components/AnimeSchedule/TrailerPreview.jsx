@@ -43,6 +43,7 @@ export default memo(function TrailerPreview({ youtubeId, pos, muted, onMute, onU
                     height="169"
                     style={{ border: 'none', display: 'block' }}
                     allow="autoplay; encrypted-media"
+                    referrerPolicy="strict-origin-when-cross-origin"
                     allowFullScreen
                 />
                 <button

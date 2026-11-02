@@ -4,6 +4,9 @@
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.025);
 }
+.sp-extension-consent { padding: 0 0 14px; }
+.sp-extension-consent p { margin: 0 0 9px; }
+.sp-extension-consent .pill { margin-bottom: 9px; }
 
 .sp-preference {
     display: flex;
