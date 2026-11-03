@@ -193,13 +193,21 @@ body.compact-mode {
     display: flex; flex-direction: column;
     pointer-events: auto;
     background: linear-gradient(135deg, rgba(16, 18, 26, 0.78) 0%, rgba(10, 11, 16, 0.88) 100%);
-    backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
+    backdrop-filter: blur(28px);
     padding: var(--space-6); border-radius: var(--radius-xl);
     border: 1px solid var(--glass-border);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), var(--glass-highlight);
-    animation: fadeSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-    will-change: transform, opacity;
+    /* Keep this backdrop surface stationary, including during startup. */
+}
+
+/* Blur the wallpaper once at the panel boundary instead of creating nested
+   backdrop passes for each translucent widget. */
+.container :is(#quote-container, .search-container input, .suggestions-list,
+    .speed-dial-item, .today-anime-box, .tab-item, .anime-card,
+    .info-tooltip, .custom-hint-card) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }
 #greeting, .clock-row, #date, .search-container, .speed-dial, #quote-container {
     flex-shrink: 0;
@@ -216,9 +224,8 @@ body.compact-mode {
 /* ── Boot Screen ─────────────────────────────────────── */
 .boot-screen {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(30px) brightness(0.5);
-    -webkit-backdrop-filter: blur(30px) brightness(0.5);
+    /* Avoid a full-screen backdrop pass over the dashboard's glass. */
+    background-color: rgba(0, 0, 0, 0.85);
     z-index: 9999;
     display: flex; align-items: center; justify-content: center;
     animation: bootFadeOut 0.8s cubic-bezier(0.4, 0, 0.2, 1) 2s forwards;
@@ -238,14 +245,6 @@ body.compact-mode {
 }
 @keyframes bootFadeOut {
     to { opacity: 0; visibility: hidden; }
-}
-.boot-hidden {
-    opacity: 0 !important;
-    transform: scale(1.02);
-    pointer-events: none;
-}
-.interactive-ui {
-    transition: opacity 1s ease, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ── Laptops & Medium Screens (1025px - 1366px or short viewport height) ── */

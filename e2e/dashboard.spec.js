@@ -14,7 +14,7 @@ addEventListener('message', event => {
 });
 </script></body></html>`;
 
-async function start(page, settings = {}) {
+async function start(page, settings = {}, { waitForBoot = true } = {}) {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.addInitScript(prefs => {
@@ -36,9 +36,34 @@ async function start(page, settings = {}) {
     await page.route('https://noembed.com/**', route => route.fulfill({ json: { title: 'Fixture station' } }));
     await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: '' }));
     await page.goto('/');
-    await expect(page.locator('#bootScreen')).toHaveCount(0);
+    if (waitForBoot) await expect(page.locator('#bootScreen')).toHaveCount(0);
     return errors;
 }
+
+test('desktop glass stays painted while startup blocks interaction', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    const errors = await start(page, {}, { waitForBoot: false });
+    const main = page.locator('#mainUi');
+    const panel = page.locator('.container');
+    const search = page.locator('#searchInput');
+
+    await expect(page.locator('#bootScreen')).toHaveCount(1);
+    await expect(main).toHaveAttribute('inert', '');
+    await expect(main).toHaveCSS('visibility', 'visible');
+    await expect(main).toHaveCSS('opacity', '1');
+    await expect(panel).toHaveCSS('backdrop-filter', 'blur(28px)');
+    await expect(panel).toHaveCSS('transform', 'none');
+    // Inert must prevent focus without hiding the video's backdrop surface.
+    await search.evaluate(element => element.focus());
+    await expect(search).not.toBeFocused();
+
+    await expect(page.locator('#bootScreen')).toHaveCount(0);
+    await expect(main).not.toHaveAttribute('inert');
+    await expect(panel).toHaveCSS('backdrop-filter', 'blur(28px)');
+    await search.focus();
+    await expect(search).toBeFocused();
+    expect(errors).toEqual([]);
+});
 
 test('desktop startup, background decode, focus tasks, and modal keyboard containment', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });

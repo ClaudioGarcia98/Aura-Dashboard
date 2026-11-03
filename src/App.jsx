@@ -157,7 +157,11 @@ export default function App() {
             {isCompact ? (
                 <CompactLayout tab={compactTab} onTabChange={setCompactTab} lofiPlaying={lofiPlaying} />
             ) : (
-            <main className={`interactive-ui ${booting ? 'boot-hidden' : ''}`} id="mainUi">
+            // Keep the glass backdrop painted while the video starts. Hiding it
+            // lets Chromium promote video to a hardware overlay, then switch
+            // presentation paths when the splash ends. Inert blocks interaction
+            // without removing the backdrop from the compositor.
+            <main className="interactive-ui" id="mainUi" inert={booting}>
                 <section style={{ opacity: 'var(--ui-opacity)', transition: 'opacity 0.8s ease-in-out' }}>
                     {showWeatherWidget && (
                         <ErrorBoundary>

@@ -74,12 +74,14 @@ describe('App Orchestrator Component', () => {
   it('transitions to main UI after boot timeout', () => {
     const { container } = render(<App />);
     expect(container.querySelector('#bootScreen')).toBeTruthy();
+    expect(container.querySelector('#mainUi').hasAttribute('inert')).toBe(true);
 
     act(() => {
       vi.advanceTimersByTime(2800);
     });
 
     expect(container.querySelector('#bootScreen')).toBeNull();
+    expect(container.querySelector('#mainUi').hasAttribute('inert')).toBe(false);
     expect(screen.getByTestId('greeting')).toBeTruthy();
     expect(screen.getByTestId('clock')).toBeTruthy();
   });
