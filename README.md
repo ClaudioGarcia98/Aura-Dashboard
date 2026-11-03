@@ -1,32 +1,56 @@
 <div align="center">
 
-# ✨ Good Morning — Aura Dashboard
+# ✨ Aura Dashboard
 
-**A cozy, local-first personal start page & productivity dashboard built with React, Vite, and glassmorphism.**  
-Live anime airing schedules, MyAnimeList watchlist sync, ambient Lofi radio, weather forecasts, speed dials, and dynamic video wallpapers—compiled into a single self-contained HTML artifact.
+**Your personal space to focus, relax, and keep up with your day.**
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-GitHub_Pages-FF7B54?style=for-the-badge&logo=github)](https://claudiogarcia98.github.io/Aura-Dashboard/)
+A customizable start page with a focus timer, daily priorities, weather, anime schedules, Lofi music, and animated wallpapers. No Aura account required.
+
+[![Open Aura](https://img.shields.io/badge/Open_Aura-GitHub_Pages-FF7B54?style=for-the-badge&logo=github)](https://claudiogarcia98.github.io/Aura-Dashboard/)
 [![Release](https://img.shields.io/badge/Release-v1.2.0-38BDF8?style=for-the-badge)](https://github.com/ClaudioGarcia98/Aura-Dashboard/releases/tag/v1.2.0)
 [![CI](https://img.shields.io/github/actions/workflow/status/ClaudioGarcia98/Aura-Dashboard/deploy.yml?branch=main&style=for-the-badge&label=Tests%20%26%20Build&logo=githubactions)](https://github.com/ClaudioGarcia98/Aura-Dashboard/actions/workflows/deploy.yml)
-[![Node](https://img.shields.io/badge/Node-%3E%3D22.12-339933?style=for-the-badge&logo=nodedotjs)](https://nodejs.org/)
-[![Buy Me A Coffee](https://img.shields.io/badge/Support-Buy_Me_a_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/claudio091s)
+[![Buy Me a Coffee](https://img.shields.io/badge/Support-Buy_Me_a_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/claudio091s)
 
 </div>
 
----
+## Get started
 
-## 🖥️ Visual Showcase
+1. **[Open Aura in your browser](https://claudiogarcia98.github.io/Aura-Dashboard/)**. You don't need to install anything or run commands.
+2. **Open Settings** using the gear at the bottom-left on desktop, or the **Settings** tab on smaller screens.
+3. **Make it yours**: add your name, choose a theme and wallpaper, and select the widgets you want under **Dashboard Layout**.
+4. **Bookmark Aura** for easy access. You can also set its address as your browser's home or startup page.
 
-### Desktop Start Page with Today's Focus (Aurora)
+Changes save automatically in the browser you're using. An internet connection is needed for live weather, anime schedules, and YouTube music or trailers.
+
+## What you can do
+
+| Feature | How it helps |
+| :--- | :--- |
+| **Today's Focus** | Work in 25-minute sessions, take 5-minute breaks, and keep up to three daily priorities. |
+| **Weather** | See current conditions in words and icons, plus a three-day forecast. |
+| **Anime schedules** | Browse today's top five releases and the weekly schedule in your chosen time zone. |
+| **MyAnimeList** | Enter your public username to highlight airing shows from your Watching list. |
+| **Lofi music** | Choose a built-in station or add your own YouTube station. |
+| **Search and Speed Dials** | Search your favorite sites and keep frequently used links close by. |
+| **Themes and wallpapers** | Choose from nine themes and six fonts, or upload your own image or video background. |
+| **Language and clocks** | Choose from eight languages, digital or analog clocks, and automatic or manual time zones. |
+| **Presets and backups** | Share your dashboard's appearance or save a backup of your preferences. |
+
+## 🖥️ A look at Aura
+
+### Desktop dashboard with Today's Focus
+
 ![Current live Aura desktop dashboard with clock, focus timer, daily priorities and Today's Launch](.github/assets/aura-live-desktop.jpg)
 
-### Live Anime Schedule & Dynamic Glassmorphism Themes
+### Anime schedules and themes
+
 | 📺 Weekly Anime Schedule with Local Time Zones | 🎨 Nine Themes in One Gallery |
 | :---: | :---: |
 | ![Current live anime schedule sidebar](.github/assets/aura-live-schedule.jpg) | ![Current live nine-theme gallery and appearance settings](.github/assets/aura-live-themes.jpg) |
 
-### Mobile-First Compact Tabbed Shell
-| 📱 Home & Focus Timer | 📅 Anime Schedule | ⚙️ Reorganized Settings |
+### On your phone
+
+| 📱 Home & Focus Timer | 📅 Anime Schedule | ⚙️ Settings |
 | :---: | :---: | :---: |
 | <img src=".github/assets/aura-live-phone-home.jpg" alt="Live mobile Home tab with clock, focus timer and daily priorities" width="280" /> | <img src=".github/assets/aura-live-phone-anime.jpg" alt="Live mobile anime calendar with local broadcast times and optional Japan reference" width="280" /> | <img src=".github/assets/aura-live-phone-settings.jpg" alt="Live mobile Settings with language, profile and MyAnimeList connection near the top" width="280" /> |
 
@@ -34,102 +58,138 @@ Captured directly from the [live GitHub Pages app](https://claudiogarcia98.githu
 
 ---
 
-## 🌟 Feature Matrix
+## Using Aura
 
-| Feature | What It Does | Storage & Providers |
+### Focus timer and daily priorities
+
+In **Today's Focus**, choose **Focus** or **Break**, then press **Start focus** or **Start break**. You can pause, resume, or reset the timer at any time. The next session waits for you to start it.
+
+- Add up to three priorities and check them off as you finish.
+- The bell switches the completion sound on or off. Turning it on plays a preview. The sound is independent of the music volume; it does not send desktop notifications.
+- Keep Aura open to hear the completion sound. Your browser or device can delay timers or silence audio while asleep or suspended.
+- Your timer and priorities survive a page reload. An elapsed timer catches up when you return; audio after reopening may require a click or keypress first.
+- Priorities clear at midnight in your selected time zone. Changing time zones preserves your current priorities.
+
+To hide the card, turn off **Settings → Dashboard Layout → Focus Timer & Tasks**. Hiding it also pauses a running timer.
+
+### Weather and location
+
+Click or tap the weather widget to see feels-like temperature, humidity, wind, sunrise, sunset, and the three-day forecast. Current conditions and forecast icons include text descriptions.
+
+Under **Settings → Weather**, choose Celsius or Fahrenheit and set **Your City** by selecting a search result. This city is a fallback when GPS is unavailable; it does not turn automatic location off.
+
+| Situation | What happens |
+| :--- | :--- |
+| Location permission is granted | Weather uses your location without another permission prompt. |
+| Temporary permission expired before reopening | Aura can ask once again when weather starts. |
+| Permission expires while Aura is open | Aura keeps the last known location instead of repeatedly interrupting weather refreshes. |
+| Permission is blocked or GPS fails | Aura uses your saved city. With no saved city, it tries approximate IP location, then London if needed. |
+| Weather is disabled | Aura does not request location for weather. |
+
+Browser location permissions are separate from Aura settings. Resetting Aura clears saved coordinates but leaves browser permission unchanged. To block access or allow it again, use your browser's site permissions.
+
+### Anime and MyAnimeList
+
+Open the anime sidebar on desktop or the **Anime** tab on smaller screens to browse the weekly schedule. **Today's Launch** shows up to five of today's releases on the home screen.
+
+Enter your **MyAnimeList Username** under **Settings → Anime Schedule** to highlight shows on your public Watching list. You do not need to enter your password or sign in through Aura. Refresh the connection after updating your list.
+
+Hover over a supported anime card on desktop, or expand it on touch screens, to watch its trailer. Synopses are supplied in English, even when you choose another interface language.
+
+### Search and favorite links
+
+Press **Ctrl + Space** to focus search. Type normally for the default search, or use a site prefix followed by a space:
+
+| Example | Searches |
+| :--- | :--- |
+| `yt lofi hip hop` | YouTube |
+| `mal frieren` | MyAnimeList |
+| `gh react` | GitHub |
+| `r anime` | Reddit |
+| `ddg cozy desk` | DuckDuckGo |
+| `wiki pomodoro` | Wikipedia |
+
+Use **Settings → Speed Dials** to add and organize your favorite links. Online search suggestions are optional and off by default; enable them under **Privacy & Motion**.
+
+### Music, appearance, and language
+
+- **Music:** press Play in the Lofi player, choose a station, and adjust its volume. Add custom YouTube stations under **Lofi Stations** in Settings.
+- **Appearance:** choose a theme and font in Settings, then upload an image or video under **Background**. Use **Privacy & Motion → Pause background video** for a still background.
+- **Language:** choose English, Portuguese (Portugal or Brazil), Spanish, French, German, Japanese, or Korean. **Automatic** follows a supported browser language, with English as the fallback.
+- **Time zone:** **Automatic** follows your device without requesting location. A manual override changes the clock, date, greeting, anime schedule, and midnight reset for daily priorities. Japan time is an optional schedule reference.
+
+### Save, share, or reset your setup
+
+| What you want | Where to go | What is included |
 | :--- | :--- | :--- |
-| **🕰️ Smart Clock & Greeting** | Digital, analog, or dual clock (`12h` / `24h`) paired with time-of-day and weather-aware greetings (*Morning*, *Afternoon*, *Evening*, *Night*) and anime quotes. | Local system clock + `Zustand` (`dash_settings`) |
-| **📺 Live Anime Airing Tracker** | Displays **Today's Launch (Top 5)** and a full **7-day airing calendar** in the device's time zone or a saved manual override, with optional Japan (`JST`) reference times and live countdown badges. | **AniList GraphQL API** + cached stale-safe fallback |
-| **🔗 MyAnimeList Watchlist Sync** | Connects any public MyAnimeList username—no login or API key required—and highlights every airing show on your `Watching` list with a glowing **`★ MY LIST`** badge. | Local Vite proxy (`/api/mal`) in dev · Dedicated **Cloudflare Worker v4** in prod |
-| **🎬 Device-Adaptive Trailers** | Hovering an anime card on desktop opens a floating YouTube trailer portal; expanding a card on touch/mobile embeds a responsive `16:9` trailer with automatic teardown on collapse. | YouTube IFrame API (origin-verified) |
-| **🎧 Persistent Lofi Radio** | Built-in YouTube Lofi stream player with curated stations, custom station URL support, shared global volume/mute memory, and uninterrupted playback when switching between desktop and mobile layouts. | YouTube IFrame API + `localStorage` |
-| **⛅ Weather & 3-Day Forecast** | Current conditions (`°C` / `°F`), expandable 3-day forecast, and automatic location resolution with GPS, IP geolocation, and custom fallback city support. | **Open-Meteo API** + location/units-keyed cache |
-| **🔍 Prefix Search & Speed Dials** | Multi-engine search bar with quick prefixes (`g `, `yt `, `mal `, `gh `, `r `), keyboard history navigation, opt-in data-only search suggestions, and reorderable bookmark Speed Dials. | Local history + `dash_settings` |
-| **🎨 Dynamic Glassmorphism & Video Wallpapers** | 9 themes in one preview gallery, 6 typography presets (*Default*, *Raleway*, *Outfit*, *Nunito*, *JetBrains*, *Playfair*), and custom image/video wallpaper uploads stored offline. | **IndexedDB** (`dashDB`) for media + CSS custom properties |
-| **🌐 Eight Language Options** | English, Portuguese (Portugal and Brazil), Spanish, French, German, Japanese, and Korean; browser detection, saved override, translated controls and accessibility labels, and locale-aware dates and numbers. | Bundled dictionaries + `dash_settings` |
-| **🌍 Automatic or Manual Time Zone** | Clock, date, greeting and anime calendar follow the device's time zone or a saved city override, including daylight saving changes. Language remains independent; Japan time is an optional anime reference. | Browser `Intl` APIs; no GPS or external location service |
-| **🍅 Today's Focus** | A 25-minute focus timer, 5-minute breaks and up to three daily priorities, with saved timer deadlines, optional completion chime and daily reset in the selected time zone. | Local `dash_focus_v1` storage |
-| **🎨 Shareable Presets** | Export and preview theme, font, Lofi stations and optional wallpaper together. Importing preserves personal profiles, language, time zone, tasks and layout. | Validated portable JSON files |
-| **💾 Versioned Backups & Clean Reset** | One-click JSON export/import of validated settings and bookmarks, plus an Aura-scoped reset that cleanly restores first-time visitor defaults without touching unrelated browser storage. | Guarded `safeStorage` adapter |
+| Back up your preferences | **Settings → Backup & Restore → Export Settings** | Preferences, Speed Dials, and custom stations. Uploaded wallpapers and focus tasks are not included. |
+| Restore a settings backup | **Settings → Backup & Restore → Import Settings** | Choose your exported JSON file, then reload when prompted. |
+| Share your dashboard's appearance | **Settings → Share your setup → Export preset** | Theme, font, and Lofi stations. **Include wallpaper** can add your uploaded image or video, up to 50 MB. |
+| Try someone else's appearance preset | **Settings → Share your setup → Import preset** | Preview it, then choose **Apply preset**. Your profile, tasks, language, time zone, volume, and layout stay as they are. |
+| Start over | **Settings → Danger Zone** | After confirmation, Aura clears its saved settings, tasks, caches, and uploaded background, then reloads. Browser permissions remain unchanged. |
 
----
+## Your data and privacy
 
-## ⚡ Quick-Start Guide
+Your preferences and uploaded backgrounds are saved in your browser, with no Aura account or cloud sync. Another browser, profile, device, or site address has its own saved setup. Clearing site data can erase your customization, so export a backup before changing browsers or resetting data. Save your original wallpaper separately or include it in an appearance preset.
 
-### Prerequisites
-- **Node.js `22.12+`** and `npm`
+Live features connect to external services: Open-Meteo for weather and city search, AniList for anime schedules, MyAnimeList through a relay for public watchlists, YouTube for music and trailers, and IP geolocation when needed. Enabling online search suggestions sends your search text to Google.
 
-### 1. Clone & Install
+## Troubleshooting
+
+- **No music or completion sound?** Click Play or Start, check that the browser tab and device aren't muted, and make sure the focus bell is on. Music volume and the completion bell are separate controls.
+- **Weather shows the wrong place?** Check the browser's location permission and select your fallback city under **Settings → Weather**. A fallback city is used when GPS is unavailable.
+- **Schedule times look wrong?** Check **Settings → Time zone** and your device's clock. Japan reference times can show a different date.
+- **MyAnimeList highlights are missing?** Check the username, confirm your Watching list is public, and refresh the connection.
+- **A live widget won't update?** Check your connection. Saved weather or schedules may stay visible while a service is unavailable.
+- **Settings disappeared?** Make sure you're using the same browser profile and site address. Restore an exported settings backup if you have one.
+
+## Run locally or develop Aura
+
+<details>
+<summary>Installation, checks, and technical notes</summary>
+
+### Requirements
+
+Use **Node.js 22.22.2+ in the 22.x line, 24.15+ in the 24.x line, or 26+**, with npm.
+
+### Start locally
+
 ```sh
 git clone https://github.com/ClaudioGarcia98/Aura-Dashboard.git
 cd Aura-Dashboard
 npm ci
-```
-
-### 2. Start the Local Development Server
-```sh
 npm run dev
 ```
-Open the local URL shown in your terminal (default `http://localhost:5173`). In development, Vite automatically proxies `/api/mal` requests directly to MyAnimeList.
 
-### 3. Available Scripts
+Open the URL printed in the terminal, usually `http://localhost:5173`.
 
-| Command | Description |
+### Development commands
+
+| Command | Purpose |
 | :--- | :--- |
-| `npm run dev` | Start the local Vite development server with HMR and `/api/mal` proxy |
-| `npm run lint` | Run ESLint across all JavaScript and React files |
-| `npm test` | Run the full Vitest unit & integration suite, including localization coverage |
-| `npm run test:browser` | Check the production build in Chromium: desktop/phone startup, keyboard focus, background recovery, and media lifecycles |
-| `npm run build` | Package the app into a single self-contained `dist/index.html` and verify CSP hashes |
-| `npm run preview` | Serve the production `dist/index.html` bundle locally |
-| `npm audit` | Check dependency security advisories |
+| `npm run dev` | Start the local development server. |
+| `npm run lint` | Check JavaScript and React code with ESLint. |
+| `npm test` | Run unit and integration tests. |
+| `npm run build` | Create and verify the self-contained `dist/index.html` production build. |
+| `npm run preview` | Serve the production build locally. |
+| `npm run test:browser` | Run production browser checks with Playwright. |
+| `npm audit` | Check dependency security advisories. |
 
-Before the first browser test run, install Chromium with `npx playwright install chromium`, then run `npm run build` and `npm run test:browser`. The suite starts a local production preview and uses controlled anime/YouTube responses. CI runs the same suite before deployment and saves traces for failures.
+Before the first browser test run, install Chromium with `npx playwright install chromium`, then run `npm run build` and `npm run test:browser`.
 
----
+Aura uses React, Vite, and Zustand. Preferences and caches use browser storage; uploaded backgrounds use IndexedDB. The production build bundles the app into one HTML file with verified Content Security Policy script hashes. Live services still require a network connection.
 
-## 🛠️ Personalizing Your Dashboard
+Development requests to `/api/mal` use Vite's proxy. The hosted app uses a Cloudflare Worker; see [the relay documentation](workers/mal/README.md). Translation sources are in `src/i18n/messages.js` and `src/i18n/quotes.js`; keep all language entries and named placeholders complete.
 
-1. **Set Your Display Name & MAL Profile**: Click the **⚙️ Settings** gear (bottom-left on desktop, top bar on mobile) and enter your display name and public **MyAnimeList username** to highlight your airing shows.
-
-2. **Customize Themes & Wallpapers**: Under **Theme**, choose a palette from the unified theme gallery. Under **Background**, upload an image or `.mp4` wallpaper (stored locally in IndexedDB).
-3. **Use Search Shortcuts**: Press `Ctrl + Space` anywhere on desktop to focus the search bar, or type a prefix (`/yt lofi hip hop`, `/mal frieren`, `/gh react`) to jump straight to your target search engine.
-4. **Backup Your Setup**: Scroll to **Backup & Restore** in Settings to export a portable `.json` snapshot of your speed dials, custom stations, and preferences.
-
-**Settings order**: Language → Profile → Anime Schedule (MyAnimeList username and refresh) → Dashboard Layout → Theme, Font, Background and Share your setup → Clock Style, Clock Format and Time zone → Weather → Speed Dials → Media Volume and Lofi Stations → Privacy & Motion → shortcuts/search reference → Backup & Restore → Danger Zone. The MyAnimeList connection stays near the top on desktop, tablet and phone layouts. Automatic language and time-zone options have their own labels; each manual choice appears once, with equivalent time-zone aliases deduplicated.
-
-**Today's Focus**: Start a 25-minute focus session or a 5-minute break from the card below the clock. Pause, resume, or reset at any time, and keep up to three daily priorities with checkboxes. Sessions dim distracting widgets while keeping the clock, tasks, and Lofi controls available. A soft completion chime follows your volume setting and can be switched off with the bell. Tasks and the running timer are saved locally; tasks clear at midnight in the selected time zone. Use **Settings → Dashboard Layout → Focus Timer & Tasks** to hide the card (this also pauses the timer). Keep Aura open for a completion chime; a saved timer catches up when you reopen it.
-
-**Themes & presets**: Settings → Theme brings all palettes together in one gallery with matching previews, including **Catppuccin Mocha, Tokyo Night, Rosé Pine, and Matcha Forest** with dark tinted surfaces for readable text over animated wallpapers. Under **Share your setup**, export a `.aura-preset.json` file with your theme, font, and Lofi stations. Keep **Include wallpaper** checked to bundle an uploaded image/video (up to 50 MB), or switch it off for a small file that keeps the recipient's existing wallpaper. Import a preset to review its contents, then choose **Apply preset**. Presets preserve your profile, daily tasks, volume, and dashboard layout; full settings backups remain separate.
-
-**Language**: The selector at the top of Settings offers **English, Português (Portugal), Português (Brasil), Español, Français, Deutsch, 日本語, and 한국어**. **Automatic** follows the first supported browser language, with English fallback. Changes apply immediately and are included in full settings backups; shared appearance presets preserve the recipient's language. Dates, clock day periods, weather values, weekday filters, countdown units, station-count plurals, errors, tooltips, and screen-reader labels follow the chosen locale. The bundled quote collection has translations for every language; non-English modes use that collection rather than the English-only remote quote service. Names, tasks, URLs, and station titles are preserved. Anime genres are translated, and Japanese titles use provider-supplied native titles when available. Language controls wording and date formatting; the separate time-zone setting controls the actual clock time and calendar day.
-
-**Time zone**: Settings defaults to **Automatic**, following the device/browser time zone without GPS, IP lookup, permissions, API keys or paid services. A manual city/time-zone override applies immediately to the digital and analog clocks, date, greeting, time-based theme, daily focus tasks and anime schedule. Schedule requests and caches use the selected zone's calendar-day boundaries, including daylight saving and fractional UTC offsets. Japan time is an optional anime reference; when its date differs, its weekday is shown. Changing zones preserves existing focus priorities and running timer deadlines; the next midnight in the selected zone resets daily tasks. Time-zone and Japan-reference preferences persist and are included in full backups, while shared appearance presets preserve the recipient's preferences.
-
-**Anime descriptions**: Synopses remain in their original English as supplied by AniList. Non-English interfaces show a localized “Synopsis available in English” note. No translation account, API key, additional Worker configuration, or external translation service is needed.
-
-Translation sources live in `src/i18n/messages.js` and `src/i18n/quotes.js`. Add complete translations with matching named placeholders; render them through `useTranslation()` rather than concatenating translated fragments. Unknown messages fall back to their English source. Localization tests check catalog completeness, interpolation, switching, storage, formatting, browser preference changes, and preserving user content.
-
----
-
-## 🔒 Privacy, Security & Architecture
-
-- **100% Local-First**: Settings, speed dials, and API caches live in your browser's `localStorage`; custom video/image backgrounds live in `IndexedDB`. No user account or cloud database is required.
-- **Privacy by Default**: Online search suggestions are **off by default** and use inert JSON requests only when explicitly enabled. MyAnimeList sync sends only the public username you type—never credentials or cookies.
-- **Single-File Production Artifact**: `scripts/single-file.js` compiles all JS, CSS, fonts metadata, and default media into a single `dist/index.html` (< 5 MB) with strict `sha256` Content-Security-Policy (`CSP`) script hashes verified by `scripts/check-build.js`.
-- **Dedicated MAL Worker Relay**: Production builds on GitHub Pages connect to a hardened Cloudflare Worker ([`workers/mal/`](workers/mal/README.md)) featuring per-IP rate limiting, request coalescing, upstream timeouts, and per-user edge caching.
-
----
+</details>
 
 ## ☕ Support the Project
 
-**Good Morning (Aura)** is free to use. If it brightens your daily workflow or anime tracking, consider supporting its continued development:
+Aura is free to use. If it makes your day a little better, you can support its continued development:
 
-- ☕ [**Buy Me a Coffee (`buymeacoffee.com/claudio091s`)**](https://buymeacoffee.com/claudio091s)
-
----
+- ☕ [**Buy Me a Coffee**](https://buymeacoffee.com/claudio091s)
 
 ## 📄 License
 
 Copyright © 2026 Cláudio Garcia. All Rights Reserved.  
-This project and its source code are proprietary. See [LICENSE](LICENSE) for full terms, and [SECURITY.md](.github/SECURITY.md) for repository security policies.
+This project and its source code are proprietary. See [LICENSE](LICENSE) for the terms and [SECURITY.md](.github/SECURITY.md) for reporting security issues.
