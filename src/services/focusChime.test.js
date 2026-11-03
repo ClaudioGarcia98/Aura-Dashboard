@@ -27,3 +27,18 @@ it('handles denied audio access without interrupting focus sessions', async () =
     const { prepareFocusChime, playFocusChime } = await import('./focusChime');
     expect(() => { prepareFocusChime(); playFocusChime(); }).not.toThrow();
 });
+
+it('resumes suspended audio before playing the completion chime', async () => {
+    const oscillator = { frequency: {}, connect: vi.fn(), start: vi.fn(), stop: vi.fn() };
+    const gain = { gain: { setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() }, connect: vi.fn() };
+    const audio = { state: 'suspended', currentTime: 0, destination: {}, createOscillator: vi.fn(() => oscillator), createGain: vi.fn(() => gain) };
+    audio.resume = vi.fn(async () => { audio.state = 'running'; });
+    vi.stubGlobal('AudioContext', vi.fn(function () { return audio; }));
+    const { prepareFocusChime, playFocusChime } = await import('./focusChime');
+    expect(await prepareFocusChime()).toBe(true);
+    audio.state = 'suspended';
+    await playFocusChime();
+    expect(audio.resume).toHaveBeenCalledTimes(2);
+    expect(audio.createOscillator).toHaveBeenCalledTimes(2);
+    expect(gain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.072, expect.any(Number));
+});

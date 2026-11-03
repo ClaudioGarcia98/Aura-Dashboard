@@ -1,18 +1,22 @@
 let context;
 
 // Unlock audio from the Start button's user gesture, before the timer finishes.
-export function prepareFocusChime() {
+export async function prepareFocusChime() {
     try {
         const AudioContext = globalThis.AudioContext || globalThis.webkitAudioContext;
-        if (!AudioContext) return;
+        if (!AudioContext) return false;
         if (!context || context.state === 'closed') context = new AudioContext();
-        if (context.state === 'suspended') context.resume()?.catch(() => {});
+        if (context.state === 'suspended' || context.state === 'interrupted') await context.resume();
+        return context.state === 'running';
     } catch { /* Audio is optional when a browser denies access. */ }
+    return false;
 }
 
-export function playFocusChime(volume = 0.2) {
-    if (!context || context.state !== 'running' || volume <= 0) return;
+export async function playFocusChime(volume = 0.6) {
+    if (!context || volume <= 0) return;
     try {
+        if (context.state === 'suspended' || context.state === 'interrupted') await context.resume();
+        if (context.state !== 'running') return;
         for (const [index, frequency] of [660, 880].entries()) {
             const start = context.currentTime + index * 0.18;
             const oscillator = context.createOscillator();

@@ -29,6 +29,18 @@ export function readWeatherCache(key) {
             data.isDay ?? (['moon', 'partly-cloudy-night'].includes(data.iconType) ? 0 : 1)) } : null;
 }
 
+let locationSession = { attempted: false, pending: null, lastGps: null };
+
+// A page reload starts a new visit. Reset also clears the current visit's location.
+export function resetWeatherLocationSession() {
+    locationSession = { attempted: false, pending: null, lastGps: null };
+}
+
+async function locationPermission() {
+    try { return (await navigator.permissions.query({ name: 'geolocation' })).state; }
+    catch { return 'unknown'; }
+}
+
 function gps(signal) {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) { reject(new Error('GPS unavailable')); return; }
@@ -42,18 +54,48 @@ function gps(signal) {
     });
 }
 
+function waitForLocation(request, signal) {
+    return new Promise((resolve, reject) => {
+        const abort = () => reject(signal.reason || new DOMException('Aborted', 'AbortError'));
+        signal.addEventListener('abort', abort, { once: true });
+        if (signal.aborted) abort();
+        request.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+    });
+}
+
 export async function resolveLocation(city, signal, cityLocation) {
     if (signal.aborted) throw signal.reason || new DOMException('Aborted', 'AbortError');
     const selectionKey = weatherCacheKey(true, city, cityLocation);
     const cached = safeJsonParse(safeStorage.getItem('dash_geo'), null);
+    const session = locationSession;
+    const permission = await locationPermission();
+    if (signal.aborted) throw signal.reason || new DOMException('Aborted', 'AbortError');
+    const needsPrompt = !session.attempted && permission !== 'granted' && permission !== 'denied' && !!navigator.geolocation;
     if (cached?.selectionKey === selectionKey && coordinates(cached.lat, cached.lon)
         && ['gps', 'ip', 'city', 'default'].includes(cached.source) && Number.isFinite(cached.ts)
-        && cached.ts <= Date.now() && Date.now() - cached.ts < WEATHER_REFRESH_MS) return cached;
+        && cached.ts <= Date.now() && Date.now() - cached.ts < WEATHER_REFRESH_MS
+        && !needsPrompt && !(permission === 'denied' && cached.source === 'gps')
+        && !(permission === 'granted' && cached.source !== 'gps')) return cached;
     let location;
-    try {
-        const coords = await gps(signal);
-        if (coordinates(coords.latitude, coords.longitude)) location = { lat: coords.latitude, lon: coords.longitude, source: 'gps' };
-    } catch (error) { if (signal.aborted) throw error; }
+    if (permission === 'denied') {
+        session.attempted = true;
+        session.lastGps = null;
+    } else if (navigator.geolocation) {
+        // Share an in-flight request across refreshes/remounts. Cancelling a weather
+        // fetch must not dismiss/reissue the browser's permission request.
+        if (!session.pending && (!session.attempted || permission === 'granted')) {
+            session.attempted = true;
+            session.pending = gps(new AbortController().signal).then(coords => {
+                if (coordinates(coords.latitude, coords.longitude)) {
+                    session.lastGps = { lat: coords.latitude, lon: coords.longitude, source: 'gps' };
+                    return session.lastGps;
+                }
+                return null;
+            }).catch(() => null).finally(() => { session.pending = null; });
+        }
+        if (session.pending) location = await waitForLocation(session.pending, signal);
+        else location = session.lastGps;
+    }
     // A configured fallback city is more intentional than an approximate IP location.
     if (!location && city?.trim()) {
         if (selectedLocation(city, cityLocation)) location = { lat: cityLocation.lat, lon: cityLocation.lon, source: 'city' };
@@ -103,7 +145,7 @@ export async function fetchWeatherData(useCelsius, city, signal, cityLocation) {
         const max = d.daily.temperature_2m_max?.[i], min = d.daily.temperature_2m_min?.[i];
         if (!validDate(date) || !Number.isFinite(max) || !Number.isFinite(min) || min > max || !validCode(d.daily.weather_code?.[i])) return [];
         return [{ date, day: new Date(`${date}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }),
-            iconType: weatherIconType(d.daily.weather_code?.[i]), max: Math.round(max), min: Math.round(min) }];
+            weatherCode: d.daily.weather_code[i], iconType: weatherIconType(d.daily.weather_code[i]), max: Math.round(max), min: Math.round(min) }];
     });
     // Open-Meteo's timezone=auto strings already express the location's wall time.
     const time = value => typeof value === 'string' && validDate(value.slice(0, 10)) && value[10] === 'T' && validTime(value.slice(11, 16)) ? value.slice(11, 16) : '--:--';

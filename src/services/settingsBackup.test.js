@@ -5,6 +5,7 @@ import { DEFAULT_SETTINGS } from '../stores/settingsSchema';
 import { deleteBackgroundBlob } from './db';
 import { useFocusStore } from '../stores/useFocusStore';
 import { safeStorage } from '../utils/storage';
+import { resolveLocation, resetWeatherLocationSession } from './weather';
 
 vi.mock('./db', () => ({ deleteBackgroundBlob: vi.fn().mockResolvedValue() }));
 beforeEach(() => { localStorage.clear(); sessionStorage.clear(); useSettingsStore.setState(structuredClone(DEFAULT_SETTINGS)); });
@@ -111,6 +112,8 @@ describe('real settings persistence and backups', () => {
         useSettingsStore.getState().setMalUsername('alice_mal');
         localStorage.setItem('another-app', 'keep'); sessionStorage.setItem('another-session', 'keep');
         sessionStorage.setItem('dash_session', 'erase');
+        localStorage.setItem('dash_geo', JSON.stringify({ lat: 38.7, lon: -9.1 }));
+        localStorage.setItem('dash_weather_cache', 'saved weather');
         const caches = { keys: vi.fn(), delete: vi.fn() };
         vi.stubGlobal('caches', caches);
         await resetAuraData();
@@ -121,7 +124,25 @@ describe('real settings persistence and backups', () => {
         expect(localStorage.getItem('another-app')).toBe('keep');
         expect(sessionStorage.getItem('another-session')).toBe('keep');
         expect(sessionStorage.getItem('dash_session')).toBeNull();
+        expect(localStorage.getItem('dash_geo')).toBeNull();
+        expect(localStorage.getItem('dash_weather_cache')).toBeNull();
         expect(caches.keys).not.toHaveBeenCalled();
+    });
+
+    it('starts a new location session after reset without changing browser permission', async () => {
+        resetWeatherLocationSession();
+        const gps = vi.fn(success => success({ coords: { latitude: 38.7, longitude: -9.1 } }));
+        const permission = { state: 'prompt' };
+        vi.stubGlobal('navigator', { geolocation: { getCurrentPosition: gps }, permissions: { query: async () => permission } });
+        const signal = new AbortController().signal;
+        await resolveLocation('', signal);
+        await resolveLocation('', signal);
+        expect(gps).toHaveBeenCalledTimes(1);
+        await resetAuraData();
+        await resolveLocation('', signal);
+        expect(gps).toHaveBeenCalledTimes(2);
+        expect(permission.state).toBe('prompt');
+        resetWeatherLocationSession();
     });
 
     it('preserves settings if background deletion fails', async () => {

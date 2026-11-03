@@ -1,13 +1,11 @@
 import { useEffect } from 'react';
 import { useFocusStore } from '../stores/useFocusStore';
-import { useSettingsStore } from '../stores/useSettingsStore';
-import { playFocusChime } from '../services/focusChime';
+import { playFocusChime, prepareFocusChime } from '../services/focusChime';
 import { useTimeZone } from './useTimeZone';
 
 // Mounted once by App, independent of the current layout or mobile tab.
 export function useFocusSession(enabled = true) {
     const timeZone = useTimeZone();
-    const volume = useSettingsStore(state => state.volume);
     const active = useFocusStore(state => !!state.endsAt && state.mode === 'focus');
     useEffect(() => {
         document.body.classList.toggle('focus-session-active', enabled && active);
@@ -17,7 +15,7 @@ export function useFocusSession(enabled = true) {
     useEffect(() => {
         let mounted = true;
         const unsubscribe = useFocusStore.subscribe((state, previous) => {
-            if (state.notice && state.notice !== previous.notice && state.chimeEnabled) playFocusChime(volume);
+            if (state.notice && state.notice !== previous.notice && state.chimeEnabled) playFocusChime();
         });
         const update = () => {
             if (!mounted) return;
@@ -36,6 +34,13 @@ export function useFocusSession(enabled = true) {
             if (event.key === 'dash_focus_v1') { useFocusStore.persist.rehydrate(); update(); }
         };
         window.addEventListener('storage', syncSaved);
+        // A running timer can survive a reload, but its audio context cannot.
+        const unlockAudio = () => {
+            const state = useFocusStore.getState();
+            if (enabled && state.endsAt && state.chimeEnabled) prepareFocusChime();
+        };
+        window.addEventListener('pointerdown', unlockAudio);
+        window.addEventListener('keydown', unlockAudio);
         return () => {
             mounted = false;
             unsubscribe();
@@ -43,6 +48,8 @@ export function useFocusSession(enabled = true) {
             window.removeEventListener('focus', update);
             document.removeEventListener('visibilitychange', update);
             window.removeEventListener('storage', syncSaved);
+            window.removeEventListener('pointerdown', unlockAudio);
+            window.removeEventListener('keydown', unlockAudio);
         };
-    }, [enabled, volume, timeZone]);
+    }, [enabled, timeZone]);
 }

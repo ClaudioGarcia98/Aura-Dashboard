@@ -60,6 +60,29 @@ describe('WeatherWidget', () => {
         });
     });
 
+    it.each([false, true])('describes current conditions and each forecast icon (inline=%s)', async inline => {
+        fetch.mockResolvedValue({ ok: true, json: async () => ({
+            ...mockWeatherData,
+            daily: { ...mockWeatherData.daily, weather_code: [0, 56] },
+        }) });
+        const { container } = render(<WeatherWidget inline={inline} />);
+        await waitFor(() => expect(screen.getByText('20°C')).toBeTruthy());
+        expect(container.querySelector(inline ? '.weather-inline-cond' : '.weather-current-condition').textContent).toContain('Clear');
+        fireEvent.click(screen.getByRole('button', { name: 'Toggle weather details' }));
+        expect(container.querySelector('.weather-forecast-condition').textContent).toBe('Freezing drizzle');
+        expect(container.querySelector('.weather-forecast-icon').getAttribute('aria-hidden')).toBe('true');
+    });
+
+    it('describes an older saved forecast that only contains an icon', async () => {
+        const { fetchWeatherData } = await import('../services/weather');
+        const cached = await fetchWeatherData(true, 'London', new AbortController().signal);
+        cached.forecast = [{ day: 'Mon', iconType: 'rain', max: 20, min: 15 }];
+        localStorage.setItem('dash_weather_cache', JSON.stringify(cached));
+        fetch.mockRejectedValue(new Error('Offline'));
+        const { container } = render(<WeatherWidget />);
+        expect(container.querySelector('.weather-forecast-condition').textContent).toBe('Rain');
+    });
+
     it('displays Fahrenheit when useCelsius is false', async () => {
         mockSettings.useCelsius = false;
         render(<WeatherWidget />);

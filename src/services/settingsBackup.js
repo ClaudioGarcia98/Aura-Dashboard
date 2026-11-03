@@ -4,6 +4,7 @@ import { safeStorage } from '../utils/storage';
 import { clearMalMemoryCache } from './anime/watching';
 import { deleteBackgroundBlob } from './db';
 import { initialFocusState, useFocusStore } from '../stores/useFocusStore';
+import { resetWeatherLocationSession } from './weather';
 
 export function createSettingsBackup(state) {
     return JSON.stringify({ format: 'aura-settings', version: 1, settings: sanitizeSettings(state) }, null, 2);
@@ -67,4 +68,5 @@ export async function resetAuraData() {
         for (const key of keys) if (key?.startsWith('dash_')) storage.removeItem(key);
     }
     safeStorage.clearPrefix('dash_');
+    resetWeatherLocationSession();
 }

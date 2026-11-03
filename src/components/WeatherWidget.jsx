@@ -111,7 +111,7 @@ export default memo(function WeatherWidget({ inline = false }) {
     }
 
     return (
-        <>
+        <div className="weather-floating">
             <button 
                 type="button"
                 className={`weather-widget ${expanded ? 'expanded' : ''}`} 
@@ -124,7 +124,10 @@ export default memo(function WeatherWidget({ inline = false }) {
                 <span id="weatherIcon" className={weather ? getIconClassName(weather.iconType) : ''} aria-hidden="true" style={{ display: 'flex', alignItems: 'center' }}>
                     {weather ? <WeatherIcon type={weather.iconType} /> : null}
                 </span>
-                <span id="weatherTemp" style={{ color: 'var(--text-primary)' }}>{weather ? formatWeatherValue(weather.temp, locale) : '--°C'}</span>
+                <span className="weather-current-main">
+                    <span id="weatherTemp">{formatWeatherValue(weather.temp, locale)}</span>
+                    <span className="weather-current-condition">{t(weatherConditionLabel(weather.weatherCode))}</span>
+                </span>
                 <span className="weather-chevron" aria-hidden="true" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {isFallback && <span title={t('Showing fallback location')} style={{ fontSize: '0.8rem', marginRight: '4px' }}>📍</span>}
                     {isOffline && <span title={t("Showing saved weather; refresh unavailable.")} style={{ fontSize: '0.8rem', marginRight: '4px', opacity: 0.8 }}>📡</span>}
@@ -143,6 +146,6 @@ export default memo(function WeatherWidget({ inline = false }) {
             >
                 <WeatherDetails weather={weather} stale={isOffline} t={t} locale={locale} />
             </div>
-        </>
+        </div>
     );
 });

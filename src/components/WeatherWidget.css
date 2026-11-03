@@ -1,4 +1,12 @@
 /* ── Weather Widget ────────────────────────────────── */
+.weather-floating {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    z-index: 40;
+    pointer-events: auto;
+}
+.weather-floating .weather-widget { position: relative; top: auto; right: auto; }
 .weather-widget {
     position: absolute; top: var(--space-4); right: var(--space-4);
     display: flex; align-items: center; gap: 10px;
@@ -24,6 +32,8 @@
     border-color: var(--accent-color);
     box-shadow: 0 0 16px var(--accent-glow);
 }
+.weather-current-main { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; line-height: 1.4; text-align: left; }
+.weather-current-condition { max-width: 180px; font-size: 0.78rem; color: var(--text-secondary); overflow-wrap: anywhere; }
 .weather-chevron {
     font-size: 0.85rem; color: rgba(255, 255, 255, 0.7); font-weight: bold;
     display: flex; align-items: center;
@@ -66,7 +76,7 @@
 
 /* Extended weather panel */
 .weather-panel {
-    position: absolute; top: calc(var(--space-4) + 48px); right: var(--space-4);
+    position: absolute; top: calc(100% + 12px); right: 0;
     width: 250px;
     background: linear-gradient(180deg, rgba(16, 16, 20, 0.96) 0%, rgba(10, 10, 14, 0.98) 100%);
     backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
@@ -148,6 +158,7 @@
 }
 .weather-forecast-day {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -158,6 +169,7 @@
     border: 1px solid rgba(255, 255, 255, 0.02);
     transition: var(--transition-standard);
 }
+.weather-forecast-condition { display: flex; align-items: center; justify-content: center; min-height: 2.8em; font-size: 0.75rem; line-height: 1.4; color: var(--text-secondary); text-align: center; overflow-wrap: anywhere; }
 .weather-forecast-day:hover {
     background: rgba(255, 255, 255, 0.06);
     border-color: rgba(255, 255, 255, 0.08);
@@ -308,6 +320,12 @@
 
 /* ── Responsive Mobile (fixed widget + clamped panel) ── */
 @media (max-width: 768px) {
+    .weather-floating {
+        position: fixed;
+        top: calc(12px + env(safe-area-inset-top, 0px));
+        right: 12px;
+        z-index: 80;
+    }
     .weather-widget {
         position: fixed;
         top: calc(12px + env(safe-area-inset-top, 0px));
@@ -317,9 +335,6 @@
         z-index: 80;
     }
     .weather-panel {
-        position: fixed;
-        top: calc(56px + env(safe-area-inset-top, 0px));
-        right: 12px;
         width: min(280px, calc(100vw - 24px));
         max-height: 70vh;
         max-height: 70dvh;

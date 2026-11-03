@@ -1,6 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { beforeEach, afterEach, it, expect, vi } from 'vitest';
-import { fetchWeatherData, weatherCacheKey, readWeatherCache, resolveLocation, WEATHER_REFRESH_MS } from './weather';
+import { fetchWeatherData, weatherCacheKey, readWeatherCache, resolveLocation, WEATHER_REFRESH_MS, resetWeatherLocationSession } from './weather';
 import { weatherIconType, weatherConditionLabel } from '../constants/weather';
 import { sanitizeSettings } from '../stores/settingsSchema';
 import { useWeather } from '../hooks/useWeather';
@@ -12,6 +12,7 @@ it('can build a default cache key without optional city or coordinate settings',
     expect(weatherCacheKey(true)).toBe(JSON.stringify([true, '']));
 });
 beforeEach(() => {
+    resetWeatherLocationSession();
     localStorage.clear();
     vi.stubGlobal('navigator', { geolocation: { getCurrentPosition: success => success({ coords: { latitude: 0, longitude: 0 } }) } });
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response(rawWeather(20))));
@@ -112,9 +113,9 @@ it.each([
     fetch.mockResolvedValue(response(raw));
     const data = await fetchWeatherData(true, '', new AbortController().signal);
     expect(data.forecast).toEqual([
-        { date: dates[1], day: weekdays[0], max: 18, min: 10, iconType: 'sun' },
-        { date: dates[2], day: weekdays[1], max: 18, min: 11, iconType: 'sun' },
-        { date: dates[3], day: weekdays[2], max: 20, min: 8, iconType: 'cloud' },
+        { date: dates[1], day: weekdays[0], max: 18, min: 10, iconType: 'sun', weatherCode: 0 },
+        { date: dates[2], day: weekdays[1], max: 18, min: 11, iconType: 'sun', weatherCode: 1 },
+        { date: dates[3], day: weekdays[2], max: 20, min: 8, iconType: 'cloud', weatherCode: 3 },
     ]);
     const url = new URL(fetch.mock.calls[0][0]);
     expect(url.searchParams.get('forecast_days')).toBe('4');
@@ -186,7 +187,7 @@ it('expires cached locations and does not reuse a different selected coordinate'
     const location = await resolveLocation('London', new AbortController().signal);
     localStorage.setItem('dash_geo', JSON.stringify(location));
     const gps = vi.fn(success => success({ coords: { latitude: 1, longitude: 2 } }));
-    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition: gps } });
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition: gps }, permissions: { query: async () => ({ state: 'granted' }) } });
     expect((await resolveLocation('London', new AbortController().signal)).lat).toBe(0);
     await vi.advanceTimersByTimeAsync(WEATHER_REFRESH_MS);
     expect((await resolveLocation('London', new AbortController().signal)).lat).toBe(1);
@@ -264,4 +265,83 @@ it('retries after a failed refresh, recovers online and removes listeners on unm
     window.dispatchEvent(new Event('focus'));
     await vi.advanceTimersByTimeAsync(WEATHER_REFRESH_MS);
     expect(fetch).toHaveBeenCalledTimes(calls);
+});
+
+it('prompts once per opening, including when the saved coordinates are fresh', async () => {
+    const gps = vi.fn(success => success({ coords: { latitude: 38.7, longitude: -9.1 } }));
+    navigator.geolocation.getCurrentPosition = gps;
+    navigator.permissions = { query: vi.fn().mockResolvedValue({ state: 'prompt' }) };
+    const signal = new AbortController().signal;
+    const location = await resolveLocation('', signal);
+    localStorage.setItem('dash_geo', JSON.stringify(location));
+    await resolveLocation('', signal);
+    expect(gps).toHaveBeenCalledTimes(1);
+    resetWeatherLocationSession(); // A new document/visit has a new session.
+    await resolveLocation('', signal);
+    expect(gps).toHaveBeenCalledTimes(2);
+});
+
+it('keeps the last known location when permission expires during a visit', async () => {
+    let state = 'granted';
+    navigator.permissions = { query: async () => ({ state }) };
+    const gps = vi.fn(success => success({ coords: { latitude: 38.7, longitude: -9.1 } }));
+    navigator.geolocation.getCurrentPosition = gps;
+    const signal = new AbortController().signal;
+    await resolveLocation('', signal);
+    state = 'prompt';
+    expect(await resolveLocation('', signal)).toMatchObject({ lat: 38.7, source: 'gps' });
+    expect(gps).toHaveBeenCalledTimes(1);
+});
+
+it('respects denied permission and ignores a cached GPS location', async () => {
+    const gps = vi.fn();
+    navigator.geolocation.getCurrentPosition = gps;
+    navigator.permissions = { query: async () => ({ state: 'denied' }) };
+    const city = 'Lisbon';
+    const selection = { city, lat: 38.7, lon: -9.1 };
+    localStorage.setItem('dash_geo', JSON.stringify({ selectionKey: weatherCacheKey(true, city, selection), lat: 0, lon: 0, source: 'gps', ts: Date.now() }));
+    expect(await resolveLocation(city, new AbortController().signal, selection)).toMatchObject({ source: 'city', lat: 38.7 });
+    expect(gps).not.toHaveBeenCalled();
+});
+
+it.each(['prompt', 'unknown'])('does not repeat failed GPS requests during refreshes when permission is %s', async state => {
+    const gps = vi.fn((success, failure) => failure({ code: 1 }));
+    navigator.geolocation.getCurrentPosition = gps;
+    navigator.permissions = { query: state === 'unknown' ? async () => { throw new Error('Unsupported'); } : async () => ({ state }) };
+    const selection = { city: 'Lisbon', lat: 38.7, lon: -9.1 };
+    const signal = new AbortController().signal;
+    for (let i = 0; i < 3; i++) expect(await resolveLocation('Lisbon', signal, selection)).toMatchObject({ source: 'city' });
+    expect(gps).toHaveBeenCalledTimes(1);
+});
+
+it('shares a pending prompt across cancelled fetches and remounts', async () => {
+    let complete;
+    const gps = vi.fn(success => { complete = success; });
+    navigator.geolocation.getCurrentPosition = gps;
+    navigator.permissions = { query: async () => ({ state: 'prompt' }) };
+    const firstController = new AbortController();
+    const first = resolveLocation('', firstController.signal);
+    const rejected = expect(first).rejects.toMatchObject({ name: 'AbortError' });
+    await vi.waitFor(() => expect(gps).toHaveBeenCalledTimes(1));
+    firstController.abort();
+    const second = resolveLocation('', new AbortController().signal);
+    await Promise.resolve();
+    complete({ coords: { latitude: 38.7, longitude: -9.1 } });
+    await rejected;
+    expect(await second).toMatchObject({ source: 'gps' });
+    expect(gps).toHaveBeenCalledTimes(1);
+});
+
+it('uses GPS again if permission is restored while a fallback location is cached', async () => {
+    const gps = vi.fn(success => success({ coords: { latitude: 38.7, longitude: -9.1 } }));
+    navigator.geolocation.getCurrentPosition = gps;
+    let state = 'denied';
+    navigator.permissions = { query: async () => ({ state }) };
+    const selection = { city: 'Lisbon', lat: 38.6, lon: -9.2 };
+    const signal = new AbortController().signal;
+    const fallback = await resolveLocation('Lisbon', signal, selection);
+    localStorage.setItem('dash_geo', JSON.stringify(fallback));
+    state = 'granted';
+    expect(await resolveLocation('Lisbon', signal, selection)).toMatchObject({ source: 'gps', lat: 38.7 });
+    expect(gps).toHaveBeenCalledTimes(1);
 });

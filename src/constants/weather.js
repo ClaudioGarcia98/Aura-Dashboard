@@ -9,7 +9,9 @@ export function weatherIconType(code, isDay = 1) {
     return 'unknown';
 }
 
-export function weatherConditionLabel(code) {
+export function weatherConditionLabel(code, iconType) {
+    // Older saved forecasts only contain an icon type.
+    if (code === undefined) code = { sun: 0, moon: 0, 'partly-cloudy': 2, 'partly-cloudy-night': 2, cloud: 3, fog: 45, rain: 61, snow: 71, storm: 95 }[iconType];
     if (code === 0) return 'Clear';
     if (code === 1) return 'Mainly clear';
     if (code === 2) return 'Partly cloudy';

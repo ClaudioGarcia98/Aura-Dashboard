@@ -128,7 +128,7 @@ it('catches up on window focus, chimes once and waits for an explicit break star
     expect(screen.getByRole('status').textContent).toContain('Focus complete');
     expect(screen.getByRole('button', { name: 'Start break' })).toBeTruthy();
     expect(document.body.classList.contains('focus-session-active')).toBe(false);
-    expect(playFocusChime).toHaveBeenCalledExactlyOnceWith(0.3);
+    expect(playFocusChime).toHaveBeenCalledExactlyOnceWith();
     fireEvent.focus(window);
     await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
     expect(playFocusChime).toHaveBeenCalledTimes(1);
@@ -182,4 +182,29 @@ it('finishes a muted focus session and its break without a chime or automatic re
     expect(screen.getByRole('status').textContent).toContain('Break complete');
     expect(screen.getByRole('button', { name: 'Start focus' })).toBeTruthy();
     expect(playFocusChime).not.toHaveBeenCalled();
+});
+
+it('plays a preview when the completion chime is enabled, even with music muted', async () => {
+    useSettingsStore.setState({ volume: 0 });
+    useFocusStore.setState({ chimeEnabled: false });
+    prepareFocusChime.mockResolvedValueOnce(true);
+    render(<FocusHarness />);
+    const bell = screen.getByRole('button', { name: 'Completion chime' });
+    await act(async () => fireEvent.click(bell));
+    expect(bell.getAttribute('aria-pressed')).toBe('true');
+    expect(playFocusChime).toHaveBeenCalledExactlyOnceWith();
+    fireEvent.click(bell);
+    expect(bell.getAttribute('aria-pressed')).toBe('false');
+    expect(playFocusChime).toHaveBeenCalledTimes(1);
+});
+
+it('sounds at completion with music muted and unlocks a restored timer on interaction', async () => {
+    useSettingsStore.setState({ volume: 0 });
+    useFocusStore.setState({ endsAt: Date.now() + 1000 });
+    render(<FocusHarness />);
+    fireEvent.pointerDown(window);
+    expect(prepareFocusChime).toHaveBeenCalled();
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+    expect(playFocusChime).toHaveBeenCalledExactlyOnceWith();
+    expect(screen.getByRole('status').textContent).toContain('Focus complete');
 });

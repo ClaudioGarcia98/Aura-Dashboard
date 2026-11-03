@@ -1,6 +1,7 @@
 import { WeatherIcon, FeelsLikeIcon, HumidityIcon, WindIcon, SunriseIcon, SunsetIcon } from './WeatherIcons';
 import { formatWeatherValue, forecastDay, getIconClassName } from '../utils/weatherPresentation';
 import { isTimeZone } from '../utils/timeZone';
+import { weatherConditionLabel } from '../constants/weather';
 
 const rows = [
     { key: 'feelsLike', label: 'Feels like', id: 'wFeels', Icon: FeelsLikeIcon },
@@ -28,7 +29,8 @@ export default function WeatherDetails({ weather, stale, t, locale, inline = fal
             <div className="weather-forecast-title">{t('3-Day Forecast')}</div>
             <div className="weather-forecast-grid">{weather.forecast.map((day, index) => <div key={day.date || index} className="weather-forecast-day">
                 <span className="weather-forecast-name">{forecastDay(day, locale)}</span>
-                <span className={`weather-forecast-icon ${getIconClassName(day.iconType)}`}><WeatherIcon type={day.iconType} /></span>
+                <span className={`weather-forecast-icon ${getIconClassName(day.iconType)}`} aria-hidden="true"><WeatherIcon type={day.iconType} /></span>
+                <span className="weather-forecast-condition">{t(weatherConditionLabel(day.weatherCode, day.iconType))}</span>
                 <div className="weather-forecast-temps">
                     <span className="weather-forecast-max">{new Intl.NumberFormat(locale).format(day.max)}°</span>
                     <span className="weather-forecast-min">{new Intl.NumberFormat(locale).format(day.min)}°</span>

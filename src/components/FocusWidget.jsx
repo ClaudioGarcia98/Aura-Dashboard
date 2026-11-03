@@ -1,7 +1,7 @@
 import { useTranslation } from '../i18n/useTranslation';
 import { useEffect, useRef, useState } from 'react';
 import { FOCUS_DURATIONS, useFocusStore } from '../stores/useFocusStore';
-import { prepareFocusChime } from '../services/focusChime';
+import { prepareFocusChime, playFocusChime } from '../services/focusChime';
 import './FocusWidget.css';
 
 export default function FocusWidget() {
@@ -32,11 +32,16 @@ export default function FocusWidget() {
         if (endsAt) pause();
         else { if (chimeEnabled) prepareFocusChime(); start(); }
     };
+    const toggleCompletionChime = async () => {
+        const enabling = !chimeEnabled;
+        toggleChime();
+        if (enabling && await prepareFocusChime() && useFocusStore.getState().chimeEnabled) playFocusChime();
+    };
 
     return <section className={`focus-widget${endsAt ? ' focus-widget--running' : ''}`} aria-labelledby="focus-title">
         <header className="focus-heading">
             <div><span className="focus-eyebrow">{t("A little space to get things done")}</span><h2 id="focus-title">{t("Today's Focus")}</h2></div>
-            <button type="button" className="focus-icon-button" onClick={() => { if (!chimeEnabled) prepareFocusChime(); toggleChime(); }} aria-label={t("Completion chime")} aria-pressed={chimeEnabled} title={chimeEnabled ? t("Completion chime on") : t("Completion chime off")}>
+            <button type="button" className="focus-icon-button" onClick={toggleCompletionChime} aria-label={t("Completion chime")} aria-pressed={chimeEnabled} title={chimeEnabled ? t("Completion chime on") : t("Completion chime off")}>
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />{!chimeEnabled && <path d="m3 3 18 18" />}</svg>
             </button>
         </header>
