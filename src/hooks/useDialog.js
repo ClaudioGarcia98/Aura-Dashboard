@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
 function isVisible(element) {
     if (element.closest('[hidden], [inert]')) return false;
@@ -14,9 +14,13 @@ export function getActiveModal() {
 }
 
 export function useDialog(ref, active, onClose, focusPanel = false) {
-    useEffect(() => {
+    const previousFocus = useRef(null);
+    // Focus and the focus trap must be installed in the same commit that shows
+    // the dialog, before paint or another keyboard event can observe it.
+    useLayoutEffect(() => {
         if (!active || !ref.current) return;
         const previous = document.activeElement;
+        previousFocus.current = previous;
         const panel = ref.current;
         const focusable = () => [...panel.querySelectorAll('button, input, select, textarea, a[href], [tabindex], [contenteditable="true"]')]
             .filter(el => !el.matches(':disabled') && el.tabIndex >= 0 && el.getAttribute('type') !== 'file' && isVisible(el));
@@ -48,7 +52,14 @@ export function useDialog(ref, active, onClose, focusPanel = false) {
             if (focusFrame !== undefined) window.cancelAnimationFrame(focusFrame);
             document.removeEventListener('keydown', handleKey);
             document.removeEventListener('focusin', containFocus);
-            if (previous?.isConnected) previous.focus();
         };
+    }, [ref, active, onClose, focusPanel]);
+
+    // Restore after the closing commit removes inert/modal attributes. Doing
+    // this in layout cleanup can focus against the previous DOM state.
+    useEffect(() => {
+        if (!active) return;
+        const previous = previousFocus.current;
+        return () => { if (previous?.isConnected) previous.focus(); };
     }, [ref, active, onClose, focusPanel]);
 }

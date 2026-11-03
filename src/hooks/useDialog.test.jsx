@@ -1,11 +1,14 @@
-import { useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getActiveModal, useDialog } from './useDialog';
 
-function Dialog({ active = true, onClose }) {
+function Dialog({ active = true, onClose, onCommit }) {
     const ref = useRef(null);
     useDialog(ref, active, onClose);
+    useLayoutEffect(() => {
+        if (active) onCommit?.(ref.current.contains(document.activeElement));
+    }, [active, onCommit]);
     return <><button>Outside</button><section ref={ref} role="dialog" aria-modal={active ? 'true' : undefined} tabIndex={-1}>
         <div style={{ display: 'none' }}><button>Hidden child</button></div>
         <input type="hidden" />
@@ -20,6 +23,15 @@ function Dialog({ active = true, onClose }) {
 afterEach(cleanup);
 
 describe('useDialog', () => {
+    it('moves focus inside a newly opened dialog before paint', () => {
+        const onCommit = vi.fn();
+        const onClose = vi.fn();
+        const { rerender } = render(<Dialog active={false} onClose={onClose} onCommit={onCommit} />);
+        screen.getByRole('button', { name: 'Outside' }).focus();
+        rerender(<Dialog active onClose={onClose} onCommit={onCommit} />);
+        expect(onCommit).toHaveBeenCalledExactlyOnceWith(true);
+    });
+
     it('includes selects and textareas, skips hidden/disabled/negative-tabindex controls, and wraps focus', () => {
         render(<Dialog onClose={vi.fn()} />);
         const first = screen.getByRole('combobox', { name: 'Language' });
